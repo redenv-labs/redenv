@@ -62,13 +62,24 @@ export const action = async (key: string, options: any) => {
         const redisKey = `${environment}:${projectName}`;
 
         let targetKey = key;
+        if (targetKey && targetKey.startsWith("__")) {
+          console.log(
+            chalk.red(
+              "✘ Secrets starting with '__' are reserved for internal metadata and cannot be viewed directly."
+            )
+          );
+          return;
+        }
+
         if (!targetKey) {
           spinner.text = "Fetching keys for selection...";
-          const keysInEnv = await redis.hkeys(redisKey);
+          const keysInEnv = (await redis.hkeys(redisKey)).filter(
+            (k) => !k.startsWith("__")
+          );
           spinner.stop();
           if (keysInEnv.length === 0) {
             console.log(
-              chalk.yellow(`No secrets found in environment "${environment}".`)
+              chalk.yellow(`No user-defined secrets found in environment "${environment}".`)
             );
             return;
           }
@@ -124,6 +135,7 @@ export const action = async (key: string, options: any) => {
           }
         });
 
+        await new Promise((resolve) => setTimeout(resolve, 100));
         const decryptedRows = await Promise.all(decryptionPromises);
         decryptedRows.forEach((row) => table.push(row));
 

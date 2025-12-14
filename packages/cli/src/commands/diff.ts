@@ -81,7 +81,14 @@ export const action = async (options: any) => {
           redis.hgetall<Record<string, any>>(keyB),
         ]);
 
-        const decryptPromisesA = Object.entries(varsA ?? {}).map(
+        const filteredVarsA = Object.fromEntries(
+          Object.entries(varsA ?? {}).filter(([key]) => !key.startsWith("__"))
+        );
+        const filteredVarsB = Object.fromEntries(
+          Object.entries(varsB ?? {}).filter(([key]) => !key.startsWith("__"))
+        );
+
+        const decryptPromisesA = Object.entries(filteredVarsA).map(
           async ([key, history]) => {
             try {
               if (!Array.isArray(history) || history.length === 0)
@@ -93,7 +100,7 @@ export const action = async (options: any) => {
           }
         );
 
-        const decryptPromisesB = Object.entries(varsB ?? {}).map(
+        const decryptPromisesB = Object.entries(filteredVarsB).map(
           async ([key, history]) => {
             try {
               if (!Array.isArray(history) || history.length === 0)

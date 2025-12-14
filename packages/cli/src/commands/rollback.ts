@@ -63,6 +63,15 @@ export const action = async (key: string, options: any) => {
         const redisKey = `${environment}:${projectName}`;
         let targetKey = key;
 
+        if (targetKey && targetKey.startsWith("__")) {
+          console.log(
+            chalk.red(
+              "✘ Secrets starting with '__' are reserved for internal metadata and cannot be rolled back."
+            )
+          );
+          return;
+        }
+
         if (!targetKey) {
           spinner = ora("Fetching keys...").start();
           const envData = await redis.hgetall<Record<string, any>>(redisKey);
@@ -75,16 +84,18 @@ export const action = async (key: string, options: any) => {
             return;
           }
 
-          const choices = Object.entries(envData).map(([key, history]) => {
-            const versionCount = Array.isArray(history) ? history.length : 0;
-            const canRollback = versionCount >= 2;
-            return canRollback
-              ? {
-                  name: `${key} ${chalk.gray(`(${versionCount} versions)`)}`,
-                  value: key,
-                }
-              : null;
-          });
+          const choices = Object.entries(envData)
+            .filter(([key]) => !key.startsWith("__")) // Filter out keys starting with __
+            .map(([key, history]) => {
+              const versionCount = Array.isArray(history) ? history.length : 0;
+              const canRollback = versionCount >= 2;
+              return canRollback
+                ? {
+                    name: `${key} ${chalk.gray(`(${versionCount} versions)`)}`,
+                    value: key,
+                  }
+                : null;
+            });
 
           const filteredChoices = choices.filter((choice) => choice !== null);
 
@@ -178,6 +189,8 @@ export const action = async (key: string, options: any) => {
               }
             }
           );
+
+          await new Promise((resolve) => setTimeout(resolve, 100));
           const decryptedRows = await Promise.all(decryptionPromises);
           decryptedRows.forEach((row) => table.push(row as any));
 
@@ -214,7 +227,7 @@ export const action = async (key: string, options: any) => {
             )}?\n  This will create a new version with the value: "${chalk.green(
               decryptedValue
             )}"`,
-            default: false,
+            default: true,
           })
         );
 

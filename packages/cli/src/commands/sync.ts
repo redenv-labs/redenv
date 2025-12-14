@@ -77,8 +77,16 @@ export const action = async (options: any) => {
       redis.hgetall<Record<string, any>>(destKey),
     ]);
 
+    // Filter out internal keys starting with __
+    const filteredSourceVars = Object.fromEntries(
+      Object.entries(rawSourceVars ?? {}).filter(([key]) => !key.startsWith("__"))
+    );
+    const filteredDestVars = Object.fromEntries(
+      Object.entries(rawDestVars ?? {}).filter(([key]) => !key.startsWith("__"))
+    );
+
     const decryptPromises = [
-      ...Object.entries(rawSourceVars ?? {}).map(async ([key, history]) => {
+      ...Object.entries(filteredSourceVars).map(async ([key, history]) => {
         try {
           if (!Array.isArray(history) || history.length === 0) return;
           sourceVars[key] = await decrypt(history[0].value, pek);
@@ -86,7 +94,7 @@ export const action = async (options: any) => {
           /* Ignore decryption errors */
         }
       }),
-      ...Object.entries(rawDestVars ?? {}).map(async ([key, history]) => {
+      ...Object.entries(filteredDestVars).map(async ([key, history]) => {
         try {
           if (!Array.isArray(history) || history.length === 0) return;
           destVars[key] = await decrypt(history[0].value, pek);
@@ -95,6 +103,7 @@ export const action = async (options: any) => {
         }
       }),
     ];
+    await new Promise((resolve) => setTimeout(resolve, 100));
     await Promise.all(decryptPromises);
 
     spinner.succeed("Environments compared.");
@@ -211,34 +220,41 @@ export const action = async (options: any) => {
 
     // Add/Update operations
     const writePromises = [
-      ...keysToAdd.map((key) =>
-        writeSecret(
-          redis,
-          projectName,
-          destEnv,
-          key,
-          sourceVars[key] ?? "",
-          pek,
-          user
-        )
-      ),
-      ...keysToUpdate.map((key) =>
-        writeSecret(
-          redis,
-          projectName,
-          destEnv,
-          key,
-          updatedKeys[key]?.to ?? "",
-          pek,
-          user
-        )
-      ),
+      ...keysToAdd
+        .filter((key) => !key.startsWith("__"))
+        .map((key) =>
+          writeSecret(
+            redis,
+            projectName,
+            destEnv,
+            key,
+            sourceVars[key] ?? "",
+            pek,
+            user
+          )
+        ),
+      ...keysToUpdate
+        .filter((key) => !key.startsWith("__"))
+        .map((key) =>
+          writeSecret(
+            redis,
+            projectName,
+            destEnv,
+            key,
+            updatedKeys[key]?.to ?? "",
+            pek,
+            user
+          )
+        ),
     ];
     await Promise.all(writePromises);
 
     // Remove operations
     if (keysToRemove.length > 0) {
-      await redis.hdel(destKey, ...keysToRemove);
+      await redis.hdel(
+        destKey,
+        ...keysToRemove.filter((key) => !key.startsWith("__"))
+      );
     }
 
     syncSpinner.succeed(

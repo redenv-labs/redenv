@@ -97,6 +97,10 @@ export const action = async (keyArg: string, options: any) => {
 
   try {
     sourceVars = (await redis.hgetall(sourceKey)) || {};
+    // Filter out internal keys starting with __
+    sourceVars = Object.fromEntries(
+      Object.entries(sourceVars).filter(([key]) => !key.startsWith("__"))
+    );
     destVars = (await redis.hgetall(destKey)) || {};
     spinner.succeed("Variables loaded.");
   } catch (err) {
@@ -109,7 +113,9 @@ export const action = async (keyArg: string, options: any) => {
     return;
   }
 
-  const missingKeys = Object.keys(sourceVars).filter((k) => !(k in destVars));
+  const missingKeys = Object.keys(sourceVars).filter(
+    (k) => !(k in destVars) && !k.startsWith("__")
+  );
   if (missingKeys.length === 0) {
     console.log(
       chalk.green(
@@ -144,13 +150,21 @@ export const action = async (keyArg: string, options: any) => {
 
   const newData: Record<string, any> = {};
   for (const k of selectedKeys) {
-    newData[k] = sourceVars[k];
+    let value = sourceVars[k];
+    if (typeof value === "string") {
+      try {
+        value = JSON.parse(value);
+      } catch {
+        // keep as string if parse fails
+      }
+    }
+    newData[k] = value;
   }
 
   console.log(chalk.cyan("\nKeys to clone:"));
   const displayPromises = selectedKeys.map(async (k) => {
     try {
-      const history = sourceVars[k];
+      const history = newData[k];
       if (!Array.isArray(history) || history.length === 0) throw new Error();
       const latestValue = await decrypt(history[0].value, pek);
       return `  • ${k}=${latestValue}`;
@@ -158,6 +172,9 @@ export const action = async (keyArg: string, options: any) => {
       return `  • ${k}=[could not display value]`;
     }
   });
+
+  // Add a small delay to ensure console output is flushed before the prompt starts
+  await new Promise((resolve) => setTimeout(resolve, 100));
   const displayLines = await Promise.all(displayPromises);
   console.log(displayLines.join("\n"));
 

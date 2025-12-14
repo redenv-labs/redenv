@@ -2,7 +2,12 @@ import chalk from "chalk";
 import ora, { type Ora } from "ora";
 import { Command } from "commander";
 import { loadProjectConfig } from "../core/config";
-import { sanitizeName, safePrompt, getAuditUser } from "../utils";
+import {
+  sanitizeName,
+  safePrompt,
+  getAuditUser,
+  secretKeyValidator,
+} from "../utils";
 import { unlockProject } from "../core/keys";
 import { fetchEnvironments } from "../utils/redis";
 import { select } from "@inquirer/prompts";
@@ -46,6 +51,13 @@ export const action = async (key: string, options: any) => {
     );
   }
 
+  const keyValidation = secretKeyValidator(key);
+  if (typeof keyValidation === "string") {
+    console.log(chalk.red(`✘ ${keyValidation}`));
+    if (process.env.REDENV_SHELL_ACTIVE)
+      throw new RedenvError(keyValidation, "INVALID_INPUT");
+    return;
+  }
   const value = await safePrompt(() =>
     multiline({
       prompt: `Enter value for ${key}:`,
@@ -70,10 +82,15 @@ export const action = async (key: string, options: any) => {
     const redisKey = `${environment}:${projectName}`;
     const exists = (await redis.hexists(redisKey, key)) > 0;
     if (exists) {
-      throw new RedenvError(
-        `Key '${key}' already exists. Use 	redenv edit ${key}	 to update it.`,
-        "UNKNOWN_ERROR"
+      spinner.stop();
+      console.log(
+        chalk.yellow(
+          `Key '${key}' already exists. Use ${chalk.cyan(
+            "redenv edit"
+          )} to update it.`
+        )
       );
+      return;
     }
 
     await writeSecret(

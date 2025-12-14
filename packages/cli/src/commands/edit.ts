@@ -2,7 +2,12 @@ import chalk from "chalk";
 import { Command } from "commander";
 import ora from "ora";
 import { loadProjectConfig } from "../core/config";
-import { safePrompt, sanitizeName, getAuditUser } from "../utils";
+import {
+  safePrompt,
+  sanitizeName,
+  getAuditUser,
+  secretKeyValidator,
+} from "../utils";
 import { fetchEnvironments } from "../utils/redis";
 import { select } from "@inquirer/prompts";
 import { multiline } from "@cli-prompts/multiline";
@@ -47,6 +52,13 @@ export const action = async (key: string, options: any) => {
     );
   }
 
+  const keyValidation = secretKeyValidator(key);
+  if (typeof keyValidation === "string") {
+    console.log(chalk.red(`✘ ${keyValidation}`));
+    if (process.env.REDENV_SHELL_ACTIVE)
+      throw new RedenvError(keyValidation, "INVALID_INPUT");
+    return;
+  }
   let spinner;
   try {
     const pek = options.pek ?? (await unlockProject(projectName as string));

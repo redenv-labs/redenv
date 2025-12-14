@@ -89,7 +89,25 @@ export const action = async (filePath: string, options: any) => {
   let parsed: Record<string, string> = {};
   try {
     const fileContent = fs.readFileSync(filePath, "utf8");
-    parsed = dotenv.parse(fileContent);
+    const rawParsed = dotenv.parse(fileContent);
+    const forbiddenKeys = Object.keys(rawParsed).filter((key) =>
+      key.startsWith("__")
+    );
+
+    parsed = Object.fromEntries(
+      Object.entries(rawParsed).filter(([key]) => !key.startsWith("__"))
+    );
+
+    if (forbiddenKeys.length > 0) {
+      console.log(
+        chalk.yellow(
+          `\n⚠ The following keys were skipped because they start with '__' (reserved for internal metadata): ${forbiddenKeys.join(
+            ", "
+          )}`
+        )
+      );
+    }
+
     spinner.succeed(chalk.green("Parsed .env file"));
   } catch (err) {
     spinner.fail(

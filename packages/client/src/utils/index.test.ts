@@ -4,7 +4,17 @@ import * as core from "@redenv/core";
 import { getPEK, populateEnv, log, error } from "./index";
 
 // Mock dependencies
-vi.mock("@redenv/core");
+vi.mock("@redenv/core", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@redenv/core")>();
+  return {
+    ...actual,
+    deriveKey: vi.fn(),
+    decrypt: vi.fn(),
+    importKey: vi.fn(),
+    hexToBuffer: vi.fn(),
+    writeSecret: vi.fn(),
+  };
+});
 
 // Mock the entire @upstash/redis module.
 vi.mock("@upstash/redis", () => {

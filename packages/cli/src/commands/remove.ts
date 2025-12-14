@@ -46,8 +46,16 @@ export const action = async (key: string, options: any) => {
           );
         }
 
-        // Determine which keys to delete
         let keysToDelete: string[] = [];
+
+        if (key && key.startsWith("__")) {
+          console.log(
+            chalk.red(
+              "✘ Secrets starting with '__' are reserved for internal metadata and cannot be removed directly."
+            )
+          );
+          return;
+        }
 
         if (!key) {
           spinner = ora(
@@ -55,13 +63,15 @@ export const action = async (key: string, options: any) => {
           ).start();
 
           const redisKey = `${environment}:${projectName}`;
-          const keys = await redis.hkeys(redisKey);
+          const keys = (await redis.hkeys(redisKey)).filter(
+            (k) => !k.startsWith("__")
+          );
           spinner.stop();
 
           if (!keys || keys.length === 0) {
             console.log(
               chalk.yellow(
-                `No keys found for ${projectName} (${environment}).`
+                `No user-defined keys found for ${projectName} (${environment}).`
               )
             );
             return;

@@ -19,14 +19,17 @@ async function fetchAndDisplayVariables(
     `Fetching variables for ${projectName} (${environment})...`
   ).start();
   try {
-    // The `hgetall` method from `@upstash/redis` automatically parses JSON strings into objects.
     const envs = await redis.hgetall<Record<string, any>>(redisKey);
     spinner.stop();
 
-    if (!envs || Object.keys(envs).length === 0) {
+    const filteredEnvs = Object.fromEntries(
+      Object.entries(envs || {}).filter(([key]) => !key.startsWith("__"))
+    );
+
+    if (Object.keys(filteredEnvs).length === 0) {
       console.log(
         chalk.yellow(
-          `No variables found for project ${projectName} (${environment}).`
+          `No environment variables found for project ${projectName} (${environment}).`
         )
       );
       return;
@@ -42,7 +45,9 @@ async function fetchAndDisplayVariables(
       style: { head: [], border: [] },
     });
 
-    const sorted = Object.entries(envs).sort(([a], [b]) => a.localeCompare(b));
+    const sorted = Object.entries(filteredEnvs).sort(([a], [b]) =>
+      a.localeCompare(b)
+    );
 
     // Decrypt all values in parallel for performance
     const decryptionPromises = sorted.map(async ([key, history]) => {
@@ -51,8 +56,6 @@ async function fetchAndDisplayVariables(
           throw new RedenvError("Invalid history format", "UNKNOWN_ERROR");
         }
         const latestVersion = history[0];
-        console.log(latestVersion);
-        console.log(decryptionKey);
         const decryptedValue = await decrypt(
           latestVersion.value,
           decryptionKey
@@ -90,52 +93,52 @@ export function listCommand(program: Command) {
 }
 
 export const action = async (options: any) => {
-      const projectConfig = await loadProjectConfig();
-      const projectOption = sanitizeName(options.project);
-      const envOption = sanitizeName(options.env);
+  const projectConfig = await loadProjectConfig();
+  const projectOption = sanitizeName(options.project);
+  const envOption = sanitizeName(options.env);
 
-      const projectName = projectOption || projectConfig?.name;
-      if (!projectName) {
-        console.log(
-          chalk.red(
-            "No project specified. Use `redenv list -p <project-name>` or run from a registered project directory."
-          )
-        );
-        return;
-      }
+  const projectName = projectOption || projectConfig?.name;
+  if (!projectName) {
+    console.log(
+      chalk.red(
+        "No project specified. Use `redenv list -p <project-name>` or run from a registered project directory."
+      )
+    );
+    return;
+  }
 
-      try {
-        const pek = options.pek ?? (await unlockProject(projectName as string));
-        let environment = envOption || projectConfig?.environment;
+  try {
+    const pek = options.pek ?? (await unlockProject(projectName as string));
+    let environment = envOption || projectConfig?.environment;
 
-        if (!environment) {
-          const envs = await fetchEnvironments(projectName, true);
-          if (envs.length === 0) {
-            console.log(
-              chalk.yellow(
-                `No environments found for project "${projectName}".`
-              )
-            );
-            return;
-          }
-          environment = await safePrompt(() =>
-            select({
-              message: "Select environment:",
-              choices: envs.map((e) => ({ name: e, value: e })),
-            })
-          );
-        }
-
-        const redisKey = `${environment}:${projectName}`;
-        await fetchAndDisplayVariables(redisKey, pek);
-      } catch (err) {
-        // Errors from unlockProject are handled, so we don't need to log them again
-        if ((err as Error).name !== "ExitPromptError") {
-          console.log(
-            chalk.red(
-              `\n✘ An unexpected error occurred: ${(err as Error).message}`
-            )
-          );
-        }
-      }
+    if (!environment) {
+                const envs = (await fetchEnvironments(projectName, true)).filter(
+                  (e) => !e.startsWith("__")
+                );
+                if (envs.length === 0) {
+                  console.log(
+                    chalk.yellow(
+                      `No environments found for project "${projectName}".`
+                    )
+                  );
+                  return;
+                }
+      environment = await safePrompt(() =>
+        select({
+          message: "Select environment:",
+          choices: envs.map((e) => ({ name: e, value: e })),
+        })
+      );
     }
+
+    const redisKey = `${environment}:${projectName}`;
+    await fetchAndDisplayVariables(redisKey, pek);
+  } catch (err) {
+    // Errors from unlockProject are handled, so we don't need to log them again
+    if ((err as Error).name !== "ExitPromptError") {
+      console.log(
+        chalk.red(`\n✘ An unexpected error occurred: ${(err as Error).message}`)
+      );
+    }
+  }
+};

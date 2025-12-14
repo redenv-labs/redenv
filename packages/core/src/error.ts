@@ -17,6 +17,7 @@ export type RedenvErrorCode =
   // Data Errors
   | "SECRET_NOT_FOUND"
   | "INVALID_SECRET_VALUE"
+  | "INVALID_INPUT"
   // plugin errors
   | "BROKEN_PLUGIN"
   // Generic

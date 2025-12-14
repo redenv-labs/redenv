@@ -73,6 +73,13 @@ export const nameValidator = (input: string) => {
   return true;
 };
 
+export const secretKeyValidator = (input: string) => {
+  if (input.startsWith("__")) {
+    return "Secret names cannot start with '__' (double underscore)";
+  }
+  return nameValidator(input);
+};
+
 export const writeProjectConfig = async (config: Record<string, unknown>) => {
   const currentConfig = await loadProjectConfig();
   const existingPath = currentConfig?._filepath;
@@ -90,9 +97,9 @@ export const writeProjectConfig = async (config: Record<string, unknown>) => {
     }
 
     const newContent = sortObject({ ...existingContent, ...config });
-    
+
     // Safety: ensure internal keys don't leak into the file
-    delete newContent._filepath; 
+    delete newContent._filepath;
 
     fs.writeFileSync(existingPath, JSON.stringify(newContent, null, 2));
     console.log(chalk.green(`✔ Updated configuration: ${existingPath}`));
@@ -104,10 +111,10 @@ export const writeProjectConfig = async (config: Record<string, unknown>) => {
     console.log(
       chalk.yellow(
         `⚠  Configuration found at ${existingPath}.\n` +
-        `   Automatic updates are only supported for JSON files.\n` +
-        `   Please update this file manually.` + 
-        `\n` +
-        `Changes that were skipped: ${JSON.stringify(config, null, 2)}`
+          `   Automatic updates are only supported for JSON files.\n` +
+          `   Please update this file manually.` +
+          `\n` +
+          `Changes that were skipped: ${JSON.stringify(config, null, 2)}`
       )
     );
     return;
@@ -118,11 +125,13 @@ export const writeProjectConfig = async (config: Record<string, unknown>) => {
 
   // Double check file doesn't exist (in case lilconfig missed it or race condition)
   if (fs.existsSync(targetPath)) {
-    console.log(chalk.yellow(`⚠  ${targetPath} already exists. Skipping creation.`));
+    console.log(
+      chalk.yellow(`⚠  ${targetPath} already exists. Skipping creation.`)
+    );
     return;
   }
 
-  // We don't merge 'currentConfig' here because if we reached this point, 
+  // We don't merge 'currentConfig' here because if we reached this point,
   // currentConfig is undefined (no config found).
   const configContent = sortObject({
     name: config.name,

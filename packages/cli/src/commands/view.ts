@@ -23,6 +23,15 @@ export function viewCommand(program: Command) {
 export const action = async (key: string, options: any) => {
   const projectConfig = await loadProjectConfig();
 
+  if (key.startsWith("__")) {
+    console.log(
+      chalk.red(
+        "✘ Secrets starting with '__' are reserved for internal metadata and cannot be viewed directly."
+      )
+    );
+    return;
+  }
+
   if (!projectConfig && !options.project) {
     console.log(
       chalk.red(
@@ -32,7 +41,8 @@ export const action = async (key: string, options: any) => {
     return;
   }
 
-  const projectName = sanitizeName(options.project) || projectConfig?.name || "";
+  const projectName =
+    sanitizeName(options.project) || projectConfig?.name || "";
   let environment = sanitizeName(options.env) || projectConfig?.environment;
 
   if (!environment) {
@@ -70,7 +80,10 @@ export const action = async (key: string, options: any) => {
     let decryptedValue: string;
     try {
       if (!Array.isArray(history) || history.length === 0) {
-        throw new RedenvError("History format is invalid or empty.", "UNKNOWN_ERROR");
+        throw new RedenvError(
+          "History format is invalid or empty.",
+          "UNKNOWN_ERROR"
+        );
       }
       const latestVersion = history[0];
       decryptedValue = await decrypt(latestVersion.value, pek);
