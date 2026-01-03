@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import { Command } from "commander";
 import { loadProjectConfig } from "../../core/config";
-import { safePrompt, sanitizeName } from "../../utils";
+import { safePrompt, sanitizeName, getAuditUser } from "../../utils";
 import { fetchProjects } from "../../utils/redis";
 import { select, input } from "@inquirer/prompts";
 import { unlockProject } from "../../core/keys";
@@ -34,7 +34,9 @@ export function createTokenCommand(program: Command) {
 
 export const action = async (project: string, options: any) => {
   let projectName =
-    sanitizeName(project) || (await loadProjectConfig())?.name || options.project;
+    sanitizeName(project) ||
+    (await loadProjectConfig())?.name ||
+    options.project;
 
   if (!projectName) {
     const projects = await fetchProjects();
@@ -83,7 +85,10 @@ export const action = async (project: string, options: any) => {
     const metaKey = `meta@${projectName}`;
     const metadata = await redis.hgetall<Record<string, any>>(metaKey);
     if (!metadata) {
-      throw new RedenvError("Failed to retrieve project metadata.", "PROJECT_NOT_FOUND");
+      throw new RedenvError(
+        "Failed to retrieve project metadata.",
+        "PROJECT_NOT_FOUND"
+      );
     }
 
     const serviceTokens = parseServiceTokens(metadata);
@@ -94,6 +99,7 @@ export const action = async (project: string, options: any) => {
       name,
       description,
       createdAt: new Date().toISOString(),
+      createdBy: getAuditUser(),
     };
 
     await redis.hset(metaKey, {

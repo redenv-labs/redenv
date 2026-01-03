@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.2] - 2026-01-03
+
+### Added
+
+- **Token Auditing:** The `token create` command now captures and stores the creator's identity (email or system username) in the `createdBy` field for better auditing.
+
 ## [1.4.1] - 2025-12-08
 
 ### Added

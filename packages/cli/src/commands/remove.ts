@@ -120,7 +120,7 @@ export const action = async (key: string, options: any) => {
         if (result > 0) {
           spinner.succeed(
             chalk.green(
-              `✔ Successfully removed ${result} key(s) from ${projectName} (${environment}).`
+              `Successfully removed ${result} key(s) from ${projectName} (${environment}).`
             )
           );
         } else {

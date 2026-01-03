@@ -1,8 +1,8 @@
 import { defineConfig } from "@redenv/core";
-import { studioPlugin } from "./packages/studio/src";
+import { studioPlugin } from "../studio/src";
 
 export default defineConfig({
   environment: "development",
-  name: "redenv",
+  name: "pras",
   plugins: [studioPlugin],
 });
