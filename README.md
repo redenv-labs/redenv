@@ -94,7 +94,22 @@ The Redenv ecosystem is completed by the **`@redenv/client`**, a lightweight lib
 
 By using the `@redenv/client`, you can rotate an API key or change a feature flag and have it reflect in your running applications in seconds, without requiring a new build or deployment.
 
-## 6. Comparison with Alternatives
+## 6. The `@redenv/studio`: Visual Management
+
+For those who prefer a visual interface over the command line, Redenv offers **`@redenv/studio`** ([NPM](https://www.npmjs.com/package/@redenv/studio) | [GitHub](https://github.com/redenv-labs/redenv-studio-plugin)). This plugin launches a modern, local web dashboard that provides a rich graphical interface for managing your secrets.
+
+- **Visual Dashboard:** View and edit secrets across all environments in a table view.
+- **Environment Management:** Create, delete, and manage environments with ease.
+- **Access Control:** Generate and manage Service Tokens for your applications and CI/CD pipelines visually.
+- **Secure:** Runs locally on your machine, maintaining the same zero-knowledge security model as the CLI.
+
+To use it, simply install the plugin and run:
+
+```bash
+redenv studio
+```
+
+## 7. Comparison with Alternatives
 
 | Feature / Aspect     | Redenv                                  | `.env` Files                             | Cloud Secret Managers (AWS, GCP)         | HashiCorp Vault (Self-Hosted)              |
 | -------------------- | --------------------------------------- | ---------------------------------------- | ---------------------------------------- | ------------------------------------------ |

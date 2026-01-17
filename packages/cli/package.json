@@ -20,7 +20,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/PRASSamin/redenv.git"
+    "url": "https://github.com/redenv-labs/redenv.git"
   },
   "type": "module",
   "main": "bin/index.js",
