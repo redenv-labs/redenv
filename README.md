@@ -10,6 +10,101 @@ In modern software development, managing environment variables and secrets (`.en
 
 **Redenv** is a comprehensive solution designed to solve these problems. It is a CLI-first secret management system that centralizes environment variables in a Redis backend you control. It features a robust, zero-knowledge, end-to-end encrypted architecture, ensuring that your secrets are always protected. By decoupling configuration from deployment, Redenv allows development teams to manage secrets dynamically and securely, drastically improving workflow efficiency and security posture.
 
+## Quick Start
+
+Get up and running with Redenv in under 60 seconds.
+
+### 1. Install the CLI
+Install the Redenv CLI globally using your preferred package manager:
+
+```bash
+pnpm add -g @redenv/cli
+```
+
+### 2. Connect to Upstash
+Connect your CLI to an Upstash Redis database. You can find your REST URL and Token in the Upstash Console.
+
+```bash
+redenv setup
+```
+
+### 3. Register your Project
+Navigate to your project directory and initialize it with an encrypted vault.
+
+```bash
+redenv register my-awesome-app
+```
+
+*Note: You will be prompted to create a **Master Password**. This password is the only key to your secrets—never lose it.*
+
+### 3.1 Install Dev Dependencies
+
+```bash
+bun add -D @redenv/core
+```
+
+### 4. Manage Secrets
+Add your first encrypted secret and view it:
+
+```bash
+# Add a secret
+redenv add API_KEY "super-secret-value"
+
+# View the secret
+redenv view API_KEY
+```
+
+### 5. Use in Your App (SDK)
+Install the zero-knowledge client:
+
+```bash
+bun add @redenv/client
+```
+
+Access secrets at runtime (fully decrypted in memory):
+
+```typescript
+import { Redenv } from "@redenv/client";
+
+const redenv = new Redenv({
+  project: "my-awesome-app",
+  tokenId: process.env.REDENV_TOKEN_ID,
+  token: process.env.REDENV_TOKEN_KEY,
+  upstash: { ... },
+});
+
+// Load secrets (stale-while-revalidate caching built-in)
+const secrets = await redenv.load();
+console.log(secrets.API_KEY); 
+```
+
+### 6. Visual Management (Optional Plugin)
+For a rich, visual dashboard, install the Studio plugin. Redenv uses a plugin system, keeping the core lightweight while allowing you to add powerful features like this.
+
+**Install:**
+```bash
+pnpm add -D @redenv/studio
+```
+
+**Configure:**
+Add it to your `redenv.config.ts`:
+
+```typescript
+import { defineConfig } from "@redenv/core";
+import { studioPlugin } from "@redenv/studio";
+
+export default defineConfig({
+  ...
+  plugins: [studioPlugin],
+});
+```
+
+**Launch:**
+```bash
+redenv studio
+```
+*This starts a local dashboard where you can drag-and-drop secrets, manage environments, and sync keys visually.*
+
 ## 1. The Research Problem: The State of Configuration Management
 
 The management of application secrets has long been a challenge, but the evolution of development and deployment practices has created two distinct, significant problem areas.
@@ -120,3 +215,16 @@ redenv studio
 | **Dynamic Updates**  | **Yes (via `@redenv/client`)**          | No (requires file change + restart)      | Yes (via SDK)                            | Yes (via SDK/API)                          |
 | **Cost**             | Low (Upstash free/serverless tier)      | Free                                     | Low to Medium (per secret/per API call)  | High (infrastructure and operational cost) |
 | **Version Control**  | **Built-in per secret**                 | Via Git (exposes history if not ignored) | Yes (managed versions)                   | Yes (via audit logs/versioned KV)          |
+
+---
+
+## Feedback & Community
+
+Redenv is in active development, and I am looking for technical feedback to improve its architecture and security model.
+
+- **Roast the Architecture:** I'm particularly interested in feedback regarding the client-side encryption flow and the trade-offs of using Redis as a primary secret store.
+- **Feature Requests:** Is the `stale-while-revalidate` caching logic sufficient for your production needs? What integrations are missing?
+- **Bug Reports:** If you find a way to break the CLI or the Studio, please open an issue.
+
+**Built with ❤️ for the Upstash community.**
+
