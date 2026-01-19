@@ -18,7 +18,7 @@ Get up and running with Redenv in under 60 seconds.
 Install the Redenv CLI globally using your preferred package manager:
 
 ```bash
-pnpm add -g @redenv/cli
+bun add -g @redenv/cli
 ```
 
 ### 2. Connect to Upstash
@@ -83,7 +83,7 @@ For a rich, visual dashboard, install the Studio plugin. Redenv uses a plugin sy
 
 **Install:**
 ```bash
-pnpm add -D @redenv/studio
+bun add -D @redenv/studio
 ```
 
 **Configure:**
