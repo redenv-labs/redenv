@@ -15,6 +15,7 @@ In modern software development, managing environment variables and secrets (`.en
 Get up and running with Redenv in under 60 seconds.
 
 ### 1. Install the CLI
+
 Install the Redenv CLI globally using your preferred package manager:
 
 ```bash
@@ -22,6 +23,7 @@ bun add -g @redenv/cli
 ```
 
 ### 2. Connect to Upstash
+
 Connect your CLI to an Upstash Redis database. You can find your REST URL and Token in the Upstash Console.
 
 ```bash
@@ -29,13 +31,14 @@ redenv setup
 ```
 
 ### 3. Register your Project
+
 Navigate to your project directory and initialize it with an encrypted vault.
 
 ```bash
 redenv register my-awesome-app
 ```
 
-*Note: You will be prompted to create a **Master Password**. This password is the only key to your secrets—never lose it.*
+_Note: You will be prompted to create a **Master Password**. This password is the only key to your secrets—never lose it._
 
 ### 3.1 Install Dev Dependencies
 
@@ -44,6 +47,7 @@ bun add -D @redenv/core
 ```
 
 ### 4. Manage Secrets
+
 Add your first encrypted secret and view it:
 
 ```bash
@@ -55,6 +59,7 @@ redenv view API_KEY
 ```
 
 ### 5. Use in Your App (SDK)
+
 Install the zero-knowledge client:
 
 ```bash
@@ -64,6 +69,7 @@ bun add @redenv/client
 Access secrets at runtime (fully decrypted in memory):
 
 ```typescript
+// lib/redenv.ts
 import { Redenv } from "@redenv/client";
 
 const redenv = new Redenv({
@@ -74,14 +80,30 @@ const redenv = new Redenv({
 });
 
 // Load secrets (stale-while-revalidate caching built-in)
-const secrets = await redenv.load();
-console.log(secrets.API_KEY); 
+await redenv.load();
+```
+
+```typescript
+// app/page.tsx
+import { redenv } from "@/lib/redenv";
+
+export default async function Home() {
+  const env = await redenv.load();
+  return (
+    <div>
+      <h1>My App</h1>
+      <p>API Key: {env.get("API_KEY")}</p>
+    </div>
+  );
+}
 ```
 
 ### 6. Visual Management (Optional Plugin)
+
 For a rich, visual dashboard, install the Studio plugin. Redenv uses a plugin system, keeping the core lightweight while allowing you to add powerful features like this.
 
 **Install:**
+
 ```bash
 bun add -D @redenv/studio
 ```
@@ -100,10 +122,12 @@ export default defineConfig({
 ```
 
 **Launch:**
+
 ```bash
 redenv studio
 ```
-*This starts a local dashboard where you can drag-and-drop secrets, manage environments, and sync keys visually.*
+
+_This starts a local dashboard where you can drag-and-drop secrets, manage environments, and sync keys visually._
 
 ## 1. The Research Problem: The State of Configuration Management
 
@@ -227,4 +251,3 @@ Redenv is in active development, and I am looking for technical feedback to impr
 - **Bug Reports:** If you find a way to break the CLI or the Studio, please open an issue.
 
 **Built with ❤️ for the Upstash community.**
-
