@@ -92,7 +92,7 @@ export default async function Home() {
   return (
     <div>
       <h1>My App</h1>
-      <p>API Key: {env.get("API_KEY")}</p>
+      <p>API Key: {env.API_KEY}</p>
     </div>
   );
 }
