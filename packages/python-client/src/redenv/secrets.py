@@ -1,25 +1,18 @@
 import json
-from typing import Any, Callable, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Optional, Type, TypeVar, Union, List
+from .errors import RedenvError
 
 T = TypeVar("T")
 
 class Secrets(dict):
     """
     A specialized dictionary for managing decrypted secrets with 
-    extra capabilities.
+    type-casting, scoping, and validation capabilities.
     """
 
     def get(self, key: str, default: Any = None, cast: Optional[Union[Type[T], Callable[[Any], T]]] = None) -> Union[T, Any]:
         """
         Retrieves a secret and optionally casts it to a specific type.
-        
-        Args:
-            key: The secret key.
-            default: The value to return if the key is missing.
-            cast: A type (int, bool, dict, list) or a callable to transform the value.
-            
-        Returns:
-            The secret value (optionally casted) or the default value.
         """
         value = super().get(key)
         
@@ -60,3 +53,30 @@ class Secrets(dict):
             return super().__getitem__(key)
         except KeyError:
             raise KeyError(f"Secret '{key}' not found in Redenv.")
+
+    def scope(self, prefix: str) -> "Secrets":
+        """
+        Returns a new Secrets object containing only the keys that start with
+        the given prefix. The prefix is stripped from the keys in the new object.
+        """
+        subset = Secrets()
+        for key, value in self.items():
+            if key.startswith(prefix):
+                new_key = key[len(prefix):]
+                if new_key:
+                    subset[new_key] = value
+        return subset
+
+    def require(self, *keys: str) -> "Secrets":
+        """
+        Validates that all provided keys exist.
+        Raises RedenvError if any key is missing.
+        Returns self for chaining.
+        """
+        missing = [k for k in keys if k not in self]
+        if missing:
+            raise RedenvError(
+                f"Missing required secrets: {', '.join(missing)}",
+                "SECRET_NOT_FOUND"
+            )
+        return self
