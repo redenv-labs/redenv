@@ -4,6 +4,7 @@ from typing import Dict, Any, Optional
 from upstash_redis.asyncio import Redis
 from cachetools import LRUCache
 from .types import RedenvOptions
+from .secrets import Secrets
 from .utils import fetch_and_decrypt, populate_env, log, error, set_secret
 from .errors import RedenvError
 
@@ -37,7 +38,7 @@ class Redenv:
     def _get_cache_key(self) -> str:
         return f"redenv:{self.options.project}:{self.options.environment}"
 
-    async def _get_secrets(self) -> Dict[str, str]:
+    async def _get_secrets(self) -> Secrets:
         key = self._get_cache_key()
         entry = self._cache.get(key)
         now = time.time()
@@ -46,7 +47,7 @@ class Redenv:
         swr_seconds = self.options.cache.swr
         
         # Function to fetch fresh value
-        async def fetch_fresh():
+        async def fetch_fresh() -> Secrets:
             try:
                 log("Fetching fresh secrets...", self.options.log)
                 secrets = await fetch_and_decrypt(self.redis, self.options)
@@ -93,10 +94,10 @@ class Redenv:
         """
         await self.load()
 
-    async def load(self) -> Dict[str, str]:
+    async def load(self) -> Secrets:
         """
         Fetches, caches, and injects secrets into the environment.
-        Returns the secrets dict.
+        Returns the Secrets object.
         """
         secrets = await self._get_secrets()
         

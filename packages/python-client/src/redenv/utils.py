@@ -1,11 +1,10 @@
-import json
-import os
-from typing import Dict, Optional, Any, List, Union
-from upstash_redis.asyncio import Redis as AsyncRedis
 from .crypto import derive_key, decrypt, hex_to_buffer, encrypt
 from .types import RedenvOptions, LogPreference
 from .errors import RedenvError
+from .secrets import Secrets
 import asyncio
+import json
+import os
 
 def log(message: str, preference: LogPreference = "low", priority: str = "low"):
     if preference == "none":
@@ -55,15 +54,12 @@ async def get_pek(redis: AsyncRedis, options: RedenvOptions, metadata: Optional[
     
     return hex_to_buffer(decrypted_pek_hex)
 
-async def fetch_and_decrypt(redis: AsyncRedis, options: RedenvOptions) -> Dict[str, str]:
+async def fetch_and_decrypt(redis: AsyncRedis, options: RedenvOptions) -> Secrets:
     """
     Fetches all secrets for a given environment and decrypts them.
     """
     log("Expired Cache: Fetching secrets from source...", options.log, "high")
     
-    # We fetch PEK first. 
-    # Optimization: We could parallelize get_pek(fetch meta) and hgetall(env_key)
-    # but we need PEK to decrypt anyway.
     try:
         pek = await get_pek(redis, options)
     except Exception as e:
@@ -73,7 +69,7 @@ async def fetch_and_decrypt(redis: AsyncRedis, options: RedenvOptions) -> Dict[s
     env_key = f"{options.environment}:{options.project}"
     versioned_secrets = await redis.hgetall(env_key)
 
-    secrets: Dict[str, str] = {}
+    secrets = Secrets()
     if not versioned_secrets:
         log("No secrets found for this environment.", options.log)
         return secrets
@@ -97,7 +93,7 @@ async def fetch_and_decrypt(redis: AsyncRedis, options: RedenvOptions) -> Dict[s
     log(f"Successfully loaded {len(secrets)} secrets.", options.log)
     return secrets
 
-async def populate_env(secrets: Dict[str, str], options: RedenvOptions):
+async def populate_env(secrets: Union[Dict[str, str], Secrets], options: RedenvOptions):
     """
     Injects secrets into the current runtime's environment.
     """
@@ -161,5 +157,4 @@ async def set_secret(redis: AsyncRedis, options: RedenvOptions, key: str, value:
         history = history[:history_limit]
         
     # Write back
-    # upstash-redis expects hset(name, field, value) or hset(name, values={...})
     return await redis.hset(env_key, key, json.dumps(history))
