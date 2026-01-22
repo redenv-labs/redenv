@@ -5,6 +5,7 @@ from upstash_redis.asyncio import Redis as AsyncRedis
 from .crypto import derive_key, decrypt, hex_to_buffer, encrypt
 from .types import RedenvOptions, LogPreference
 from .errors import RedenvError
+import asyncio
 
 def log(message: str, preference: LogPreference = "low", priority: str = "low"):
     if preference == "none":
@@ -18,12 +19,15 @@ def error(message: str, preference: LogPreference = "low"):
     if preference != "none":
         print(f"[REDENV] Error: {message}")
 
-async def get_pek(redis: AsyncRedis, options: RedenvOptions) -> bytes:
+async def get_pek(redis: AsyncRedis, options: RedenvOptions, metadata: Optional[Dict[str, Any]] = None) -> bytes:
     """
     Fetches and decrypts the Project Encryption Key (PEK).
+    If metadata is provided, it skips the Redis fetch.
     """
-    meta_key = f"meta@{options.project}"
-    metadata = await redis.hgetall(meta_key)
+    if not metadata:
+        meta_key = f"meta@{options.project}"
+        metadata = await redis.hgetall(meta_key)
+        
     if not metadata:
         raise RedenvError(f'Project "{options.project}" not found.', "PROJECT_NOT_FOUND")
 
@@ -36,10 +40,6 @@ async def get_pek(redis: AsyncRedis, options: RedenvOptions) -> bytes:
     # If not found in standard service tokens, check for ephemeral token field
     if not token_info:
         ephemeral_field = f"ephemeral:{options.token_id}"
-        # Redis returns hgetall keys/values as strings usually, but check implementation.
-        # hgetall returns dictionary.
-        # If accessing specific field that might not be in the map if we used HGETALL on meta_key.
-        # But wait, metadata contains ALL fields of the hash.
         raw_ephemeral = metadata.get(ephemeral_field)
         if raw_ephemeral:
             token_info = json.loads(raw_ephemeral) if isinstance(raw_ephemeral, str) else raw_ephemeral
@@ -61,6 +61,9 @@ async def fetch_and_decrypt(redis: AsyncRedis, options: RedenvOptions) -> Dict[s
     """
     log("Expired Cache: Fetching secrets from source...", options.log, "high")
     
+    # We fetch PEK first. 
+    # Optimization: We could parallelize get_pek(fetch meta) and hgetall(env_key)
+    # but we need PEK to decrypt anyway.
     try:
         pek = await get_pek(redis, options)
     except Exception as e:
@@ -108,14 +111,55 @@ async def populate_env(secrets: Dict[str, str], options: RedenvOptions):
     log(f"Injection complete. {injected_count} variables were set.", options.log)
 
 async def set_secret(redis: AsyncRedis, options: RedenvOptions, key: str, value: str):
-    # This involves writing to Redis which requires more logic (handling versioning, auditing etc).
-    # The JS client `setSecret` calls `writeSecret` in core.
-    # Since `core` has `write.ts`, I would need to port `write.ts` too.
-    # For a basic SDK that fetches secrets, maybe I can skip `set` for now or default it.
-    # The user asked for "build new sdk", "assist me".
-    # I should start with Read-Only capability as that's the primary use case for SDKs (running in apps).
-    # Writing is usually done via CLI.
-    # But `Redenv` class has `set`.
-    # I will mark `set` as NotImplemented for now or try to implement it if easy.
-    # `writeSecret` in `core` is logic heavy.
-    raise NotImplementedError("Setting secrets is not yet implemented in Python SDK")
+    """
+    Sets a secret in Redis with versioning and history.
+    """
+    env_key = f"{options.environment}:{options.project}"
+    meta_key = f"meta@{options.project}"
+    
+    # Fetch metadata (for PEK & historyLimit) and current history in parallel
+    metadata, current_history = await asyncio.gather(
+        redis.hgetall(meta_key), 
+        redis.hget(env_key, key)
+    )
+    
+    if not metadata:
+        raise RedenvError(f'Project "{options.project}" not found.', "PROJECT_NOT_FOUND")
+        
+    # Reuse metadata to get PEK without extra fetch
+    pek = await get_pek(redis, options, metadata)
+    
+    history_limit = int(metadata.get("historyLimit", 10))
+    
+    # Fetch current history for the key
+    history = []
+    if current_history:
+        history = json.loads(current_history) if isinstance(current_history, str) else current_history
+        
+    if not isinstance(history, list):
+        history = []
+        
+    last_version = history[0]["version"] if len(history) > 0 else 0
+    
+    # Encrypt new value
+    encrypted_value = encrypt(value, pek)
+    
+    from datetime import datetime, timezone
+    
+    new_version = {
+        "version": last_version + 1,
+        "value": encrypted_value,
+        "user": options.token_id, # Using token_id as the user/auditor
+        "createdAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    }
+    
+    # Prepend new version
+    history.insert(0, new_version)
+    
+    # Trim history
+    if history_limit > 0:
+        history = history[:history_limit]
+        
+    # Write back
+    # upstash-redis expects hset(name, field, value) or hset(name, values={...})
+    return await redis.hset(env_key, key, json.dumps(history))
