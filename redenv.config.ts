@@ -7,4 +7,3 @@ export default defineConfig({
   plugins: [studioPlugin],
 });
 
-console.log(studioPlugin.name)
