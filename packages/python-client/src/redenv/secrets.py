@@ -80,3 +80,16 @@ class Secrets(dict):
                 "SECRET_NOT_FOUND"
             )
         return self
+
+    def __repr__(self) -> str:
+        """
+        Masks secret values to prevent accidental leakage in logs.
+        """
+        masked = {k: "********" for k in self.keys()}
+        return f"Secrets({masked})"
+
+    def __str__(self) -> str:
+        """
+        Returns the masked representation of the secrets.
+        """
+        return self.__repr__()
