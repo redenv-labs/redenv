@@ -10,17 +10,34 @@ import time
 from typing import Literal, Optional, Dict, Any, Union
 from cachetools import LRUCache
 
+import logging
+
+logger = logging.getLogger("redenv")
+
+if not logger.handlers:
+    logger.addHandler(logging.NullHandler())
+
 def log(message: str, preference: LogPreference = "low", priority: str = "low"):
+    """
+    Logs messages using the standard python logging module.
+    """
     if preference == "none":
         return
-    if preference == "low" and priority == "high":
-        print(f"[REDENV] {message}")
+
+    # If preference is "low", we only log high priority messages as INFO
+    # If preference is "high", we log everything (low priority as DEBUG, high as INFO)
+    
+    if priority == "high":
+        logger.info(message)
     elif preference == "high":
-        print(f"[REDENV] {message}")
+        logger.debug(message)
 
 def error(message: str, preference: LogPreference = "low"):
+    """
+    Logs errors using the standard python logging module.
+    """
     if preference != "none":
-        print(f"[REDENV] Error: {message}")
+        logger.error(message)
 
 async def get_pek(redis: AsyncRedis, options: RedenvOptions, metadata: Optional[Dict[str, Any]] = None) -> bytes:
     """
