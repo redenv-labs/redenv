@@ -97,12 +97,13 @@ class Redenv:
     async def load(self) -> Secrets:
         """
         Fetches, caches, and injects secrets into the environment.
-        Returns the Secrets object.
+        
+        Returns:
+            The Secrets object.
         """
         secrets = await self._get_secrets()
         
-        # Ensure env is populated (idempotent operation)
-        # This handles cases where we got data from cache but didn't run fetch_fresh
+        # Ensure env is populated
         await populate_env(secrets, self.options)
         
         return secrets

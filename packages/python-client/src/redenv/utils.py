@@ -101,6 +101,9 @@ async def populate_env(secrets: Union[Dict[str, str], Secrets], options: RedenvO
     injected_count = 0
     
     for key, value in secrets.items():
+        if not options.env.override and key in os.environ:
+            continue
+            
         os.environ[key] = value
         injected_count += 1
         
