@@ -4,7 +4,6 @@ build-backend = "hatchling.build"
 
 [project]
 name = "redenv"
-version = "0.1.1"
 description = "A zero-knowledge, end-to-end encrypted secret management SDK for Python."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -33,6 +32,11 @@ dependencies = [
     "cachetools>=5.0.0",
 ]
 
+dynamic = ["version"]
+
+[tool.hatch.version]
+  path = "src/redenv/__init__.py"
+
 [project.urls]
 Homepage = "https://github.com/redenv-labs/redenv"
 Documentation = "https://github.com/redenv-labs/redenv/tree/main/packages/python-client"
@@ -42,9 +46,12 @@ Issues = "https://github.com/redenv-labs/redenv/issues"
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "pytest-asyncio",
     "python-dotenv",
     "build",
-    "twine"
+    "twine",
+    "ruff",
+    "pyright"
 ]
 
 [tool.hatch.build.targets.wheel]

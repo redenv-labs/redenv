@@ -39,7 +39,7 @@ class Secrets(dict):
                     return default
             
             # General casting (int, float, or custom callable)
-            return cast(value)
+            return cast(value) # type: ignore
             
         except (ValueError, TypeError):
             return default

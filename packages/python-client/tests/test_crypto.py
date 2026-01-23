@@ -1,9 +1,7 @@
 import pytest
-import os
 import binascii
 from redenv.crypto import (
     random_bytes,
-    generate_salt, # Wait, I didn't export generate_salt in __init__ or use it? I should check crypto.py
     derive_key,
     encrypt,
     decrypt,
