@@ -1,12 +1,14 @@
 import json
 import os
-from typing import Dict, Optional, Any, List, Union
+import time
+from typing import Dict, Optional, Any, Union, Literal
 from upstash_redis import Redis as SyncRedis
 from ..crypto import derive_key, decrypt, hex_to_buffer, encrypt
-from ..types import RedenvOptions, LogPreference
+from ..types import RedenvOptions, CacheEntry
 from ..errors import RedenvError
 from ..secrets import Secrets
 from ..utils import log, error
+from cachetools import LRUCache
 
 def get_pek(redis: SyncRedis, options: RedenvOptions, metadata: Optional[Dict[str, Any]] = None) -> bytes:
     """
@@ -140,3 +142,58 @@ def set_secret(redis: SyncRedis, options: RedenvOptions, key: str, value: str):
         history = history[:history_limit]
         
     return redis.hset(env_key, key, json.dumps(history))
+
+def get_secret_version(redis: SyncRedis, options: RedenvOptions, cache: LRUCache, key: str, version: int, mode: Literal["id", "index"] = "id") -> Optional[str]:
+    """
+    Fetches a specific version of a secret with optimized caching and smart indexing.
+    """
+    hist_cache_key = f"history:{options.project}:{options.environment}:{key}"
+    entry = cache.get(hist_cache_key)
+    
+    history_list = []
+    
+    if entry:
+        log(f"History cache hit for {key}.", options.log)
+        history_list = entry.value
+    else:
+        log(f"History cache miss for {key}. Fetching full history...", options.log)
+        env_key = f"{options.environment}:{options.project}"
+        history_str = redis.hget(env_key, key)
+        
+        if history_str:
+            try:
+                raw_list = json.loads(history_str) if isinstance(history_str, str) else history_str
+                if isinstance(raw_list, list):
+                    history_list = raw_list
+                    cache[hist_cache_key] = CacheEntry(history_list, time.time())
+            except Exception as e:
+                error(f"Failed to parse history: {e}", options.log)
+
+    if not history_list:
+        return None
+
+    target_record = None
+
+    if mode == "index":
+        try:
+            target_record = history_list[version]
+        except IndexError:
+            return None
+    else:
+        if version < 0:
+            try:
+                target_record = history_list[version]
+            except IndexError:
+                return None
+        else:
+            target_record = next((item for item in history_list if item.get("version") == version), None)
+
+    if not target_record:
+        return None
+
+    try:
+        pek = get_pek(redis, options)
+        return decrypt(target_record["value"], pek)
+    except Exception as e:
+        error(f"Failed to decrypt version {version} ({mode}): {e}", options.log)
+        return None

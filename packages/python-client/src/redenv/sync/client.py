@@ -1,10 +1,10 @@
 import time
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Literal
 from upstash_redis import Redis
 from cachetools import LRUCache
 from ..types import RedenvOptions
 from ..secrets import Secrets
-from .utils import fetch_and_decrypt, populate_env, log, error, set_secret
+from .utils import fetch_and_decrypt, populate_env, log, error, set_secret, get_secret_version
 from ..errors import RedenvError
 
 class CacheEntry:
@@ -117,3 +117,15 @@ class Redenv:
             msg = str(e)
             error(f"Failed to set secret: {msg}", self.options.log)
             raise RedenvError(f"Failed to set secret: {msg}", "UNKNOWN_ERROR")
+
+    def get_version(self, key: str, version: int, mode: Literal["id", "index"] = "id") -> Optional[str]:
+        """
+        Fetches a specific version of a secret.
+        
+        Args:
+            key: The secret key.
+            version: The version ID or index.
+            mode: "id" (default) uses positive version numbers, negative for index from end.
+                  "index" treats version as a 0-based array index (0=latest).
+        """
+        return get_secret_version(self.redis, self.options, self._cache, key, version, mode)

@@ -1,5 +1,5 @@
 import json
-from typing import Any, Callable, Optional, Type, TypeVar, Union, List
+from typing import Any, Callable, Optional, Type, TypeVar, Union
 from .errors import RedenvError
 
 T = TypeVar("T")

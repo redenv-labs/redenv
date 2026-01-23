@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional, Literal, Dict, Any
+from typing import Literal, Dict, Any
 
 LogPreference = Literal["none", "low", "high"]
 
@@ -16,6 +16,11 @@ class CacheConfig:
 @dataclass
 class EnvConfig:
     override: bool = True
+
+class CacheEntry:
+    def __init__(self, value: Any, created_at: float):
+        self.value = value
+        self.created_at = created_at
 
 @dataclass
 class RedenvOptions:

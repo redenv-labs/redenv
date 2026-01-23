@@ -1,11 +1,14 @@
 from .crypto import derive_key, decrypt, hex_to_buffer, encrypt
-from .types import RedenvOptions, LogPreference
+from .types import RedenvOptions, LogPreference, CacheEntry
 from .errors import RedenvError
 from upstash_redis import AsyncRedis
 from .secrets import Secrets
 import asyncio
 import json
 import os
+import time
+from typing import Literal, Optional, Dict, Any, Union
+from cachetools import LRUCache
 
 def log(message: str, preference: LogPreference = "low", priority: str = "low"):
     if preference == "none":
@@ -165,3 +168,67 @@ async def set_secret(redis: AsyncRedis, options: RedenvOptions, key: str, value:
         
     # Write back
     return await redis.hset(env_key, key, json.dumps(history))
+
+async def get_secret_version(redis: AsyncRedis, options: RedenvOptions, cache: LRUCache, key: str, version: int, mode: Literal["id", "index"] = "id") -> Optional[str]:
+    """
+    Fetches a specific version of a secret with optimized caching and smart indexing.
+    
+    Args:
+        mode: "id" (default) - positive numbers for version ID, negative for index from end.
+              "index" - treats version as array index (0=latest, 1=prev, -1=oldest).
+    """
+    hist_cache_key = f"history:{options.project}:{options.environment}:{key}"
+    entry = cache.get(hist_cache_key)
+    
+    history_list = []
+    
+    if entry:
+        log(f"History cache hit for {key}.", options.log)
+        history_list = entry.value
+    else:
+        log(f"History cache miss for {key}. Fetching full history...", options.log)
+        env_key = f"{options.environment}:{options.project}"
+        history_str = await redis.hget(env_key, key)
+        
+        if history_str:
+            try:
+                raw_list = json.loads(history_str) if isinstance(history_str, str) else history_str
+                if isinstance(raw_list, list):
+                    history_list = raw_list
+                    cache[hist_cache_key] = CacheEntry(history_list, time.time())
+            except Exception as e:
+                error(f"Failed to parse history: {e}", options.log)
+
+    if not history_list:
+        return None
+
+    target_record = None
+
+    if mode == "index":
+        try:
+            # history_list is sorted newest-first
+            target_record = history_list[version]
+        except IndexError:
+            return None
+    else:
+        # Default "id" mode
+        if version < 0:
+            # Smart fallback: use as index for negative numbers
+            try:
+                target_record = history_list[version]
+            except IndexError:
+                return None
+        else:
+            # Standard search by ID
+            target_record = next((item for item in history_list if item.get("version") == version), None)
+
+    if not target_record:
+        return None
+
+    try:
+        pek = await get_pek(redis, options)
+        return decrypt(target_record["value"], pek)
+    except Exception as e:
+        error(f"Failed to decrypt version {version} ({mode}): {e}", options.log)
+        return None
+
