@@ -10,7 +10,7 @@ import { normalize, safePrompt, sanitizeName } from "../utils";
 import { fetchEnvironments, fetchProjects } from "../utils/redis";
 import dotenv from "dotenv";
 import { unlockProject } from "../core/keys";
-import { decrypt } from "@redenv/core";
+import { decrypt, expandSecrets } from "@redenv/core";
 
 export function exportCommand(program: Command) {
   program
@@ -20,6 +20,7 @@ export function exportCommand(program: Command) {
     .option("-p, --project <name>", "Specify project name")
     .option("-e, --env <env>", "Specify environment")
     .option("-f, --file <path>", "Output file", ".env")
+    .option("--raw", "Export raw values without resolving variable references")
     .action(action);
 }
 
@@ -39,7 +40,7 @@ export const action = async (options: any) => {
       select({
         message: "Select project:",
         choices: projects.map((p) => ({ name: p, value: p })),
-      })
+      }),
     );
   }
 
@@ -49,7 +50,7 @@ export const action = async (options: any) => {
       select({
         message: "Select environment:",
         choices: envs.map((e) => ({ name: e, value: e })),
-      })
+      }),
     );
   }
 
@@ -63,12 +64,12 @@ export const action = async (options: any) => {
   try {
     const rawVars = await redis.hgetall(redisKey);
     versionedVars = Object.fromEntries(
-      Object.entries(rawVars ?? {}).filter(([key]) => !key.startsWith("__"))
+      Object.entries(rawVars ?? {}).filter(([key]) => !key.startsWith("__")),
     );
     spinner.succeed(chalk.green("Variables fetched"));
   } catch (err) {
     spinner.fail(
-      chalk.red(`Failed to fetch variables: ${(err as Error).message}`)
+      chalk.red(`Failed to fetch variables: ${(err as Error).message}`),
     );
 
     if (process.env.REDENV_SHELL_ACTIVE) {
@@ -85,7 +86,7 @@ export const action = async (options: any) => {
   let selectedKeys: string[];
   try {
     const exportAll = await safePrompt(() =>
-      confirm({ message: "Export ALL keys?", default: true })
+      confirm({ message: "Export ALL keys?", default: true }),
     );
     if (exportAll) {
       selectedKeys = Object.keys(versionedVars);
@@ -100,7 +101,7 @@ export const action = async (options: any) => {
               value: k,
             })),
           loop: false,
-        })
+        }),
       );
       if (!selectedKeys.length) {
         console.log(chalk.yellow("⚠ No keys selected. Cancelled."));
@@ -122,36 +123,58 @@ export const action = async (options: any) => {
     existingVars = dotenv.parse(existingContent);
   }
 
-  const conflicts = selectedKeys.filter((key) =>
-    Object.prototype.hasOwnProperty.call(existingVars, key)
-  );
+  // --- PROCESSING: Decrypt EVERYTHING first ---
+  // We decrypt all keys in the environment to ensure references resolve correctly.
+  const decryptedMap: Record<string, string> = {};
+  const allKeys = Object.keys(versionedVars);
 
-  const diffPromises = conflicts.map(async (key) => {
+  const decryptionPromises = allKeys.map(async (key) => {
     try {
       const history = versionedVars[key];
-      if (!Array.isArray(history) || history.length === 0)
-        return { key, isDiff: true };
-      const decryptedValue = await decrypt(history[0].value, pek);
-      const isDiff = normalize(existingVars[key]) !== normalize(decryptedValue);
-      return { key, isDiff };
+      if (Array.isArray(history) && history.length > 0) {
+        decryptedMap[key] = await decrypt(history[0].value, pek);
+      }
     } catch {
-      return { key, isDiff: true }; // Treat un-decryptable values as different
+      // Skip failed decryptions
     }
   });
-
   await new Promise((resolve) => setTimeout(resolve, 100));
-  const diffResults = await Promise.all(diffPromises);
-  const diffValues = diffResults.filter((r) => r.isDiff).map((r) => r.key);
+  await Promise.all(decryptionPromises);
+
+  // Expand (Unless --raw)
+  let finalMap = decryptedMap;
+  if (!options.raw) {
+    try {
+      finalMap = expandSecrets(decryptedMap);
+    } catch (e) {
+      console.log(
+        chalk.yellow(
+          `\n⚠ Warning: ${(e as Error).message}. Exporting raw values.\n`,
+        ),
+      );
+    }
+  }
+
+  // --- DIFF DETECTION ---
+  const conflicts = selectedKeys.filter((key) =>
+    Object.prototype.hasOwnProperty.call(existingVars, key),
+  );
+
+  const diffValues = conflicts.filter((key) => {
+    const fileVal = normalize(existingVars[key]);
+    const redVal = normalize(finalMap[key]);
+    return fileVal !== redVal;
+  });
 
   let override = false;
   if (diffValues.length > 0) {
     override = await safePrompt(() =>
       confirm({
         message: `The following keys already exist with different values: ${chalk.magenta(
-          diffValues.join(", ")
+          diffValues.join(", "),
         )}. Override them?`,
         default: false,
-      })
+      }),
     );
   }
 
@@ -163,11 +186,12 @@ export const action = async (options: any) => {
 
   if (keysToWrite.length === 0) {
     console.log(
-      chalk.green("✔ Nothing to export. Everything is already in sync.")
+      chalk.green("✔ Nothing to export. Everything is already in sync."),
     );
     return;
   }
 
+  // --- WRITE ---
   let finalContent = existingContent;
   const keysToOverride = override ? diffValues : [];
 
@@ -196,18 +220,16 @@ export const action = async (options: any) => {
       finalContent.endsWith("\n\n") || finalContent.length === 0 ? "" : "\n";
     contentToAppend += `\n# Variables exported by redenv from ${projectName} (${environment}) at ${new Date().toISOString()}\n`;
 
-    const decryptionPromises = keysToWrite.map(async (key) => {
-      try {
-        const history = versionedVars[key];
-        if (!Array.isArray(history) || history.length === 0) throw new Error();
-        const decryptedValue = await decrypt(history[0].value, pek);
-        return `${key}="${decryptedValue}"\n`;
-      } catch {
-        return `# ${key}="[redenv: could not decrypt value]"\n`;
-      }
+    const linesToAppend = keysToWrite.map((key) => {
+      const val = finalMap[key] ?? "";
+      // Simple escaping logic for .env
+      const escapedVal =
+        val.includes("\n") || val.includes('"')
+          ? `"${val.replace(/"/g, '\\"')}"`
+          : val;
+      return `${key}=${escapedVal}\n`;
     });
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    const linesToAppend = await Promise.all(decryptionPromises);
+
     contentToAppend += linesToAppend.join("");
   }
 
@@ -217,8 +239,8 @@ export const action = async (options: any) => {
     fs.writeFileSync(filePath, finalContent);
     console.log(
       chalk.green(
-        `✔ Exported ${keysToWrite.length} keys to ${chalk.blue(outputFile)}`
-      )
+        `✔ Exported ${keysToWrite.length} keys to ${chalk.blue(outputFile)}`,
+      ),
     );
   } catch (err) {
     console.log(chalk.red(`✘ Failed to write file: ${(err as Error).message}`));
