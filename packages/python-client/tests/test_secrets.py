@@ -8,8 +8,8 @@ def test_secrets_access():
     assert secrets["KEY"] == "value"
     assert secrets.get("KEY") == "value"
     
-    with pytest.raises(KeyError, match="'MISSING' not found"):
-        _ = secrets["MISSING"]
+    # Missing keys should return None instead of raising KeyError
+    assert secrets["MISSING"] is None
 
 def test_secrets_cast_int():
     secrets = Secrets({"PORT": "8080", "BAD": "abc"})

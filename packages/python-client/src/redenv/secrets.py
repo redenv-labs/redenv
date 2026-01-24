@@ -46,13 +46,9 @@ class Secrets(dict):
 
     def __getitem__(self, key: str) -> Any:
         """
-        Ensures standard dict access still works but raises a 
-        helpful error if the key is missing.
+        Returns None if the key is not found instead of raising KeyError.
         """
-        try:
-            return super().__getitem__(key)
-        except KeyError:
-            raise KeyError(f"Secret '{key}' not found in Redenv.")
+        return self.get(key)
 
     def scope(self, prefix: str) -> "Secrets":
         """
