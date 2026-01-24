@@ -53,6 +53,12 @@ async def main():
     # 3. Smart Casting
     port = secrets.get("PORT", cast=int)
     debug = secrets.get("DEBUG", cast=bool)
+    
+    # 4. Safe Access (Returns None if missing)
+    missing = secrets["MISSING_KEY"] # None
+
+    # 5. Fallback Values
+    timeout = secrets.get("TIMEOUT", default=30, cast=int)
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -75,7 +81,30 @@ print(secrets["API_KEY"])
 
 ## Advanced Usage
 
-### 1. Scoping & Validation
+### 1. Secret Expansion (Reference other keys)
+Redenv supports referencing other secrets using the `${VAR_NAME}` syntax. This helps avoid duplication.
+
+**Example Configuration:**
+- `BASE_URL`: `https://api.example.com`
+- `AUTH_URL`: `${BASE_URL}/auth`
+
+**Usage:**
+```python
+secrets = await client.load()
+
+print(secrets["AUTH_URL"]) 
+# Output: https://api.example.com/auth
+```
+
+### 2. Raw Values
+You can access the unexpanded, raw value of a secret using the `.raw` property. This is useful for debugging or editing.
+
+```python
+print(secrets["AUTH_URL"])      # https://api.example.com/auth
+print(secrets.raw["AUTH_URL"])  # ${BASE_URL}/auth
+```
+
+### 3. Scoping & Validation
 Organize large configurations and ensure critical keys exist.
 
 ```python
@@ -92,7 +121,7 @@ print(stripe_config["KEY"])     # Maps to STRIPE_KEY
 print(stripe_config["WEBHOOK"]) # Maps to STRIPE_WEBHOOK
 ```
 
-### 2. Time Travel (Version History)
+### 4. Time Travel (Version History)
 Redenv stores a history of every secret change. You can access older versions for rollbacks or auditing.
 
 ```python

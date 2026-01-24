@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-01-25
+
+### Added
+
+- **Secret Expansion:** Support for `${VAR_NAME}` syntax for referencing other secrets within values.
+- **Raw Value Access:** Added `.raw` property to `Secrets` object to access unexpanded values.
+- **Recursive Resolution:** Variable expansion supports multi-level recursion with circular dependency detection.
+
+### Changed
+
+- **Safe Access:** Accessing a non-existent secret via `secrets["KEY"]` now returns `None` instead of raising a `KeyError`.
+- **Improved Scoping:** `secrets.scope()` now correctly preserves both expanded and raw values in the resulting subset.
+
 ## [0.2.0] - 2026-01-22
 
 ### Added
