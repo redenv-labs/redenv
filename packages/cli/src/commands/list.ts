@@ -3,12 +3,11 @@ import { Command } from "commander";
 import { loadProjectConfig } from "../core/config";
 import { redis } from "../core/upstash";
 import ora from "ora";
-import Table from "cli-table3";
 import { select } from "@inquirer/prompts";
 import { safePrompt, sanitizeName } from "../utils";
 import { fetchEnvironments } from "../utils/redis";
 import { unlockProject } from "../core/keys";
-import { decrypt, RedenvError } from "@redenv/core";
+import { decrypt, RedenvError, expandSecrets } from "@redenv/core";
 
 async function fetchAndDisplayVariables(
   redisKey: string,
@@ -39,18 +38,15 @@ async function fetchAndDisplayVariables(
       chalk.cyan.bold(`\n📦 Variables for ${projectName} (${environment}):\n`)
     );
 
-    const table = new Table({
-      head: [chalk.cyanBright("KEY"), chalk.greenBright("VALUE")],
-      colWidths: [28, 50],
-      style: { head: [], border: [] },
-    });
-
     const sorted = Object.entries(filteredEnvs).sort(([a], [b]) =>
       a.localeCompare(b)
     );
 
+    // 1. Decrypt all values first
+    const decryptedMap: Record<string, string> = {};
+    
     // Decrypt all values in parallel for performance
-    const decryptionPromises = sorted.map(async ([key, history]) => {
+    await Promise.all(sorted.map(async ([key, history]) => {
       try {
         if (!Array.isArray(history) || history.length === 0) {
           throw new RedenvError("Invalid history format", "UNKNOWN_ERROR");
@@ -60,22 +56,49 @@ async function fetchAndDisplayVariables(
           latestVersion.value,
           decryptionKey
         );
-        return [key, decryptedValue];
+        decryptedMap[key] = decryptedValue;
       } catch {
-        return [key, chalk.yellow(`[Corrupted or invalid data]`)];
+        decryptedMap[key] = "[Corrupted or invalid data]";
       }
-    });
+    }));
 
-    const decryptedRows = await Promise.all(decryptionPromises);
-
-    for (const [key, decryptedValue] of decryptedRows) {
-      table.push([
-        chalk.blue(key as string),
-        chalk.green(decryptedValue as string),
-      ]);
+    // 2. Expand variables
+    let finalMap = decryptedMap;
+    try {
+      finalMap = expandSecrets(decryptedMap);
+    } catch (e) {
+      console.log(chalk.yellow(`\n⚠ Warning: ${(e as Error).message}\n`));
+      // Fallback to unexpanded if cycle detected
     }
 
-    console.log(table.toString());
+    // 3. Display (Tree-style View)
+    for (const [key] of sorted) {
+      const original = decryptedMap[key];
+      const expanded = finalMap[key];
+      
+      console.log(chalk.blue.bold(key));
+      console.log(chalk.gray("│"));
+      
+      let valOutput = expanded;
+      if (original !== expanded && original !== "[Corrupted or invalid data]") {
+         valOutput = `${chalk.green(original)} ${chalk.gray(`(${expanded})`)}`;
+      } else {
+         valOutput = chalk.green(expanded);
+      }
+
+      // Handle multiline values with tree branch prefix
+      const lines = valOutput.split("\n");
+      lines.forEach((line, i) => {
+          if (i === 0) {
+              console.log(`${chalk.gray("└─")} ${line}`);
+          } else {
+              console.log(`${chalk.gray("   ")} ${line}`);
+          }
+      });
+      
+      console.log(""); // Empty line separator
+    }
+
   } catch (err) {
     spinner.fail(
       chalk.red(`Failed to fetch variables: ${(err as Error).message}`)
