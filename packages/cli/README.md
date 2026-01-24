@@ -97,9 +97,27 @@ import { studioPlugin } from "@redenv/studio";
 
 export default defineConfig({
   name: "my-project",
-  plugins: [studioPlugin()],
+  plugins: [studioPlugin],
 });
 ```
+
+## Secret References
+
+Redenv supports recursive variable referencing, allowing you to reduce duplication in your configuration.
+
+Use the `${VAR_NAME}` syntax to reference other secrets within the same environment.
+
+```bash
+# Example
+redenv add BASE_URL "https://api.example.com"
+redenv add API_ENDPOINT "${BASE_URL}/v1"
+```
+
+When you view or export `API_ENDPOINT`, it will automatically resolve to `https://api.example.com/v1`.
+
+- **Recursion:** References can be nested (A -> B -> C).
+- **Escaping:** Use `\${VAR}` to treat it as a literal string.
+- **Validation:** The CLI validates references when adding or editing secrets.
 
 ### Building Plugins
 
@@ -119,11 +137,11 @@ Any installed plugins will also appear in the help menu and can be run just like
 
 #### Core Commands
 
-- `add`
-- `edit`
-- `view`
-- `list`
-- `remove`
+- `add`: Add a new secret (supports references).
+- `edit`: Edit an existing secret (pre-filled with current value).
+- `view`: View a secret's value (shows both raw and resolved values).
+- `list`: List all secrets (shows resolved values in a tree view).
+- `remove`: Remove secrets.
 
 #### Project Management
 
@@ -134,7 +152,7 @@ Any installed plugins will also appear in the help menu and can be run just like
 #### Advanced Workflows
 
 - `import`
-- `export`
+- `export`: Export secrets to `.env` or JSON (supports `--raw` to skip expansion).
 - `clone`
 - `diff`
 - `sync`

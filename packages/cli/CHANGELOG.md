@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-01-25
+
+### Added
+
+- **Secret Referencing:** Full support for `${VAR_NAME}` syntax in secret values. References are recursively resolved in `list`, `view`, and `export` commands.
+- **Improved UI:** Introduced a clean, tree-style output format for `list` and `view` commands to better display multi-line values and expansion details.
+- **Reference Validation:** The `add` and `edit` commands now interactively validate referenced keys and warn if they don't exist.
+- **Command Arguments:** The `add` and `edit` commands now accept an optional `[value]` argument for quicker, non-interactive secret updates.
+- **Smart Edit:** The `edit` command now pre-populates the prompt with the current secret value for easier modification.
+- **Raw Export:** Added `--raw` flag to `redenv export` to skip variable expansion.
+
 ## [1.4.2] - 2026-01-03
 
 ### Added

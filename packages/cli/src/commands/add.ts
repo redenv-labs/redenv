@@ -20,13 +20,18 @@ export function addCommand(program: Command) {
   program
     .command("add")
     .argument("<key>", "The ENV key to add")
+    .argument("[value]", "The value for the secret (optional)")
     .description("Add a new environment variable to your project")
     .option("-p, --project <name>", "Specify the project name")
     .option("-e, --env <env>", "Specify the environment")
     .action(action);
 }
 
-export const action = async (key: string, options: any) => {
+export const action = async (
+  key: string,
+  valueArg: string | undefined,
+  options: any,
+) => {
   const projectConfig = await loadProjectConfig();
 
   if (!projectConfig && !options.project) {
@@ -62,9 +67,6 @@ export const action = async (key: string, options: any) => {
       return;
     }
 
-    let value = "";
-    let isValid = false;
-
     // Pre-fetch keys once to avoid network lag in loop
     const redisKey = `${environment}:${projectName}`;
     // We need to unlock first to check existence? No, hexists doesn't need PEK.
@@ -87,13 +89,37 @@ export const action = async (key: string, options: any) => {
 
     const availableKeys = existingKeys.filter((k) => !k.startsWith("__"));
 
+    let value = valueArg || "";
+
+    let isValid = false;
+    if (value) {
+      // Direct value path (Non-interactive validation)
+      const refs = getReferences(value);
+      const missingRefs = refs.filter((r) => !existingKeys.includes(r));
+
+      if (missingRefs.length > 0) {
+        console.log(
+          chalk.red(`✘ Unknown key(s) referenced: ${missingRefs.join(", ")}`),
+        );
+        console.log(
+          chalk.gray(
+            `  Available keys: ${availableKeys.sort().join(", ") || "(none)"}\n`,
+          ),
+        );
+        isValid = false;
+      } else {
+        isValid = true;
+      }
+    }
+
+    // Interactive flow
     while (!isValid) {
       value = await safePrompt(() =>
         multiline({
           prompt: `Enter value for ${key}:`,
           required: true,
-          validate(value) {
-            if (!value.trim()) return "You must enter something.";
+          validate(v) {
+            if (!v.trim()) return "You must enter something.";
             return true;
           },
         }),
@@ -112,7 +138,6 @@ export const action = async (key: string, options: any) => {
             `  Available keys: ${availableKeys.sort().join(", ") || "(none)"}\n`,
           ),
         );
-        console.log(chalk.yellow("  Please try again."));
         continue; // Loop back
       }
 

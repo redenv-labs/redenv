@@ -13,21 +13,25 @@ import { fetchEnvironments } from "../utils/redis";
 import { select } from "@inquirer/prompts";
 import { multiline } from "@cli-prompts/multiline";
 import { unlockProject } from "../core/keys";
-import { RedenvError, writeSecret } from "@redenv/core";
+import { RedenvError, writeSecret, decrypt } from "@redenv/core";
 import { redis } from "../core/upstash";
-import { decrypt } from "@redenv/core";
 
 export function editCommand(program: Command) {
   program
     .command("edit")
     .argument("<key>", "The ENV key to modify")
+    .argument("[value]", "The new value (optional)")
     .description("Update an existing environment variable’s value")
     .option("-p, --project <name>", "Specify the project name")
     .option("-e, --env <env>", "Specify the environment")
     .action(action);
 }
 
-export const action = async (key: string, options: any) => {
+export const action = async (
+  key: string,
+  valueArg: string | undefined,
+  options: any,
+) => {
   const projectConfig = await loadProjectConfig();
 
   if (!projectConfig && !options.project) {
@@ -62,7 +66,7 @@ export const action = async (key: string, options: any) => {
     return;
   }
 
-  // 1. Optimized parallel fetch for validation and default value
+  // Optimized parallel fetch for validation and default value
   const redisKey = `${environment}:${projectName}`;
   const [existingKeys, historyJSON] = await Promise.all([
     redis.hkeys(redisKey),
@@ -76,10 +80,10 @@ export const action = async (key: string, options: any) => {
     );
   }
 
-  // 2. Unlock project once and get PEK
+  // Unlock project once and get PEK
   const pek = options.pek ?? (await unlockProject(projectName as string));
 
-  // 3. Decrypt current value for the default prompt
+  // Decrypt current value for the default prompt
   let defaultValue = "";
   try {
     const history = Array.isArray(historyJSON)
@@ -93,10 +97,30 @@ export const action = async (key: string, options: any) => {
   }
 
   const availableKeys = existingKeys.filter((k) => !k.startsWith("__"));
-  let newValue = "";
+  let newValue = valueArg || "";
   let isValid = false;
 
-  // 4. Prompt Loop
+  if (newValue) {
+    // Direct value path (Non-interactive validation)
+    const refs = getReferences(newValue);
+    const missingRefs = refs.filter((r) => !existingKeys.includes(r));
+
+    if (missingRefs.length > 0) {
+      console.log(
+        chalk.red(`✘ Unknown key(s) referenced: ${missingRefs.join(", ")}`),
+      );
+      console.log(
+        chalk.gray(`  Available keys: ${availableKeys.sort().join(", ") || "(none)"}
+`),
+      );
+      // Don't exit here, fall through to interactive loop so user can fix it
+      isValid = false;
+    } else {
+      isValid = true;
+    }
+  }
+
+  // Prompt Loop
   while (!isValid) {
     newValue = await safePrompt(() =>
       multiline({

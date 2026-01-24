@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-01-25
+
+### Added
+
+- **Secret Expansion:** Added `expandSecrets` utility to recursively resolve `${VAR_NAME}` references within secret values, including cycle detection and escaping support.
+
 ## [1.0.5] - 2025-12-08
 
 ### Added
