@@ -42,7 +42,7 @@ async function fetchAndDisplayVariables(
       a.localeCompare(b)
     );
 
-    // 1. Decrypt all values first
+    // Decrypt all values first
     const decryptedMap: Record<string, string> = {};
     
     // Decrypt all values in parallel for performance
@@ -62,7 +62,7 @@ async function fetchAndDisplayVariables(
       }
     }));
 
-    // 2. Expand variables
+    // Expand variables
     let finalMap = decryptedMap;
     try {
       finalMap = expandSecrets(decryptedMap);
@@ -71,7 +71,7 @@ async function fetchAndDisplayVariables(
       // Fallback to unexpanded if cycle detected
     }
 
-    // 3. Display (Tree-style View)
+    // Display (Tree-style View)
     for (const [key] of sorted) {
       const original = decryptedMap[key];
       const expanded = finalMap[key];
