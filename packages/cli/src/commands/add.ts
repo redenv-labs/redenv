@@ -7,6 +7,7 @@ import {
   safePrompt,
   getAuditUser,
   secretKeyValidator,
+  getReferences,
 } from "../utils";
 import { unlockProject } from "../core/keys";
 import { fetchEnvironments } from "../utils/redis";
@@ -31,8 +32,8 @@ export const action = async (key: string, options: any) => {
   if (!projectConfig && !options.project) {
     console.log(
       chalk.red(
-        "✘ No project registered. Use `redenv register <name>` or pass `--project <name>`."
-      )
+        "✘ No project registered. Use `redenv register <name>` or pass `--project <name>`.",
+      ),
     );
     return;
   }
@@ -47,51 +48,83 @@ export const action = async (key: string, options: any) => {
       select({
         message: "Select environment:",
         choices: envs.map((e) => ({ name: e, value: e })),
-      })
+      }),
     );
   }
 
-  const keyValidation = secretKeyValidator(key);
-  if (typeof keyValidation === "string") {
-    console.log(chalk.red(`✘ ${keyValidation}`));
-    if (process.env.REDENV_SHELL_ACTIVE)
-      throw new RedenvError(keyValidation, "INVALID_INPUT");
-    return;
-  }
-  const value = await safePrompt(() =>
-    multiline({
-      prompt: `Enter value for ${key}:`,
-      required: true,
-      validate(value) {
-        if (!value.trim()) return "You must enter something.";
-        return true;
-      },
-    })
-  );
-
   let spinner: Ora | undefined;
   try {
-    const pek = options.pek ?? (await unlockProject(projectName));
-    spinner = ora(
-      `Adding ${chalk.cyan(key)} to ${chalk.yellow(
-        projectName
-      )} (${environment})...`
-    ).start();
+    const keyValidation = secretKeyValidator(key);
+    if (typeof keyValidation === "string") {
+      console.log(chalk.red(`✘ ${keyValidation}`));
+      if (process.env.REDENV_SHELL_ACTIVE)
+        throw new RedenvError(keyValidation, "INVALID_INPUT");
+      return;
+    }
 
-    // Prevent accidental overwrites, which the core `writeSecret` does not do.
+    let value = "";
+    let isValid = false;
+
+    // Pre-fetch keys once to avoid network lag in loop
     const redisKey = `${environment}:${projectName}`;
-    const exists = (await redis.hexists(redisKey, key)) > 0;
+    // We need to unlock first to check existence? No, hexists doesn't need PEK.
+    // But we need to check if key exists to prevent overwrite.
+    const [exists, existingKeys] = await Promise.all([
+      redis.hexists(redisKey, key).then((r) => r > 0),
+      redis.hkeys(redisKey),
+    ]);
+
     if (exists) {
-      spinner.stop();
       console.log(
         chalk.yellow(
           `Key '${key}' already exists. Use ${chalk.cyan(
-            "redenv edit"
-          )} to update it.`
-        )
+            "redenv edit",
+          )} to update it.`,
+        ),
       );
       return;
     }
+
+    const availableKeys = existingKeys.filter((k) => !k.startsWith("__"));
+
+    while (!isValid) {
+      value = await safePrompt(() =>
+        multiline({
+          prompt: `Enter value for ${key}:`,
+          required: true,
+          validate(value) {
+            if (!value.trim()) return "You must enter something.";
+            return true;
+          },
+        }),
+      );
+
+      // Reference Validation
+      const refs = getReferences(value);
+      const missingRefs = refs.filter((r) => !existingKeys.includes(r));
+
+      if (missingRefs.length > 0) {
+        console.log(
+          chalk.red(`\n✘ Unknown key(s) referenced: ${missingRefs.join(", ")}`),
+        );
+        console.log(
+          chalk.gray(
+            `  Available keys: ${availableKeys.sort().join(", ") || "(none)"}\n`,
+          ),
+        );
+        console.log(chalk.yellow("  Please try again."));
+        continue; // Loop back
+      }
+
+      isValid = true;
+    }
+
+    const pek = options.pek ?? (await unlockProject(projectName));
+    spinner = ora(
+      `Adding ${chalk.cyan(key)} to ${chalk.yellow(
+        projectName,
+      )} (${environment})...`,
+    ).start();
 
     await writeSecret(
       redis,
@@ -100,15 +133,15 @@ export const action = async (key: string, options: any) => {
       key,
       value,
       pek,
-      getAuditUser()
+      getAuditUser(),
     );
 
     spinner.succeed(
       chalk.greenBright(
         `Added '${key}' → ${chalk.cyan(
-          value
-        )} in ${projectName} (${environment})`
-      )
+          value,
+        )} in ${projectName} (${environment})`,
+      ),
     );
   } catch (err) {
     const error = err as Error;
@@ -123,7 +156,7 @@ export const action = async (key: string, options: any) => {
     if (error.name !== "ExitPromptError") {
       console.log(
         chalk.red(`
-✘ An unexpected error occurred: ${error.message}`)
+✘ An unexpected error occurred: ${error.message}`),
       );
     }
     process.exit(1);

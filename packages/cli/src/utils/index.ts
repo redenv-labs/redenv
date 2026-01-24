@@ -80,6 +80,12 @@ export const secretKeyValidator = (input: string) => {
   return nameValidator(input);
 };
 
+export const getReferences = (value: string): string[] => {
+  const regex = /\$\{([a-zA-Z0-9_]+)\}/g;
+  const matches = [...value.matchAll(regex)];
+  return matches.map((m) => m[1]!);
+};
+
 export const writeProjectConfig = async (config: Record<string, unknown>) => {
   const currentConfig = await loadProjectConfig();
   const existingPath = currentConfig?._filepath;

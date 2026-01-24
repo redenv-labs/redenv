@@ -4,3 +4,4 @@ export * from "./error";
 export * from "./types";
 export * from "./config";
 export * from "./plugins";
+export * from "./expand";
