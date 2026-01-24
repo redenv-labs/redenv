@@ -72,3 +72,25 @@ def test_secrets_masking():
     assert "API_KEY" in output
     assert "secret_value" not in output
     assert "********" in output
+
+def test_secrets_raw_access():
+    raw_data = {"BASE": "val", "URL": "${BASE}/path"}
+    expanded_data = {"BASE": "val", "URL": "val/path"}
+    
+    secrets = Secrets(expanded_data, raw_data=raw_data)
+    
+    assert secrets["URL"] == "val/path"
+    assert secrets.raw["URL"] == "${BASE}/path"
+    assert secrets.raw["BASE"] == "val"
+    
+    # Test scoping raw access
+    stripe_raw = {"STRIPE_KEY": "${BASE}/key"}
+    stripe_expanded = {"STRIPE_KEY": "val/key"}
+    full_secrets = Secrets(
+        {**expanded_data, **stripe_expanded},
+        raw_data={**raw_data, **stripe_raw}
+    )
+    
+    stripe_scope = full_secrets.scope("STRIPE_")
+    assert stripe_scope["KEY"] == "val/key"
+    assert stripe_scope.raw["KEY"] == "${BASE}/key"

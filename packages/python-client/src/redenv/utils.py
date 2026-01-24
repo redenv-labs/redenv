@@ -115,13 +115,17 @@ async def fetch_and_decrypt(redis: AsyncRedis, options: RedenvOptions) -> Secret
             error(f'Failed to decrypt secret "{key}".', options.log)
             continue
 
-    # Expand variables
-    expanded_secrets = expand_secrets(dict(secrets))
-    for key, val in expanded_secrets.items():
-        secrets[key] = val
+    # Capture raw decrypted secrets before expansion
+    raw_decrypted = dict(secrets)
 
-    log(f"Successfully loaded {len(secrets)} secrets.", options.log)
-    return secrets
+    # Expand variables
+    expanded_secrets = expand_secrets(raw_decrypted)
+    
+    # Create final Secrets object with both expanded and raw data
+    result = Secrets(expanded_secrets, raw_data=raw_decrypted)
+
+    log(f"Successfully loaded {len(result)} secrets.", options.log)
+    return result
 
 async def populate_env(secrets: Union[Dict[str, str], Secrets], options: RedenvOptions):
     """

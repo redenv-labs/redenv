@@ -10,6 +10,18 @@ class Secrets(dict):
     type-casting, scoping, and validation capabilities.
     """
 
+    def __init__(self, data: Optional[dict] = None, raw_data: Optional[dict] = None):
+        super().__init__(data or {})
+        self._raw_data = raw_data or data or {}
+
+    @property
+    def raw(self) -> "Secrets":
+        """
+        Returns a Secrets object containing the raw, unexpanded values.
+        """
+        # Create a new Secrets object with the raw data, but mark it as its own raw
+        return Secrets(self._raw_data, raw_data=self._raw_data)
+
     def get(self, key: str, default: Any = None, cast: Optional[Union[Type[T], Callable[[Any], T]]] = None) -> Union[T, Any]:
         """
         Retrieves a secret and optionally casts it to a specific type.
@@ -55,13 +67,22 @@ class Secrets(dict):
         Returns a new Secrets object containing only the keys that start with
         the given prefix. The prefix is stripped from the keys in the new object.
         """
-        subset = Secrets()
+        subset_data = {}
+        subset_raw = {}
+        
         for key, value in self.items():
             if key.startswith(prefix):
                 new_key = key[len(prefix):]
                 if new_key:
-                    subset[new_key] = value
-        return subset
+                    subset_data[new_key] = value
+                    
+        for key, value in self._raw_data.items():
+            if key.startswith(prefix):
+                new_key = key[len(prefix):]
+                if new_key:
+                    subset_raw[new_key] = value
+                    
+        return Secrets(subset_data, raw_data=subset_raw)
 
     def require(self, *keys: str) -> "Secrets":
         """
