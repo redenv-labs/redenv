@@ -1,6 +1,7 @@
 from .crypto import derive_key, decrypt, hex_to_buffer, encrypt
 from .types import RedenvOptions, LogPreference, CacheEntry
 from .errors import RedenvError
+from .expand import expand_secrets
 from upstash_redis import AsyncRedis
 from .secrets import Secrets
 import asyncio
@@ -113,6 +114,11 @@ async def fetch_and_decrypt(redis: AsyncRedis, options: RedenvOptions) -> Secret
         except Exception:
             error(f'Failed to decrypt secret "{key}".', options.log)
             continue
+
+    # Expand variables
+    expanded_secrets = expand_secrets(dict(secrets))
+    for key, val in expanded_secrets.items():
+        secrets[key] = val
 
     log(f"Successfully loaded {len(secrets)} secrets.", options.log)
     return secrets

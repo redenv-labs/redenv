@@ -7,6 +7,7 @@ from ..crypto import derive_key, decrypt, hex_to_buffer, encrypt
 from ..types import RedenvOptions, CacheEntry
 from ..errors import RedenvError
 from ..secrets import Secrets
+from ..expand import expand_secrets
 from ..utils import log, error
 from cachetools import LRUCache
 
@@ -78,6 +79,11 @@ def fetch_and_decrypt(redis: SyncRedis, options: RedenvOptions) -> Secrets:
         except Exception:
             error(f'Failed to decrypt secret "{key}".', options.log)
             continue
+
+    # Expand variables
+    expanded_secrets = expand_secrets(dict(secrets))
+    for key, val in expanded_secrets.items():
+        secrets[key] = val
 
     log(f"Successfully loaded {len(secrets)} secrets.", options.log)
     return secrets
