@@ -1,9 +1,8 @@
 import pytest
 import json
-import time
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 from redenv import Redenv
-from redenv.crypto import encrypt, derive_key, hex_to_buffer, buffer_to_hex, random_bytes
+from redenv.crypto import encrypt, derive_key, buffer_to_hex, random_bytes
 
 # --- Test Data Setup ---
 PASSWORD = "masterpassword"

@@ -70,16 +70,29 @@ describe("Secret Expansion", () => {
     });
   });
 
-  it("should handle escaped references", () => {
+  it("should handle escaped references (odd backslashes)", () => {
     const secrets = {
       A: "value",
-      B: "\\${A}", // Should not expand
-      C: "Prefix \\${A} Suffix",
+      B: "\\${A}", // 1 backslash: Escaped -> ${A}
+      C: "\\\\\\${A}", // 3 backslashes: Escaped -> \${A}
     };
     expect(expandSecrets(secrets)).toEqual({
       A: "value",
       B: "${A}",
-      C: "Prefix ${A} Suffix",
+      C: "\\${A}",
+    });
+  });
+
+  it("should handle unescaped backslashes (even backslashes)", () => {
+    const secrets = {
+      A: "value",
+      B: "\\\\${A}", // 2 backslashes: Not escaped -> \value
+      C: "\\\\\\\\${A}", // 4 backslashes: Not escaped -> \\value
+    };
+    expect(expandSecrets(secrets)).toEqual({
+      A: "value",
+      B: "\\value",
+      C: "\\\\value",
     });
   });
 

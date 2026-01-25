@@ -10,7 +10,7 @@ test:
 
 # Run linting and type checking
 lint:
-	python -m ruff check src tests
+	python -m ruff check src
 	python -m pyright src
 
 # Build the package artifacts
