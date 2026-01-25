@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.1.0] - 2026-01-25
 
 ### Added
 
@@ -14,6 +14,8 @@ All notable changes to this project will be documented in this file.
   - **Validation:** `.require(...keys)` method for fail-fast checks of mandatory secrets.
   - **Raw Access:** `.raw` property to access original values before expansion.
   - **Automatic Masking:** Sensitive values are now automatically masked (`********`) when using `console.log(secrets)`, `secrets.toString()`, or `JSON.stringify(secrets)`.
+  - **Time Travel:** Added `.getVersion(key, version)` to fetch historical secrets. Supports absolute version IDs and relative indexing (e.g., -1 for oldest).
+  - **Environment Override:** Added `env.override` option (default: `true`) to control whether `process.env` (or `Deno.env`) is overwritten.
 - **Unmasked Access:** Added `secrets.toObject()` to retrieve the plain, unmasked secrets object when needed for debugging or specific integrations.
 
 ## [1.0.7] - 2025-12-07

@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.1] - 2026-01-25
+
+### Changed
+
+- Updated `@redenv/core` to v1.1.1 to include improved secret expansion and escaping logic.
+
 ## [1.5.0] - 2026-01-25
 
 ### Added

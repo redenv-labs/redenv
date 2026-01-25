@@ -64,10 +64,11 @@ export async function fetchAndDecrypt(
   options: Pick<
     RedenvOptions,
     "project" | "tokenId" | "token" | "environment" | "log"
-  >
+  >,
+  pek?: CryptoKey
 ): Promise<Secrets> {
   log("Expired Cache: Fetching secrets from source...", options.log, "high");
-  const pek = await getPEK(redis, options);
+  const projectKey = pek ?? await getPEK(redis, options);
   const envKey = `${options.environment}:${options.project}`;
   const versionedSecrets = await redis.hgetall<Record<string, any>>(envKey);
 
@@ -81,7 +82,7 @@ export async function fetchAndDecrypt(
     async ([key, history]) => {
       try {
         if (!Array.isArray(history) || history.length === 0) return null;
-        const decryptedValue = await decrypt(history[0].value, pek);
+        const decryptedValue = await decrypt(history[0].value, projectKey);
         return { key, value: decryptedValue };
       } catch {
         error(`Failed to decrypt secret "${key}".`, options.log);
@@ -124,16 +125,17 @@ export async function setSecret(
   redis: Redis,
   options: Pick<RedenvOptions, "project" | "tokenId" | "token" | "environment">,
   key: string,
-  value: string
+  value: string,
+  pek?: CryptoKey
 ): Promise<void> {
-  const pek = await getPEK(redis, options);
+  const projectKey = pek ?? await getPEK(redis, options);
   await writeSecret(
     redis,
     options.project,
     options.environment || "development",
     key,
     value,
-    pek,
+    projectKey,
     options.tokenId // Use tokenId for auditing
   );
 }
@@ -144,10 +146,11 @@ export async function setSecret(
  */
 export async function populateEnv(
   secrets: Secrets | Record<string, string>,
-  options: Pick<RedenvOptions, "log">
+  options: Pick<RedenvOptions, "log" | "env">
 ): Promise<void> {
   log("Populating environment with secrets...", options.log);
   let injectedCount = 0;
+  const override = options.env?.override ?? true;
 
   const isDeno =
     // @ts-expect-error: Check for Deno global
@@ -156,10 +159,14 @@ export async function populateEnv(
   for (const key in secrets) {
     if (Object.prototype.hasOwnProperty.call(secrets, key)) {
       const value = secrets[key];
+      
       if (isDeno) {
+        // @ts-expect-error: Deno.env.get
+        if (!override && Deno.env.get(key) !== undefined) continue;
         // @ts-expect-error: Deno.env.set
         Deno.env.set(key, value);
       } else {
+        if (!override && process.env[key] !== undefined) continue;
         process.env[key] = value;
       }
       injectedCount++;
@@ -188,4 +195,47 @@ export function log(
 
 export function error(message: string, logPreference: LogPreference = "low") {
   if (logPreference !== "none") console.error(`[REDENV] Error: ${message}`);
+}
+
+/**
+ * Fetches the history of a specific secret from Redis.
+ */
+export async function getSecretHistory(
+  redis: Redis,
+  options: Pick<RedenvOptions, "project" | "environment" | "log">,
+  key: string
+): Promise<any[]> {
+  const envKey = `${options.environment}:${options.project}`;
+  // Upstash Redis might return the object directly if it's JSON, or string
+  const result = await redis.hget<string | any[]>(envKey, key);
+
+  if (!result) return [];
+  
+  if (Array.isArray(result)) return result;
+  
+  try {
+    return typeof result === "string" ? JSON.parse(result) : result;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    error(`Failed to parse history for ${key}: ${msg}`, options.log);
+    return [];
+  }
+}
+
+/**
+ * Decrypts a specific encrypted value using the Project Encryption Key.
+ */
+export async function decryptVersion(
+  redis: Redis,
+  options: Pick<RedenvOptions, "project" | "tokenId" | "token" | "log">,
+  encryptedValue: string,
+  pek?: CryptoKey
+): Promise<string> {
+  try {
+    const projectKey = pek ?? await getPEK(redis, options);
+    return decrypt(encryptedValue, projectKey);
+  } catch (e) {
+     const msg = e instanceof Error ? e.message : String(e);
+     throw new RedenvError(`Decryption failed: ${msg}`, "DECRYPTION_FAILED");
+  }
 }

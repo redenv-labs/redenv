@@ -48,6 +48,17 @@ export interface RedenvOptions {
     swr?: number;
   };
   /**
+   * Configuration for environment variable injection.
+   */
+  env?: {
+    /**
+     * If true, existing environment variables will be overwritten by secrets.
+     * If false, existing environment variables will be preserved.
+     * @default true
+     */
+    override?: boolean;
+  };
+  /**
    * If "low", will print only error logs and some info logs to the console.
    * If "high", will print all logs to the console.
    * If "none", will not print any logs to the console.
