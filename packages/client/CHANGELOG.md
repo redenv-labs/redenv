@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- Updated `@redenv/core` to v[Unreleased] to include improved atomic writng logic
+
 ## [1.1.0] - 2026-01-25
 
 ### Added

@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- **Atomic Secret Updates:** Refactored `writeSecret` to use a Lua script for atomic "read-modify-write" operations in Redis. This prevents race conditions and data loss during concurrent secret updates.
+- **Cluster-Safe Architecture:** Optimized the update flow to be Redis Cluster compatible by separating metadata retrieval from the atomic write operation, avoiding CROSSSLOT errors.
+
 ## [1.1.1] - 2026-01-25
 
 ### Changed

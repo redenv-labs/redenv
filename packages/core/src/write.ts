@@ -1,6 +1,5 @@
 import type { Redis } from "@upstash/redis";
 import { encrypt } from "./crypto";
-import type { EnvironmentVariableValue } from "./types";
 import { RedenvError } from "./error";
 
 /**
@@ -27,11 +26,8 @@ export async function writeSecret(
   const redisKey = `${environment}:${projectName}`;
   const metaKey = `meta@${projectName}`;
 
-  // Fetch metadata and the current secret history in parallel
-  const [metadata, currentHistory] = await Promise.all([
-    redis.hgetall<{ historyLimit?: number }>(metaKey),
-    redis.hget(redisKey, key) as Promise<EnvironmentVariableValue | null>,
-  ]);
+  // We do this outside Lua to avoid CROSSSLOT errors in Redis Cluster/Upstash
+  const metadata = await redis.hgetall<{ historyLimit?: number }>(metaKey);
 
   if (!metadata) {
     throw new RedenvError(
@@ -40,22 +36,66 @@ export async function writeSecret(
     );
   }
 
-  const history = Array.isArray(currentHistory) ? currentHistory : [];
-  const lastVersion = history[0]?.version || 0;
+  const encryptedValue = await encrypt(newValue, pek);
+  const createdAt = new Date().toISOString();
+  const historyLimit = metadata.historyLimit ?? 10;
 
-  const newVersion = {
-    version: lastVersion + 1,
-    value: await encrypt(newValue, pek),
-    user: user,
-    createdAt: new Date().toISOString(),
-  };
+  // This script only touches ONE key (redisKey), ensuring cluster safety.
+  // KEYS[1] = env_key
+  // ARGV[1] = field, ARGV[2] = encrypted_value, ARGV[3] = user, ARGV[4] = created_at, ARGV[5] = history_limit
+  const script = `
+    local env_key = KEYS[1]
+    local field = ARGV[1]
+    local encrypted_value = ARGV[2]
+    local user = ARGV[3]
+    local created_at = ARGV[4]
+    local history_limit = tonumber(ARGV[5])
 
-  history.unshift(newVersion);
+    -- Fetch Current History
+    local current_data = redis.call('HGET', env_key, field)
+    local history = {}
 
-  // Enforce the history limit
-  const limit = metadata.historyLimit ?? 10;
-  const trimmedHistory = limit > 0 ? history.slice(0, limit) : history;
+    if current_data then
+        local status, res = pcall(cjson.decode, current_data)
+        if status then
+            history = res
+        end
+    end
 
-  const valueToStore = JSON.stringify(trimmedHistory);
-  await redis.hset(redisKey, { [key]: valueToStore });
+    -- Determine Next Version
+    local last_version = 0
+    if #history > 0 and history[1] and history[1]['version'] then
+        last_version = history[1]['version']
+    end
+
+    -- Create New Record
+    local new_version = {
+        version = last_version + 1,
+        value = encrypted_value,
+        user = user,
+        createdAt = created_at
+    }
+
+    -- Prepend (Newest First)
+    table.insert(history, 1, new_version)
+
+    -- Trim History
+    if history_limit > 0 then
+        while #history > history_limit do
+            table.remove(history)
+        end
+    end
+
+    -- Save and Return
+    local encoded = cjson.encode(history)
+    redis.call('HSET', env_key, field, encoded)
+
+    return encoded
+  `;
+
+  await redis.eval(
+    script,
+    [redisKey],
+    [key, encryptedValue, user, createdAt, historyLimit]
+  );
 }
