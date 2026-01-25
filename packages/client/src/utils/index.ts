@@ -4,10 +4,12 @@ import {
   importKey,
   hexToBuffer,
   writeSecret,
+  expandSecrets,
 } from "@redenv/core";
 import { Redis } from "@upstash/redis";
 import type { LogPreference, RedenvOptions } from "../types";
 import { RedenvError } from "@redenv/core";
+import { Secrets } from "../secrets";
 
 /**
  * A stateless helper function that fetches and decrypts the Project Encryption Key (PEK).
@@ -55,7 +57,7 @@ export async function getPEK(
  *
  * @param redis - An instance of the Upstash Redis client.
  * @param options - The Redenv configuration options.
- * @returns A record of the decrypted secrets.
+ * @returns A Secrets object containing the decrypted secrets.
  */
 export async function fetchAndDecrypt(
   redis: Redis,
@@ -63,7 +65,7 @@ export async function fetchAndDecrypt(
     RedenvOptions,
     "project" | "tokenId" | "token" | "environment" | "log"
   >
-): Promise<Record<string, string>> {
+): Promise<Secrets> {
   log("Expired Cache: Fetching secrets from source...", options.log, "high");
   const pek = await getPEK(redis, options);
   const envKey = `${options.environment}:${options.project}`;
@@ -72,7 +74,7 @@ export async function fetchAndDecrypt(
   const secrets: Record<string, string> = {};
   if (!versionedSecrets) {
     log("No secrets found for this environment.", options.log);
-    return secrets;
+    return new Secrets({});
   }
 
   const decryptionPromises = Object.entries(versionedSecrets).map(
@@ -95,11 +97,19 @@ export async function fetchAndDecrypt(
     }
   }
 
+  // Capture raw decrypted secrets before expansion
+  const rawDecrypted = { ...secrets };
+
+  // Expand variables
+  const expandedSecrets = expandSecrets(rawDecrypted);
+
   log(
-    `Successfully loaded ${Object.keys(secrets).length} secrets.`,
+    `Successfully loaded ${Object.keys(expandedSecrets).length} secrets.`,
     options.log
   );
-  return secrets;
+  
+  // Return Secrets instance with both expanded and raw data
+  return new Secrets(expandedSecrets, rawDecrypted);
 }
 
 /**
@@ -133,7 +143,7 @@ export async function setSecret(
  * Supports Node.js (`process.env`) and Deno (`Deno.env`).
  */
 export async function populateEnv(
-  secrets: Record<string, string>,
+  secrets: Secrets | Record<string, string>,
   options: Pick<RedenvOptions, "log">
 ): Promise<void> {
   log("Populating environment with secrets...", options.log);

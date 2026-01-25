@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- **Secrets Class Wrapper:** Replaced the plain `Record<string, string>` return type of `.load()` with a specialized `Secrets` class.
+- **Feature Parity with Python SDK:**
+  - **Secret Expansion:** Automatic resolution of `${VAR_NAME}` references within secrets.
+  - **Smart Casting:** New `.get(key)` method returning a wrapper with `.toInt()`, `.toBool()`, `.toJSON()`, and `.toString()` helpers.
+  - **Scoping:** `.scope(prefix)` method to create a view of secrets with a specific prefix stripped.
+  - **Validation:** `.require(...keys)` method for fail-fast checks of mandatory secrets.
+  - **Raw Access:** `.raw` property to access original values before expansion.
+  - **Automatic Masking:** Sensitive values are now automatically masked (`********`) when using `console.log(secrets)`, `secrets.toString()`, or `JSON.stringify(secrets)`.
+- **Unmasked Access:** Added `secrets.toObject()` to retrieve the plain, unmasked secrets object when needed for debugging or specific integrations.
+
 ## [1.0.7] - 2025-12-07
 
 ### Added

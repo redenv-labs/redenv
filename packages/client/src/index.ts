@@ -5,6 +5,7 @@ import { LRUCache } from "lru-cache";
 import type { RedenvOptions } from "./types";
 import { fetchAndDecrypt, populateEnv, setSecret, error, log } from "./utils";
 import { RedenvError } from "@redenv/core";
+import { Secrets } from "./secrets";
 
 // Create a single LRU cache instance to be used for all clients.
 const lru = new LRUCache<string, CacheEntry>({ max: 1000 });
@@ -58,7 +59,7 @@ export class Redenv {
     return `redenv:${this.options.project}:${this.options.environment}`;
   }
 
-  private getSecrets(): Promise<Record<string, string>> {
+  private getSecrets(): Promise<Secrets> {
     return cachified({
       key: this.getCacheKey(),
       cache: lru,
@@ -83,7 +84,7 @@ export class Redenv {
    * Fetches, caches, and injects secrets into the environment.
    * Returns a client instance for optional programmatic access.
    */
-  public async load(): Promise<Record<string, string>> {
+  public async load(): Promise<Secrets> {
     const secrets = await this.getSecrets();
     await populateEnv(secrets, this.options);
     return secrets;
@@ -111,3 +112,4 @@ export class Redenv {
 }
 
 export * from "./types";
+export * from "./secrets";
