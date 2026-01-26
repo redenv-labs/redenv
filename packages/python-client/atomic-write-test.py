@@ -1,16 +1,20 @@
 import asyncio
 import json
 import time
+import os
 from upstash_redis.asyncio import Redis
 from redenv.utils import set_secret
 from redenv.crypto import derive_key, generate_salt, random_bytes, encrypt, buffer_to_hex, decrypt
 from redenv.types import RedenvOptions, UpstashConfig
 
 # Credentials from client/example.ts
-UPSTASH_URL = "https://lenient-lion-15790.upstash.io"
-UPSTASH_TOKEN = "AT2uAAIncDJkZjNkODk5M2E4OWI0NzI5YTBkODEzZDY2ZmI4M2FkMXAyMTU3OTA"
+UPSTASH_URL = os.getenv("UPSTASH_URL")
+UPSTASH_TOKEN = os.getenv("UPSTASH_TOKEN")
 
 async def main():
+    if not UPSTASH_URL or not UPSTASH_TOKEN:
+        raise ValueError("UPSTASH_URL and UPSTASH_TOKEN must be set")
+    
     project_name = f"test-atomic-py-{int(time.time())}"
     environment = "dev"
     key = "ATOMIC_KEY_PY"
