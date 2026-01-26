@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Terminal } from "lucide-react";
-import { clsx } from "clsx";
+import { cn } from "@heroui/react";
 
 interface TerminalDemoProps {
   className?: string;
@@ -10,7 +10,7 @@ interface TerminalDemoProps {
 
 export function TerminalDemo({ className }: TerminalDemoProps) {
   return (
-    <div className={clsx("relative group", className)}>
+    <div className={cn("relative group", className)}>
       {/* Glow Effect behind terminal */}
       <div className="absolute -inset-1 bg-linear-to-r from-primary/50 to-warning/50 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200" />
 

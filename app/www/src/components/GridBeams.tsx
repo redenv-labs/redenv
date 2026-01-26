@@ -1,6 +1,6 @@
 "use client";
 import { cn } from "@heroui/react";
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 interface Beam {
   x: number;
