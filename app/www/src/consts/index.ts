@@ -1,0 +1,1 @@
+export const REDENV_GITHUB_URL = "https://github.com/redenv-labs/redenv";

@@ -1,26 +1,105 @@
 @import "tailwindcss";
+@plugin "../hero.ts";
+@source "../../node_modules/@heroui/theme/dist/*.{js,ts,jsx,tsx}";
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000000;
+  --foreground: #ededed;
+
+  /* Brand */
+  --primary: #ff3333;
+  --primary-foreground: #ffffff;
+  --secondary: #1a1a1a;
+  --secondary-foreground: #ffffff;
+
+  /* UI/Status */
+  --muted: #111111;
+  --muted-foreground: #888888;
+  --border: #333333;
+
+  --success: #00e054;
+  --success-foreground: #00e054;
+  --warning: #ffb020;
+  --warning-foreground: #ffb020;
+  --error: #ff3333;
+  --error-foreground: #ff3333;
+  --info: #3b82f6;
+  --info-foreground: #60a5fa;
+
+  /* Terminal */
+  --command: #34d399; /* emerald-400 */
+  --command-arg: #38bdf8; /* sky-400/cyan */
+  --string: #fcd34d; /* amber-300 */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  /* Brand */
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  /* UI/Status */
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-error: var(--error);
+  --color-error-foreground: var(--error-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
+  /* Terminal */
+  --color-terminal-bg: var(--terminal-bg);
+  --color-terminal-dot-red: var(--terminal-dot-red);
+  --color-terminal-dot-yellow: var(--terminal-dot-yellow);
+  --color-terminal-dot-green: var(--terminal-dot-green);
+  --color-command: var(--command);
+  --color-command-arg: var(--command-arg);
+  --color-string: var(--string);
+
+  --font-sans: var(--font-outfit);
+  --font-mono: var(--font-space-mono);
+
+  @keyframes beam {
+    0% {
+      transform: translateY(-100%) translateX(-100%) rotate(45deg);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(200%) translateX(200%) rotate(45deg);
+      opacity: 0;
+    }
   }
 }
 
+* {
+  font-family: var(--font-outfit);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+a {
+  @apply cursor-pointer;
 }
