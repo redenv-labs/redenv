@@ -110,7 +110,7 @@ async function main() {
     process.exit(1);
   } finally {
     // Cleanup
-    console.log("\nCley aning up...");
+    console.log("\nCleaning up...");
     await redis.del(`meta@${projectName}`);
     await redis.del(`${environment}:${projectName}`);
     process.exit(0);

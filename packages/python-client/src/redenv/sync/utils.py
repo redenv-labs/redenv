@@ -110,14 +110,12 @@ def populate_env(secrets: Union[Dict[str, str], Secrets], options: RedenvOptions
 
 def set_secret(redis: SyncRedis, options: RedenvOptions, key: str, value: str):
     """
-    Sets a secret in Redis with versioning and history.
+    Sets a secret in Redis.
     """
     env_key = f"{options.environment}:{options.project}"
     meta_key = f"meta@{options.project}"
     
-    # Sequential fetch (Simpler for sync, parallel requires threads)
     metadata = redis.hgetall(meta_key)
-    current_history_str = redis.hget(env_key, key)
     
     if not metadata:
         raise RedenvError(f'Project "{options.project}" not found.', "PROJECT_NOT_FOUND")
@@ -126,32 +124,66 @@ def set_secret(redis: SyncRedis, options: RedenvOptions, key: str, value: str):
     
     history_limit = int(metadata.get("historyLimit", 10))
     
-    history = []
-    if current_history_str:
-        history = json.loads(current_history_str) if isinstance(current_history_str, str) else current_history_str
-        
-    if not isinstance(history, list):
-        history = []
-        
-    last_version = history[0]["version"] if len(history) > 0 else 0
-    
     encrypted_value = encrypt(value, pek)
     
     from datetime import datetime, timezone
+    created_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     
-    new_version = {
-        "version": last_version + 1,
-        "value": encrypted_value,
-        "user": options.token_id,
-        "createdAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    script = """
+    local env_key = KEYS[1]
+    local field = ARGV[1]
+    local encrypted_value = ARGV[2]
+    local user = ARGV[3]
+    local created_at = ARGV[4]
+    local history_limit = tonumber(ARGV[5])
+
+    -- Fetch Current History
+    local current_data = redis.call('HGET', env_key, field)
+    local history = {}
+
+    if current_data then
+        local status, res = pcall(cjson.decode, current_data)
+        if status then
+            history = res
+        end
+    end
+
+    -- Determine Next Version
+    local last_version = 0
+    if #history > 0 and history[1] and history[1]['version'] then
+        last_version = history[1]['version']
+    end
+
+    -- Create New Record
+    local new_version = {
+        version = last_version + 1,
+        value = encrypted_value,
+        user = user,
+        createdAt = created_at
     }
+
+    -- Prepend (Newest First)
+    table.insert(history, 1, new_version)
+
+    -- Trim History
+    if history_limit > 0 then
+        while #history > history_limit do
+            table.remove(history)
+        end
+    end
+
+    -- Save and Return
+    local encoded = cjson.encode(history)
+    redis.call('HSET', env_key, field, encoded)
+
+    return encoded
+    """
     
-    history.insert(0, new_version)
-    
-    if history_limit > 0:
-        history = history[:history_limit]
-        
-    return redis.hset(env_key, key, json.dumps(history))
+    return redis.eval(
+        script,
+        [env_key],
+        [key, encrypted_value, options.token_id, created_at, str(history_limit)]
+    )
 
 def get_secret_version(redis: SyncRedis, options: RedenvOptions, cache: LRUCache, key: str, version: int, mode: Literal["id", "index"] = "id") -> Optional[str]:
     """

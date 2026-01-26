@@ -110,19 +110,28 @@ async def test_write_secret(client, mock_redis):
     new_val = "new-value"
     await client.set(SECRET_KEY, new_val)
     
-    # Verify hset was called
-    args = mock_redis.hset.call_args
-    # hset(key, field, value)
-    assert args[0][0] == "dev:test-project"
-    assert args[0][1] == SECRET_KEY
+    # Verify eval was called (for Lua script)
+    assert mock_redis.eval.called
     
-    written_json = args[0][2]
-    history = json.loads(written_json)
+    args = mock_redis.eval.call_args
+    script = args[0][0]
+    keys = args[0][1]
+    argv = args[0][2]
     
-    assert len(history) == 2 # Prepend new version
-    assert history[0]["version"] == 2
-    # We can't verify encrypted value easily without decrypting, 
-    # but we assume encrypt() works (tested in unit tests)
+    # Check script content basics
+    assert "local env_key = KEYS[1]" in script
+    assert "redis.call('HSET', env_key, field, encoded)" in script
+    
+    # Check keys
+    assert keys[0] == "dev:test-project"
+    
+    # Check args: [key, encrypted_value, user, created_at, history_limit]
+    assert argv[0] == SECRET_KEY
+    # We can't verify encrypted value exactly without decrypting, but it should be a string
+    assert isinstance(argv[1], str)
+    assert argv[2] == TOKEN_ID
+    # History Limit
+    assert int(argv[4]) == 10
 
 @pytest.mark.asyncio
 async def test_get_version(client, mock_redis):

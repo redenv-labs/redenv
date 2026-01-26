@@ -4,7 +4,6 @@ from .errors import RedenvError
 from .expand import expand_secrets
 from upstash_redis import AsyncRedis
 from .secrets import Secrets
-import asyncio
 import json
 import os
 import time
@@ -145,56 +144,85 @@ async def populate_env(secrets: Union[Dict[str, str], Secrets], options: RedenvO
 
 async def set_secret(redis: AsyncRedis, options: RedenvOptions, key: str, value: str):
     """
-    Sets a secret in Redis with versioning and history.
+    Sets a secret in Redis.
     """
     env_key = f"{options.environment}:{options.project}"
     meta_key = f"meta@{options.project}"
     
-    # Fetch metadata (for PEK & historyLimit) and current history in parallel
-    metadata, current_history = await asyncio.gather(
-        redis.hgetall(meta_key), 
-        redis.hget(env_key, key)
-    )
+    # We do this outside Lua to avoid CROSSSLOT errors in Redis Cluster/Upstash
+    metadata = await redis.hgetall(meta_key)
     
     if not metadata:
         raise RedenvError(f'Project "{options.project}" not found.', "PROJECT_NOT_FOUND")
         
-    # Reuse metadata to get PEK without extra fetch
+    # Reuse metadata to get PEK
     pek = await get_pek(redis, options, metadata)
     
     history_limit = int(metadata.get("historyLimit", 10))
-    
-    # Fetch current history for the key
-    history = []
-    if current_history:
-        history = json.loads(current_history) if isinstance(current_history, str) else current_history
-        
-    if not isinstance(history, list):
-        history = []
-        
-    last_version = history[0]["version"] if len(history) > 0 else 0
     
     # Encrypt new value
     encrypted_value = encrypt(value, pek)
     
     from datetime import datetime, timezone
+    created_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     
-    new_version = {
-        "version": last_version + 1,
-        "value": encrypted_value,
-        "user": options.token_id, # Using token_id as the user/auditor
-        "createdAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    # KEYS[1] = env_key
+    # ARGV[1] = field (key), ARGV[2] = encrypted_value, ARGV[3] = user, ARGV[4] = created_at, ARGV[5] = history_limit
+    script = """
+    local env_key = KEYS[1]
+    local field = ARGV[1]
+    local encrypted_value = ARGV[2]
+    local user = ARGV[3]
+    local created_at = ARGV[4]
+    local history_limit = tonumber(ARGV[5])
+
+    -- Fetch Current History
+    local current_data = redis.call('HGET', env_key, field)
+    local history = {}
+
+    if current_data then
+        local status, res = pcall(cjson.decode, current_data)
+        if status then
+            history = res
+        end
+    end
+
+    -- Determine Next Version
+    local last_version = 0
+    if #history > 0 and history[1] and history[1]['version'] then
+        last_version = history[1]['version']
+    end
+
+    -- Create New Record
+    local new_version = {
+        version = last_version + 1,
+        value = encrypted_value,
+        user = user,
+        createdAt = created_at
     }
-    
-    # Prepend new version
-    history.insert(0, new_version)
-    
-    # Trim history
-    if history_limit > 0:
-        history = history[:history_limit]
-        
-    # Write back
-    return await redis.hset(env_key, key, json.dumps(history))
+
+    -- Prepend (Newest First)
+    table.insert(history, 1, new_version)
+
+    -- Trim History
+    if history_limit > 0 then
+        while #history > history_limit do
+            table.remove(history)
+        end
+    end
+
+    -- Save and Return
+    local encoded = cjson.encode(history)
+    redis.call('HSET', env_key, field, encoded)
+
+    return encoded
+    """
+
+    return await redis.eval(
+        script,
+        [env_key],
+        [key, encrypted_value, options.token_id, created_at, str(history_limit)]
+    )
 
 async def get_secret_version(redis: AsyncRedis, options: RedenvOptions, cache: LRUCache, key: str, version: int, mode: Literal["id", "index"] = "id") -> Optional[str]:
     """

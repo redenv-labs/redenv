@@ -104,15 +104,27 @@ def test_sync_set_secret(sync_client, mock_redis_sync):
     new_val = "new-sync-val"
     sync_client.set(SECRET_KEY, new_val)
     
-    # Verify hset was called
-    assert mock_redis_sync.hset.called
-    args = mock_redis_sync.hset.call_args
-    assert args[0][0] == "prod:sync-project"
-    assert args[0][1] == SECRET_KEY
+    # Verify eval was called (for Lua script)
+    assert mock_redis_sync.eval.called
     
-    written_json = args[0][2]
-    history = json.loads(written_json)
-    assert history[0]["version"] == 2
+    args = mock_redis_sync.eval.call_args
+    script = args[0][0]
+    keys = args[0][1]
+    argv = args[0][2]
+    
+    # Check script content basics
+    assert "local env_key = KEYS[1]" in script
+    assert "redis.call('HSET', env_key, field, encoded)" in script
+    
+    # Check keys
+    assert keys[0] == "prod:sync-project"
+    
+    # Check args: [key, encrypted_value, user, created_at, history_limit]
+    assert argv[0] == SECRET_KEY
+    assert isinstance(argv[1], str)
+    assert argv[2] == TOKEN_ID
+    # History Limit
+    assert int(argv[4]) == 10
 
 def test_sync_get_version(sync_client, mock_redis_sync):
     # Valid version
