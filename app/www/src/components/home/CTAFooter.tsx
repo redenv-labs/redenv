@@ -131,61 +131,6 @@ export function CTAFooter() {
           </motion.div>
         </motion.div>
 
-        {/* Footer links */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={isInView ? { opacity: 1 } : {}}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-20 pt-8 border-t border-white/5"
-        >
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            {/* Logo & copyright */}
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                <span className="text-primary font-bold text-sm">R</span>
-              </div>
-              <span className="text-white/40 text-sm">
-                Redenv &copy; {new Date().getFullYear()}
-              </span>
-            </div>
-
-            {/* Links */}
-            <div className="flex items-center gap-6 text-sm">
-              <Link
-                href="/docs"
-                className="text-white/40 hover:text-white/70 transition-colors"
-              >
-                Documentation
-              </Link>
-              <Link
-                href="https://github.com/redenv-labs/redenv"
-                target="_blank"
-                className="text-white/40 hover:text-white/70 transition-colors"
-              >
-                GitHub
-              </Link>
-              <Link
-                href="https://www.npmjs.com/package/@redenv/cli"
-                target="_blank"
-                className="text-white/40 hover:text-white/70 transition-colors"
-              >
-                npm
-              </Link>
-            </div>
-
-            {/* Built with */}
-            <div className="flex items-center gap-2 text-sm text-white/30">
-              <span>Powered by</span>
-              <Link
-                href="https://upstash.com"
-                target="_blank"
-                className="text-emerald-400/70 hover:text-emerald-400 transition-colors font-medium"
-              >
-                Upstash
-              </Link>
-            </div>
-          </div>
-        </motion.div>
       </div>
     </section>
   );

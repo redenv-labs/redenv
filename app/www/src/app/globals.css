@@ -103,3 +103,19 @@ button,
 a {
   @apply cursor-pointer;
 }
+/* ::-webkit-scrollbar {
+  width: 6px;
+  } */
+  
+  /* 
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted-foreground/50 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/80;
+} */

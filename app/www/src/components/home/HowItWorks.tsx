@@ -2,13 +2,15 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import { Terminal, Lock, Rocket, ChevronRight } from "lucide-react";
+import { Terminal, Lock, Rocket } from "lucide-react";
+import ShikiHighlighter from "react-shiki";
 
 const steps = [
   {
     number: "01",
     title: "Connect",
-    description: "Link your Upstash Redis database with a single command. Your secrets stay yours.",
+    description:
+      "Link your Upstash Redis database with a single command. Your secrets stay yours.",
     icon: Terminal,
     command: "redenv setup",
     color: "emerald",
@@ -16,7 +18,8 @@ const steps = [
   {
     number: "02",
     title: "Encrypt",
-    description: "Add secrets with AES-256-GCM encryption. Zero-knowledge — we never see plaintext.",
+    description:
+      "Add secrets with AES-256-GCM encryption. Zero-knowledge — we never see plaintext.",
     icon: Lock,
     command: "redenv add API_KEY sk-...",
     color: "primary",
@@ -24,7 +27,8 @@ const steps = [
   {
     number: "03",
     title: "Ship",
-    description: "Fetch secrets at runtime. No rebuilds, no redeployments. Just ship.",
+    description:
+      "Fetch secrets at runtime. No rebuilds, no redeployments. Just ship.",
     icon: Rocket,
     command: "await redenv.load()",
     color: "blue",
@@ -33,24 +37,24 @@ const steps = [
 
 const colorMap = {
   emerald: {
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/20",
+    bg: "bg-emerald-500/20",
+    border: "border-emerald-500/35",
     text: "text-emerald-400",
-    glow: "shadow-emerald-500/20",
+    glow: "shadow-emerald-500/40",
     line: "from-emerald-500",
   },
   primary: {
-    bg: "bg-primary/10",
-    border: "border-primary/20",
+    bg: "bg-primary/20",
+    border: "border-primary/35",
     text: "text-primary",
-    glow: "shadow-primary/20",
+    glow: "shadow-primary/40",
     line: "from-primary",
   },
   blue: {
-    bg: "bg-blue-500/10",
-    border: "border-blue-500/20",
+    bg: "bg-blue-500/20",
+    border: "border-blue-500/35",
     text: "text-blue-400",
-    glow: "shadow-blue-500/20",
+    glow: "shadow-blue-500/40",
     line: "from-blue-500",
   },
 };
@@ -60,10 +64,7 @@ export function HowItWorks() {
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
 
   return (
-    <section
-      ref={sectionRef}
-      className="relative py-32 px-6 overflow-hidden"
-    >
+    <section ref={sectionRef} className="relative py-32 px-6 overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(255,51,51,0.06),transparent)]" />
 
@@ -75,7 +76,7 @@ export function HowItWorks() {
           transition={{ duration: 0.6 }}
           className="text-center mb-20"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/3 mb-6">
             <span className="text-xs font-medium text-white/60 uppercase tracking-wider">
               How It Works
             </span>
@@ -92,7 +93,7 @@ export function HowItWorks() {
         <div className="relative">
           {/* Connection line (desktop) */}
           <div className="hidden lg:block absolute top-24 left-0 right-0 h-px">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent" />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-6">
@@ -107,25 +108,22 @@ export function HowItWorks() {
                   transition={{ duration: 0.5, delay: index * 0.15 }}
                   className="relative"
                 >
-                  {/* Connector arrow (desktop) */}
-                  {index < steps.length - 1 && (
-                    <div className="hidden lg:flex absolute -right-5 top-21.25 z-10 w-6 h-6 items-center justify-center">
-                      <ChevronRight className="text-white/20" size={20} />
-                    </div>
-                  )}
-
                   {/* Card */}
                   <div className="relative group">
                     {/* Glow on hover */}
-                    <div className={`absolute -inset-px rounded-2xl ${colors.bg} opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500`} />
+                    <div
+                      className={`absolute -inset-px rounded-2xl ${colors.bg} opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500`}
+                    />
 
-                    <div className="relative bg-neutral-950/60 border border-white/[0.08] rounded-2xl p-6 md:p-8 backdrop-blur-sm h-full">
+                    <div className="relative bg-muted/50 border border-border/60 rounded-2xl p-6 backdrop-blur-sm h-full">
                       {/* Step number */}
                       <div className="flex items-center justify-between mb-6">
-                        <div className={`w-12 h-12 rounded-xl ${colors.bg} border ${colors.border} flex items-center justify-center`}>
+                        <div
+                          className={`w-12 h-12 rounded-xl ${colors.bg} border ${colors.border} flex items-center justify-center`}
+                        >
                           <step.icon className={colors.text} size={22} />
                         </div>
-                        <span className="text-5xl font-bold text-white/[0.03]">
+                        <span className="text-5xl font-bold text-white/3">
                           {step.number}
                         </span>
                       </div>
@@ -139,9 +137,18 @@ export function HowItWorks() {
                       </p>
 
                       {/* Command */}
-                      <div className="bg-black/40 border border-white/5 rounded-lg px-4 py-3 font-mono text-sm">
-                        <span className="text-white/30 select-none">$ </span>
-                        <span className={colors.text}>{step.command}</span>
+                      <div className="bg-secondary/70 group-hover:bg-background/30 border border-border/60 rounded-xl transition-all duration-300 px-4 py-3 font-mono text-sm flex gap-1">
+                        <span className="text-muted-foreground select-none">
+                          ${" "}
+                        </span>
+                        <ShikiHighlighter
+                          language="shell"
+                          showLanguage={false}
+                          theme="github-dark"
+                          className={"[&_pre]:bg-transparent! [&_pre]:p-0!"}
+                        >
+                          {step.command}
+                        </ShikiHighlighter>
                       </div>
                     </div>
                   </div>

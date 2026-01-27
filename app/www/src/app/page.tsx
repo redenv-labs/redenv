@@ -4,6 +4,7 @@ import { ScrollJourney } from "@/components/home/ScrollJourney";
 import { HowItWorks } from "@/components/home/HowItWorks";
 import { SDKShowcase } from "@/components/home/SDKShowcase";
 import { CTAFooter } from "@/components/home/CTAFooter";
+import { Footer } from "@/components/Footer";
 
 export default function Home() {
   return (
@@ -20,6 +21,7 @@ export default function Home() {
       <HowItWorks />
       <SDKShowcase />
       <CTAFooter />
+      <Footer />
     </main>
   );
 }

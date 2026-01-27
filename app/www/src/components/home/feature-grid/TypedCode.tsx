@@ -1,30 +1,36 @@
 "use client";
-import { useState, useEffect } from "react";
-import {motion} from "framer-motion"
+import { useState, useEffect, useRef } from "react";
+import { motion, useInView } from "framer-motion";
 
 export const TypedCode = () => {
   const [step, setStep] = useState(0);
   const [showTooltip, setShowTooltip] = useState(false);
 
+  const containerRef = useRef(null);
+  const isInView = useInView(containerRef, { once: true, amount: 0.5 });
+  const [hasStarted, setHasStarted] = useState(false);
+
   useEffect(() => {
+    if (isInView && !hasStarted) {
+      setHasStarted(true);
+    }
+  }, [isInView, hasStarted]);
+
+  useEffect(() => {
+    if (!hasStarted) return;
+
     const timer = setTimeout(() => {
       if (step < 4) setStep(step + 1);
       else setShowTooltip(true);
-    }, 400);
+    }, 400); // 400ms
     return () => clearTimeout(timer);
-  }, [step]);
-
-  // Reset animation periodically
-  useEffect(() => {
-    const resetTimer = setInterval(() => {
-      setStep(0);
-      setShowTooltip(false);
-    }, 8000);
-    return () => clearInterval(resetTimer);
-  }, []);
+  }, [step, hasStarted]);
 
   return (
-    <div className="w-full bg-[#0a0a0a] border border-white/8 rounded-xl shadow-2xl font-mono text-[13px]">
+    <div
+      ref={containerRef}
+      className="w-full bg-[#0a0a0a] border border-white/8 rounded-xl shadow-2xl font-mono text-[13px]"
+    >
       {/* Window chrome */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-white/2">
         <div className="flex gap-2">
@@ -39,7 +45,9 @@ export const TypedCode = () => {
       <div className="p-5 min-h-45 relative">
         {/* Line 1: Import */}
         <div className="flex items-center">
-          <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">1</span>
+          <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">
+            1
+          </span>
           {step >= 1 && (
             <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <span className="text-pink-400">import</span>
@@ -55,12 +63,16 @@ export const TypedCode = () => {
 
         {/* Line 2: Empty */}
         <div className="flex items-center h-5">
-          <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">2</span>
+          <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">
+            2
+          </span>
         </div>
 
         {/* Line 3: Load secrets */}
         <div className="flex items-center">
-          <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">3</span>
+          <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">
+            3
+          </span>
           {step >= 2 && (
             <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <span className="text-purple-400">const</span>
@@ -76,12 +88,16 @@ export const TypedCode = () => {
 
         {/* Line 4: Empty */}
         <div className="flex items-center h-5">
-          <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">4</span>
+          <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">
+            4
+          </span>
         </div>
 
         {/* Line 5: toInt example */}
         <div className="flex items-center relative">
-          <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">5</span>
+          <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">
+            5
+          </span>
           {step >= 3 && (
             <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <span className="text-purple-400">const</span>
@@ -120,7 +136,9 @@ export const TypedCode = () => {
 
         {/* Line 6: toBool example */}
         <div className="flex items-center">
-          <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">6</span>
+          <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">
+            6
+          </span>
           {step >= 4 && (
             <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <span className="text-purple-400">const</span>
@@ -139,7 +157,9 @@ export const TypedCode = () => {
 
         {/* Line 7: toJSON example */}
         <div className="flex items-center">
-          <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">7</span>
+          <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">
+            7
+          </span>
           {step >= 4 && (
             <motion.span
               initial={{ opacity: 0 }}

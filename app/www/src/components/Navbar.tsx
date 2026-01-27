@@ -5,7 +5,7 @@ import { BookOpen, FileText, ExternalLink } from "lucide-react";
 import { Github } from "./icons/Github";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
-import { REDENV_GITHUB_URL } from "@/consts";
+import { REDENV_GITHUB_URL, REDENV_LABS_URL } from "@/consts";
 import { RedenvLabsLogo } from "./icons/RedenvLabsLogo";
 
 export function Navbar() {
@@ -71,7 +71,7 @@ export function Navbar() {
               <Link
                 target="_blank"
                 rel="noopener noreferrer"
-                href={REDENV_GITHUB_URL.split("/").slice(0, 4).join("/")}
+                href={REDENV_LABS_URL}
                 className="flex items-center gap-2 group"
               >
                 <div className="flex items-center justify-center w-6 h-6 text-white/80 group-hover:text-white transition-colors">

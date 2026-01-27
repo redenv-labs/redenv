@@ -95,7 +95,7 @@ export const EncryptionFlow = () => {
             <div className="w-1.5 h-1.5 rounded-full bg-white/30" />
             Encrypted (Unreadable)
           </div>
-          <div className="text-white/30 text-[11px]">
+          <div className="text-white/30 text-[11px] truncate">
             <DecryptingText targetText="aGVsbG8gd29ybGQhIHRoaXMgaXMgYSB0ZXN0" />
           </div>
         </div>
