@@ -109,7 +109,7 @@ export function HowItWorks() {
                 >
                   {/* Connector arrow (desktop) */}
                   {index < steps.length - 1 && (
-                    <div className="hidden lg:flex absolute -right-3 top-24 z-10 w-6 h-6 items-center justify-center">
+                    <div className="hidden lg:flex absolute -right-5 top-21.25 z-10 w-6 h-6 items-center justify-center">
                       <ChevronRight className="text-white/20" size={20} />
                     </div>
                   )}
