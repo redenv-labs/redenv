@@ -1,5 +1,9 @@
 import HeroSection from "@/components/home/Hero";
 import { FeatureGrid } from "@/components/home/FeatureGrid";
+import { ScrollJourney } from "@/components/home/ScrollJourney";
+import { HowItWorks } from "@/components/home/HowItWorks";
+import { SDKShowcase } from "@/components/home/SDKShowcase";
+import { CTAFooter } from "@/components/home/CTAFooter";
 
 export default function Home() {
   return (
@@ -12,6 +16,10 @@ export default function Home() {
 
       <HeroSection />
       <FeatureGrid />
+      <ScrollJourney />
+      <HowItWorks />
+      <SDKShowcase />
+      <CTAFooter />
     </main>
   );
 }

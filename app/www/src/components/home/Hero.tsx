@@ -3,7 +3,7 @@
 import { Button, Link } from "@heroui/react";
 import { ArrowRight, Copy, Check, Shield, Zap, Lock } from "lucide-react";
 import { motion } from "framer-motion";
-import { TerminalDemo } from "@/components/home/components/TerminalDemo";
+import { TerminalDemo } from "@/components/home/hero/TerminalDemo";
 import { useState } from "react";
 import { GridBeams } from "@/components/GridBeams";
 
@@ -56,8 +56,8 @@ const HeroSection = () => {
             className="group inline-flex items-center gap-3 px-4 py-2 rounded-full border border-white/10 bg-white/3 hover:bg-white/6 hover:border-white/20 transition-all duration-300 text-sm"
           >
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
             </span>
             <span className="text-white/60 group-hover:text-white/80 transition-colors">
               Zero-knowledge encryption
