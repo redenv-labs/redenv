@@ -5,6 +5,7 @@ import { ArrowRight, Copy, Check, Shield, Zap, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import { TerminalDemo } from "@/components/home/components/TerminalDemo";
 import { useState } from "react";
+import { GridBeams } from "@/components/GridBeams";
 
 const HeroSection = () => {
   const [copied, setCopied] = useState(false);
@@ -38,6 +39,10 @@ const HeroSection = () => {
 
   return (
     <section className="relative z-10 w-full min-h-screen flex flex-col items-center justify-center md:px-6 py-32 overflow-hidden">
+      <div className="absolute inset-0 z-0 select-none pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(255,51,51,0.15),transparent)]" />
+        <GridBeams gridSize={100} beamCount={100} />
+      </div>
       <motion.div
         variants={container}
         initial="hidden"
