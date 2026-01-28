@@ -2,7 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import { Link } from "@heroui/react";
+import { Link } from "@/components/Link";
 import { ExternalLink, Terminal, Shield, Sparkles } from "lucide-react";
 import { Github } from "./icons/Github";
 import { RedenvLabsLogo } from "./icons/RedenvLabsLogo";

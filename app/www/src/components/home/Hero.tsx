@@ -1,6 +1,7 @@
 "use client";
 
-import { Button, Link } from "@heroui/react";
+import { Button } from "@heroui/react";
+import { Link } from "@/components/Link";
 import { ArrowRight, Copy, Check, Shield, Zap, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import { TerminalDemo } from "@/components/home/hero/TerminalDemo";

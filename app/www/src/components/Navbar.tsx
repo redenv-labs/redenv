@@ -1,6 +1,6 @@
 "use client";
 
-import { Link } from "@heroui/react";
+import { Link } from "@/components/Link";
 import { BookOpen, FileText, ExternalLink } from "lucide-react";
 import { Github } from "./icons/Github";
 import { motion, AnimatePresence } from "framer-motion";
