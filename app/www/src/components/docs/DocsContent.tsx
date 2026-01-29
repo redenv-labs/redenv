@@ -2,8 +2,15 @@
 
 import { motion } from "framer-motion";
 import { Link } from "@heroui/react";
-import { ChevronRight, Pencil, Clock, ArrowRight, ArrowLeft } from "lucide-react";
+import {
+  ChevronRight,
+  Pencil,
+  Clock,
+  ArrowRight,
+  ArrowLeft,
+} from "lucide-react";
 import { REDENV_GITHUB_URL } from "@/consts";
+import { cn } from "@/lib/utils";
 
 interface AdjacentPage {
   title: string;
@@ -107,7 +114,6 @@ export function DocsContent({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.2 }}
-       
       >
         {children}
       </motion.div>
@@ -118,12 +124,15 @@ export function DocsContent({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.3 }}
-          className="mt-16 grid grid-cols-2 gap-4"
+          className={cn(
+            "mt-16 grid gap-4",
+            !prev || !next ? "grid-cols-1" : "grid-cols-2",
+          )}
         >
           {prev ? (
             <Link
               href={prev.url}
-              className="group flex flex-col items-start gap-2 rounded-lg border border-border/40 p-4 transition-colors hover:border-primary/40 hover:bg-primary/5"
+              className="group flex flex-col items-start gap-2 rounded-lg border border-border/20 p-4 transition-colors hover:border-primary/40 bg-secondary/30 hover:bg-primary/5"
             >
               <span className="flex items-start gap-1.5 text-xs text-muted-foreground/60">
                 <ArrowLeft size={12} />
@@ -139,7 +148,7 @@ export function DocsContent({
           {next ? (
             <Link
               href={next.url}
-              className="group flex flex-col items-end gap-2 rounded-lg border border-border/40 p-4 transition-colors hover:border-primary/40 hover:bg-primary/5"
+              className="group flex flex-col items-end gap-2 rounded-lg border border-border/20 p-4 transition-colors hover:border-primary/40 bg-secondary/30 hover:bg-primary/5"
             >
               <span className="flex items-center gap-1.5 text-xs text-muted-foreground/60">
                 Next

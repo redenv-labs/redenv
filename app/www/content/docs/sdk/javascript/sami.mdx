@@ -19,16 +19,23 @@ The `@redenv/client` package allows you to fetch secrets in your Node.js, edge, 
 
 ## Usage
 
-```typescript
+```typescript twoslash lineNumbers
 import { Redenv } from "@redenv/client";
 
 const client = new Redenv({
-  token: process.env.REDENV_TOKEN,
+  project: "my-project",
+  token: "my-token",
+  tokenId: "my-token-id",
+  upstash: {
+    url: "https://upstash.com",
+    token: "my-upstash-token",
+  },
 });
 
 async function main() {
-  const secrets = await client.getSecrets("my-project");
-  console.log(secrets);
+  const secrets = await client.load();
+  const secret = secrets.get("my-secret");
+  console.log(secret);
 }
 
 main();

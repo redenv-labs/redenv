@@ -4,6 +4,12 @@ import type * as Config from '../source.config';
 
 const create = browser<typeof Config, import("fumadocs-mdx/runtime/types").InternalTypeConfig & {
   DocData: {
+    docs: {
+      /**
+       * extracted references (e.g. hrefs, paths), useful for analyzing relationships between pages.
+       */
+      extractedReferences: import("fumadocs-mdx").ExtractedReference[];
+    },
   }
 }>();
 const browserCollections = {

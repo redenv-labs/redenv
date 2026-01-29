@@ -58,7 +58,7 @@ export function CodeBlock({
       <div
         className={cn(
           "flex items-center justify-between border-border/30 bg-secondary/30",
-          title ? "px-4 py-1.5 border-b" : "",
+          title ? "px-4 py-1 border-b" : "",
         )}
       >
         <div className="w-full flex items-center justify-between gap-3 text-muted-foreground">

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button, Link } from "@heroui/react";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Search } from "lucide-react";
@@ -40,6 +40,10 @@ function SidebarFolder({
 
   const [isOpen, setIsOpen] = useState(isActive);
 
+  useEffect(() => {
+    if (isActive) setIsOpen(true);
+  }, [isActive]);
+
   return (
     <div>
       <button
@@ -77,7 +81,7 @@ function SidebarFolder({
             className="overflow-hidden"
           >
             <div className="relative ml-1.75 border-l border-border/40">
-              {item.children.map((child, index) => (
+              {item.children.map((child: any, index: number) => (
                 <SidebarItem key={index} item={child} level={level + 1} />
               ))}
             </div>
@@ -213,7 +217,7 @@ export function DocsSidebar({ tree }: DocsSidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-4 pb-6 scrollbar-hide">
-        {filteredTree.children.map((item, index) => (
+        {filteredTree.children.map((item: any, index: number) => (
           <SidebarItem key={index} item={item} />
         ))}
 

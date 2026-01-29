@@ -3,6 +3,7 @@
 @source "../../node_modules/@heroui/theme/dist/*.{js,ts,jsx,tsx}";
 @import "fumadocs-ui/css/neutral.css";
 @import "fumadocs-ui/css/preset.css";
+@import 'fumadocs-twoslash/twoslash.css';
 
 @custom-variant dark (&:is(.dark *));
 

@@ -3,7 +3,6 @@ import { Link } from "@/components/Link";
 import { ExternalLink } from "lucide-react";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 
-// Client components
 import { CodeBlock } from "@/components/mdx/CodeBlock";
 import { Callout } from "@/components/mdx/Callout";
 import { Card, Cards } from "@/components/mdx/Cards";
@@ -17,6 +16,7 @@ import {
 } from "@/components/mdx/CodeBlock";
 import { ComponentProps } from "react";
 import { cn } from "./lib/utils";
+import * as Twoslash from 'fumadocs-twoslash/ui';
 
 // =============================================================================
 // TYPOGRAPHY
@@ -156,7 +156,7 @@ const UnorderedList = ({
   ...props
 }: React.HTMLAttributes<HTMLUListElement>) => (
   <ul
-    className="my-5 ml-2 list-none space-y-2 text-muted-foreground [&>li]:relative [&>li]:pl-6 [&>li]:before:absolute [&>li]:before:left-1 [&>li]:before:top-[0.6rem] [&>li]:before:h-1.5 [&>li]:before:w-1.5 [&>li]:before:rounded-full [&>li]:before:bg-primary/50"
+    className="my-5 ml-2 list-none space-y-2 text-muted-foreground [&>li]:relative [&>li]:pl-6 [&>li]:before:absolute [&>li]:before:left-1 [&>li]:before:top-1/2 [&>li]:before:-translate-y-1/2 [&>li]:before:h-1.5 [&>li]:before:w-1.5 [&>li]:before:rounded-full [&>li]:before:bg-primary/50"
     {...props}
   >
     {children}
@@ -292,7 +292,8 @@ const Image = ({
 export function getMDXComponents(components?: MDXComponents): MDXComponents {
   return {
     ...defaultMdxComponents,
-
+    ...Twoslash,
+    
     // Typography
     h1: H1,
     h2: H2,
