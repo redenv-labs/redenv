@@ -1,0 +1,21 @@
+{
+  "title": "Documentation",
+  "pages": [
+    "index",
+    "---Getting Started---",
+    "installation",
+    "quickstart",
+    "---Core Concepts---",
+    "concepts/encryption",
+    "concepts/environments",
+    "concepts/secrets",
+    "---CLI---",
+    "cli/overview",
+    "cli/commands",
+    "---SDKs---",
+    "sdk/javascript",
+    "sdk/python",
+    "---Testing---",
+    "test-page"
+  ]
+}

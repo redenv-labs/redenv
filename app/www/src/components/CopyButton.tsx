@@ -7,15 +7,21 @@ import { motion } from "framer-motion";
 
 export const CopyButton = ({
   text = "",
+  handleCopy,
   disabled = false,
 }: {
   text?: string;
+  handleCopy?: () => void;
   disabled?: boolean;
 }) => {
   const [copied, setCopied] = useState(false);
 
   const handleClick = () => {
-    navigator.clipboard.writeText(text);
+    if (!text && typeof handleCopy === "function") {
+      handleCopy();
+    } else {
+      navigator.clipboard.writeText(text);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

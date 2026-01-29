@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "@/providers/Providers";
-import { Navbar } from "@/components/Navbar";
 import { Outfit } from "next/font/google";
 
 const outfit = Outfit({
@@ -23,10 +22,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${outfit.className} antialiased min-h-screen bg-background text-foreground`}
+        className={`${outfit.className} antialiased min-h-screen bg-background text-foreground scrollbar-1`}
       >
         <Providers>
-          <Navbar />
           {children}
         </Providers>
       </body>

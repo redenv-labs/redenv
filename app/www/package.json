@@ -12,9 +12,13 @@
     "@gsap/react": "^2.1.2",
     "@heroui/react": "^2.6.8",
     "@tanstack/react-query": "^5.64.1",
+    "@types/mdx": "^2.0.13",
     "axios": "^1.7.9",
     "clsx": "^2.1.1",
     "framer-motion": "^12.29.0",
+    "fumadocs-core": "^16.4.9",
+    "fumadocs-mdx": "^14.2.6",
+    "fumadocs-ui": "^16.4.9",
     "gsap": "^3.14.2",
     "lucide-react": "^0.563.0",
     "next": "16.1.4",
@@ -40,6 +44,8 @@
     "unrs-resolver"
   ],
   "trustedDependencies": [
+    "@heroui/shared-utils",
+    "esbuild",
     "sharp",
     "unrs-resolver"
   ]

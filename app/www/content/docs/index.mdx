@@ -1,0 +1,55 @@
+---
+title: Introduction
+description: Zero-knowledge, end-to-end encrypted secret management for modern teams.
+---
+
+Welcome to **Redenv** - a secure, zero-knowledge secret management system that replaces traditional `.env` files with encrypted, versioned secrets stored in the cloud.
+
+## What is Redenv?
+
+Redenv is a CLI-first tool that enables developers to manage secrets securely without ever exposing them in plaintext. Your secrets are encrypted client-side before being sent anywhere, meaning **we never see your data**.
+
+## Key Features
+
+- **Zero-Knowledge Encryption** - All encryption happens on your machine using AES-256-GCM
+- **Version History** - Track changes to your secrets over time
+- **Environment Support** - Separate secrets for development, staging, and production
+- **Team Collaboration** - Share encrypted secrets with your team securely
+- **SDK Support** - Native SDKs for JavaScript/TypeScript and Python
+
+## Quick Example
+
+```bash
+# Install the CLI
+bun add -g @redenv/cli
+
+# Initialize a new project
+redenv init my-project
+
+# Add a secret
+redenv set DATABASE_URL "postgres://..." --env production
+
+# List secrets
+redenv list --env production
+```
+
+## How It Works
+
+1. **You create a project** with a master password
+2. **Secrets are encrypted** locally using your password
+3. **Encrypted data is stored** in Upstash Redis
+4. **Your team can access** secrets with the shared password
+5. **No one else** - not even us - can read your secrets
+
+## Next Steps
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+  <a href="/docs/installation" className="block p-4 rounded-lg border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all">
+    <h3 className="font-semibold mb-1">Installation</h3>
+    <p className="text-sm text-muted-foreground">Get started with the CLI installation</p>
+  </a>
+  <a href="/docs/quickstart" className="block p-4 rounded-lg border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all">
+    <h3 className="font-semibold mb-1">Quickstart</h3>
+    <p className="text-sm text-muted-foreground">Create your first project in minutes</p>
+  </a>
+</div>

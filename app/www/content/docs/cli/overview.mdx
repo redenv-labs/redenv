@@ -1,0 +1,44 @@
+---
+title: CLI Overview
+description: Learn how to manage your secrets using the Redenv CLI.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Redenv CLI
+
+The Redenv CLI is the primary way to interact with your secrets and environments. It allows you to push, pull, and manage secrets directly from your terminal.
+
+## Installation
+
+<Callout title="Prerequisites">
+  Make sure you have Node.js installed on your machine.
+</Callout>
+
+```bash
+npm install -g @redenv/cli
+```
+
+## Authentication
+
+Before you can use the CLI, you need to login:
+
+```bash
+redenv login
+```
+
+This will open your browser to authenticate with your Redenv account.
+
+## Basic Usage
+
+To pull secrets for your current project:
+
+```bash
+redenv pull
+```
+
+To push local changes:
+
+```bash
+redenv push
+```

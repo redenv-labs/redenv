@@ -1,0 +1,41 @@
+---
+title: Python SDK
+description: Documentation for the Redenv Python SDK.
+---
+
+# Python SDK
+
+The `redenv-python` package allows you to fetch secrets in your Python applications.
+
+## Installation
+
+```bash
+pip install redenv
+```
+
+## Usage
+
+```python
+from redenv import Redenv
+
+client = Redenv(token="your-token")
+
+secrets = client.get_secrets("my-project")
+print(secrets)
+```
+
+## Integration with Django
+
+You can use Redenv to load secrets into your Django settings.
+
+```python
+# settings.py
+from redenv import Redenv
+import os
+
+client = Redenv(token=os.getenv("REDENV_TOKEN"))
+secrets = client.get_secrets("my-django-project")
+
+for key, value in secrets.items():
+    os.environ[key] = value
+```

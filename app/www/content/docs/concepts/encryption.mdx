@@ -1,0 +1,53 @@
+---
+title: Encryption
+description: How Redenv encrypts your secrets using zero-knowledge encryption.
+---
+
+Redenv uses industry-standard cryptographic algorithms to ensure your secrets remain private.
+
+## Zero-Knowledge Architecture
+
+With zero-knowledge encryption, your secrets are encrypted **before** leaving your machine. This means:
+
+- **We never see your plaintext secrets**
+- **Only you** (and those with the password) can decrypt them
+- Even if our servers were compromised, your data remains safe
+
+## Encryption Algorithm
+
+Redenv uses **AES-256-GCM** for symmetric encryption:
+
+- **AES-256**: Advanced Encryption Standard with 256-bit keys
+- **GCM**: Galois/Counter Mode for authenticated encryption
+- Provides both **confidentiality** and **integrity**
+
+## Key Derivation
+
+Your master password is converted to an encryption key using **PBKDF2**:
+
+- **PBKDF2-HMAC-SHA256** algorithm
+- **310,000 iterations** (per OWASP recommendations)
+- Unique **salt** per project
+
+This makes brute-force attacks computationally infeasible.
+
+## How It Works
+
+```
+┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐
+│  Your Password  │  →   │  PBKDF2 Key     │  →   │  AES-256-GCM    │
+│                 │      │  Derivation     │      │  Encryption     │
+└─────────────────┘      └─────────────────┘      └─────────────────┘
+                                                          │
+                                                          ▼
+                                               ┌─────────────────┐
+                                               │ Encrypted Data  │
+                                               │ (sent to cloud) │
+                                               └─────────────────┘
+```
+
+## Security Considerations
+
+- Always use a **strong, unique password** for each project
+- Store passwords securely (password manager recommended)
+- Use **service tokens** for CI/CD instead of sharing master passwords
