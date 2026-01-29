@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Redenv Plugin Registry",
+  "description": "Schema for a Redenv plugin's registry.json file.",
+  "type": "object",
+  "required": [
+    "name",
+    "description",
+    "version",
+    "author",
+    "category",
+    "installCommand"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Reference to this schema file."
+    },
+    "name": {
+      "type": "string",
+      "description": "Unique plugin identifier (e.g. 'studio', 'redenv-health'). Used as the plugin's slug.",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "displayName": {
+      "type": "string",
+      "description": "Human-readable plugin name shown in the UI. Falls back to 'name' if omitted."
+    },
+    "description": {
+      "type": "string",
+      "description": "Short description of the plugin (1-2 sentences).",
+      "maxLength": 256
+    },
+    "version": {
+      "type": "string",
+      "description": "Current semver version of the plugin.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.]+)?$"
+    },
+    "author": {
+      "type": "string",
+      "description": "Plugin author or organization name."
+    },
+    "category": {
+      "type": "string",
+      "description": "Plugin category for filtering. Reserved categories like 'official' are managed by the system.",
+      "not": { "enum": ["official"] }
+    },
+    "status": {
+      "type": "string",
+      "description": "Release status of the plugin. Defaults to 'stable' if omitted.",
+      "enum": ["stable", "beta", "new"],
+      "default": "stable"
+    },
+    "installCommand": {
+      "type": "string",
+      "description": "The command users run to install the plugin (e.g. 'bun add -g @redenv/studio')."
+    },
+    "repository": {
+      "type": "string",
+      "description": "URL to the plugin's source code repository.",
+      "format": "uri"
+    },
+    "docs": {
+      "type": "string",
+      "description": "URL or path to the plugin's documentation page."
+    }
+  }
+}

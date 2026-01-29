@@ -20,6 +20,7 @@ export const SpotlightCard = ({
   spotlightOpacity,
   index = 0,
   isInView = false,
+  enable3dRotation = true,
 }: {
   children: React.ReactNode;
   className?: string;
@@ -29,6 +30,7 @@ export const SpotlightCard = ({
   spotlightOpacity: MotionValue<number>;
   index?: number;
   isInView?: boolean;
+  enable3dRotation?: boolean;
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const localX = useMotionValue(0);
@@ -39,7 +41,7 @@ export const SpotlightCard = ({
   const rotateY = useSpring(0, { stiffness: 200, damping: 20 });
 
   useMotionValueEvent(mouseX, "change", (latestX: number) => {
-    if (!cardRef.current) return;
+    if (!cardRef.current || !enable3dRotation) return;
     const rect = cardRef.current.getBoundingClientRect();
     const x = latestX - rect.left;
     const y = mouseY.get() - rect.top;

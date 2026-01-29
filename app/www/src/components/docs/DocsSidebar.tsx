@@ -5,30 +5,24 @@ import { useState, useMemo, useEffect } from "react";
 import { Button, Link } from "@heroui/react";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Search } from "lucide-react";
-import type { PageTree } from "fumadocs-core/server";
+import type { Root, Node, Folder, Item } from "fumadocs-core/page-tree";
 import { cn } from "@/lib/utils";
 import { Github } from "@/components/icons/Github";
 import { REDENV_GITHUB_URL } from "@/consts";
 
 interface DocsSidebarProps {
-  tree: PageTree.Root;
+  tree: Root;
 }
 
 interface SidebarItemProps {
-  item: PageTree.Node;
+  item: Node;
   level?: number;
 }
 
-function SidebarFolder({
-  item,
-  level = 0,
-}: {
-  item: PageTree.Folder;
-  level?: number;
-}) {
+function SidebarFolder({ item, level = 0 }: { item: Folder; level?: number }) {
   const pathname = usePathname();
   const isActive = useMemo(() => {
-    const checkActive = (nodes: PageTree.Node[]): boolean => {
+    const checkActive = (nodes: Node[]): boolean => {
       return nodes.some((node) => {
         if (node.type === "page" && node.url === pathname) return true;
         if (node.type === "folder") return checkActive(node.children);
@@ -92,13 +86,7 @@ function SidebarFolder({
   );
 }
 
-function SidebarPage({
-  item,
-  level = 0,
-}: {
-  item: PageTree.Item;
-  level?: number;
-}) {
+function SidebarPage({ item, level = 0 }: { item: Item; level?: number }) {
   const pathname = usePathname();
   const isActive = pathname === item.url;
 
@@ -106,9 +94,9 @@ function SidebarPage({
     <Link
       href={item.url}
       className={cn(
-        "relative group flex items-center py-1.5 text-sm transition-colors duration-150 rounded-md",
+        "relative group flex items-center py-1.5 text-sm transition-[colors,padding-left] duration-150 rounded-md",
         isActive
-          ? "bg-primary/10 text-primary font-medium border border-primary/20"
+          ? "bg-primary/10 text-primary font-medium border border-primary/20 pl-2.5!"
           : "text-muted-foreground hover:text-foreground hover:bg-secondary/50",
       )}
       style={{ paddingLeft: `${level * 12 + 6}px` }}
@@ -158,12 +146,12 @@ export function DocsSidebar({ tree }: DocsSidebarProps) {
   const filteredTree = useMemo(() => {
     if (!searchQuery.trim()) return tree;
 
-    const filterNodes = (nodes: PageTree.Node[]): PageTree.Node[] => {
+    const filterNodes = (nodes: Node[]): Node[] => {
       return nodes
         .map((node) => {
           if (node.type === "page") {
-            const matches = node.name
-              .toLowerCase()
+            const matches = (node.name as any)
+              ?.toLowerCase()
               .includes(searchQuery.toLowerCase());
             return matches ? node : null;
           }
@@ -176,7 +164,7 @@ export function DocsSidebar({ tree }: DocsSidebarProps) {
           }
           return node;
         })
-        .filter(Boolean) as PageTree.Node[];
+        .filter(Boolean) as Node[];
     };
 
     return { ...tree, children: filterNodes(tree.children) };

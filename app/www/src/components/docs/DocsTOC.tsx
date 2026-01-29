@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import type { TableOfContents } from "fumadocs-core/server";
+import type { TableOfContents } from "fumadocs-core/toc";
 
 interface DocsTOCProps {
   toc: TableOfContents;
@@ -59,7 +59,7 @@ export function DocsTOC({ toc }: DocsTOCProps) {
       rafRef.current = requestAnimationFrame(updateActiveHeading);
     };
 
-    // Recalculate positions on resize (layout shifts)
+    // Recalculate positions on resize
     const onResize = () => {
       collectPositions();
       updateActiveHeading();
@@ -78,7 +78,7 @@ export function DocsTOC({ toc }: DocsTOCProps) {
   if (toc.length === 0) return null;
 
   return (
-    <aside className="hidden xl:block w-56 flex-shrink-0">
+    <aside className="hidden xl:block w-56 shrink-0">
       <div className="sticky top-24">
         <div className="pb-4">
           <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider mb-4">

@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${outfit.className} antialiased min-h-screen bg-background text-foreground scrollbar-1`}
+        className={`${outfit.className} antialiased min-h-screen bg-background text-foreground scrollbar-1 overflow-x-hidden`}
       >
         <Providers>
           {children}

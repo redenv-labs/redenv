@@ -38,7 +38,7 @@ export function Step({ children, title, step, isLast }: StepProps) {
         <div className="absolute left-4 top-8 bottom-0 w-px bg-primary/20" />
       )}
       {/* Step number */}
-      <div className="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-bold shadow-lg shadow-primary/20 ring-4 ring-background select-none">
+      <div className="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-bold shadow-lg shadow-primary/20 ring-4 ring-background/50 select-none">
         {step}
       </div>
       {/* Content */}

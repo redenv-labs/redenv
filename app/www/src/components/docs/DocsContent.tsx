@@ -132,7 +132,7 @@ export function DocsContent({
           {prev ? (
             <Link
               href={prev.url}
-              className="group flex flex-col items-start gap-2 rounded-lg border border-border/20 p-4 transition-colors hover:border-primary/40 bg-secondary/30 hover:bg-primary/5"
+              className="group flex flex-col items-start gap-2 rounded-2xl border border-border/20 p-4 transition-colors hover:border-primary/20 bg-secondary/30 hover:bg-primary/10"
             >
               <span className="flex items-start gap-1.5 text-xs text-muted-foreground/60">
                 <ArrowLeft size={12} />
@@ -148,7 +148,7 @@ export function DocsContent({
           {next ? (
             <Link
               href={next.url}
-              className="group flex flex-col items-end gap-2 rounded-lg border border-border/20 p-4 transition-colors hover:border-primary/40 bg-secondary/30 hover:bg-primary/5"
+              className="group flex flex-col items-end gap-2 rounded-2xl border border-border/20 p-4 transition-colors hover:border-primary/20 bg-secondary/30 hover:bg-primary/10"
             >
               <span className="flex items-center gap-1.5 text-xs text-muted-foreground/60">
                 Next
