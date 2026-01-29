@@ -57,8 +57,8 @@ export function PluginsHero({
           variants={item}
           className="text-lg md:text-xl text-white/35 max-w-2xl mx-auto mb-12 leading-relaxed"
         >
-          Plugins that integrate with your workflow, from CI/CD pipelines
-          to visual dashboards and secret rotation.
+          Plugins that integrate with your workflow, from CI/CD pipelines to
+          visual dashboards and secret rotation.
         </motion.p>
 
         {/* Search */}
@@ -66,7 +66,7 @@ export function PluginsHero({
           <div className="relative">
             <Search
               size={18}
-              className="absolute left-5 top-1/2 -translate-y-1/2 text-white/25"
+              className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground z-10"
             />
             <input
               type="search"

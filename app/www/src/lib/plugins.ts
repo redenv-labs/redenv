@@ -1,6 +1,5 @@
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import type { Plugin, PluginCategory, PluginStatus } from "@/data/plugins";
+import registry from "~/public/plugins.registry.json";
 
 /**
  * An entry in the central plugins.registry.json maintained in the repo.
@@ -57,7 +56,11 @@ function validateRegistryJSON(data: unknown): PluginRegistryJSON | null {
   if (typeof d.version !== "string" || !d.version) return null;
   if (typeof d.author !== "string" || !d.author) return null;
   if (typeof d.installCommand !== "string" || !d.installCommand) return null;
-  if (typeof d.category !== "string" || !VALID_CATEGORIES.has(d.category as PluginCategory)) return null;
+  if (
+    typeof d.category !== "string" ||
+    !VALID_CATEGORIES.has(d.category as PluginCategory)
+  )
+    return null;
 
   return {
     name: d.name,
@@ -66,9 +69,11 @@ function validateRegistryJSON(data: unknown): PluginRegistryJSON | null {
     version: d.version,
     author: d.author,
     category: d.category as PluginCategory,
-    status: typeof d.status === "string" && VALID_STATUSES.has(d.status as PluginStatus)
-      ? (d.status as PluginStatus)
-      : "stable",
+    status:
+      typeof d.status === "string" &&
+      VALID_STATUSES.has(d.status as PluginStatus)
+        ? (d.status as PluginStatus)
+        : "stable",
     installCommand: d.installCommand,
     repository: typeof d.repository === "string" ? d.repository : undefined,
     docs: typeof d.docs === "string" ? d.docs : undefined,
@@ -79,7 +84,9 @@ function validateRegistryJSON(data: unknown): PluginRegistryJSON | null {
  * Fetches a single plugin's registry.json from the author's URL.
  * Returns null on any failure (network, parse, validation).
  */
-async function fetchPluginRegistry(entry: RegistryEntry): Promise<Plugin | null> {
+async function fetchPluginRegistry(
+  entry: RegistryEntry,
+): Promise<Plugin | null> {
   try {
     const res = await fetch(entry.url, {
       next: { revalidate: 3600 }, // 1 hour ISR
@@ -90,6 +97,10 @@ async function fetchPluginRegistry(entry: RegistryEntry): Promise<Plugin | null>
     const raw = await res.json();
     const data = validateRegistryJSON(raw);
     if (!data) return null;
+
+    if (data.category.toLowerCase().includes("official")) {
+      return null;
+    }
 
     return {
       id: data.name,
@@ -116,15 +127,7 @@ async function fetchPluginRegistry(entry: RegistryEntry): Promise<Plugin | null>
  * Gracefully skips any that fail.
  */
 export async function getPlugins(): Promise<Plugin[]> {
-  let entries: RegistryEntry[];
-
-  try {
-    const registryPath = join(process.cwd(), "plugins.registry.json");
-    const raw = await readFile(registryPath, "utf-8");
-    entries = JSON.parse(raw) as RegistryEntry[];
-  } catch {
-    return [];
-  }
+  const entries = registry as RegistryEntry[];
 
   const results = await Promise.allSettled(
     entries.map((entry) => fetchPluginRegistry(entry)),
@@ -132,12 +135,12 @@ export async function getPlugins(): Promise<Plugin[]> {
 
   const plugins = results
     .filter(
-      (r): r is PromiseFulfilledResult<Plugin | null> => r.status === "fulfilled",
+      (r): r is PromiseFulfilledResult<Plugin | null> =>
+        r.status === "fulfilled",
     )
     .map((r) => r.value)
     .filter((p): p is Plugin => p !== null);
 
-  // Sort: featured first, then official, then alphabetical
   return plugins.sort((a, b) => {
     if (a.featured !== b.featured) return a.featured ? -1 : 1;
     if (a.official !== b.official) return a.official ? -1 : 1;

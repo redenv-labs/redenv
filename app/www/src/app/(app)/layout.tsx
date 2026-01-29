@@ -1,27 +1,25 @@
 "use client";
 
-import { useState } from "react";
 import { AppNavbar } from "@/components/AppNavbar";
+import { MobileMenuProvider } from "@/components/MobileMenuContext";
+import { AppMobileMenu } from "@/components/AppMobileMenu";
 
-export default function DocsLayout({ children }: { children: React.ReactNode }) {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
+export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-background">
-      {/* Background decorations */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-32 -left-32 w-150 h-150 bg-primary/10 rounded-full blur-[120px]" />
-        <div className="absolute top-1/3 right-0 w-125 h-125 bg-primary/8 rounded-full blur-[100px]" />
-        <div className="absolute bottom-0 left-1/3 w-175 h-100 bg-primary/6 rounded-full blur-[140px]" />
-      </div>
+    <MobileMenuProvider>
+      <div className="min-h-screen bg-background overflow-x-clip">
+        {/* Background decorations */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-32 -left-32 w-150 h-150 bg-primary/10 rounded-full blur-[120px]" />
+          <div className="absolute top-1/3 right-0 w-125 h-125 bg-primary/8 rounded-full blur-[100px]" />
+          <div className="absolute bottom-0 left-1/3 w-175 h-100 bg-primary/6 rounded-full blur-[140px]" />
+        </div>
 
-      {/* Header */}
-      <AppNavbar
-        onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        isMobileMenuOpen={isMobileMenuOpen}
-      />
-      
-     {children}
-    </div>
+        <AppNavbar />
+        <AppMobileMenu />
+
+        {children}
+      </div>
+    </MobileMenuProvider>
   );
 }

@@ -1,7 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { categoryLabels, type Plugin, type PluginCategory } from "@/data/plugins";
+import {
+  categoryLabels,
+  type Plugin,
+  type PluginCategory,
+} from "@/data/plugins";
 
 export function CategoryFilter({
   activeCategory,
@@ -20,15 +24,18 @@ export function CategoryFilter({
   }
 
   const allCategories = [
-    { key: "all", label: "All" },
     ...categories
       .filter((c) => counts[c])
       .map((c) => ({ key: c, label: categoryLabels[c] })),
-  ];
+  ] as { key: string; label: string }[];
+
+  if (counts.all > 0) {
+    allCategories.unshift({ key: "all", label: "All" });
+  }
 
   return (
     <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-1 mb-10">
-      {allCategories.map(({ key, label }) => (
+      {allCategories?.filter(Boolean)?.map(({ key, label }) => (
         <button
           key={key}
           onClick={() => onCategoryChange(key)}

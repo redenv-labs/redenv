@@ -7,22 +7,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { RedenvLabsLogo } from "@/components/icons/RedenvLabsLogo";
 import { cn } from "@/lib/utils";
 import { REDENV_LABS_URL } from "@/consts";
-
-interface AppNavbarProps {
-  onMobileMenuToggle?: () => void;
-  isMobileMenuOpen?: boolean;
-}
+import { useMobileMenu } from "@/components/MobileMenuContext";
 
 const navItems: { label: string; href: string; active: boolean; disabled?: boolean }[] = [
   { label: "Docs", href: "/docs", active: true },
   { label: "Plugins", href: "/plugins", active: true },
 ];
 
-export function AppNavbar({
-  onMobileMenuToggle,
-  isMobileMenuOpen,
-}: AppNavbarProps) {
+export function AppNavbar() {
   const pathname = usePathname();
+  const { isOpen, toggle } = useMobileMenu();
 
   return (
     <header
@@ -89,12 +83,12 @@ export function AppNavbar({
               </nav>
               {/* Mobile menu button */}
               <button
-                onClick={onMobileMenuToggle}
+                onClick={toggle}
                 className="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
                 aria-label="Toggle menu"
               >
                 <AnimatePresence mode="wait">
-                  {isMobileMenuOpen ? (
+                  {isOpen ? (
                     <motion.div
                       key="close"
                       initial={{ opacity: 0, rotate: -90 }}
