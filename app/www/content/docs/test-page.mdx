@@ -3,11 +3,6 @@ title: UI Test Page
 description: A page to test all documentation UI elements and typography.
 ---
 
-import { Tab, Tabs } from "fumadocs-ui/components/tabs";
-import { Callout } from "fumadocs-ui/components/callout";
-import { Accordion, Accordions } from "fumadocs-ui/components/accordion";
-import { Steps, Step } from "fumadocs-ui/components/steps";
-
 # Top Level Heading
 
 This is a paragraph of text to test the body typography. It should be legible, have appropriate line height, and contrast. **Bold text** and _italic text_ should be clearly distinguishable.
@@ -46,8 +41,10 @@ pnpm install @redenv/cli
 
 ### Callouts
 
-<Callout title="Info" type="info">
-  This is an info callout for general information.
+<Callout title="Tip">
+    It can be used without Fumadocs UI, in other words, it's headless.
+
+    For beginners and normal usages, use [Fumadocs UI](/docs/ui).
 </Callout>
 
 <Callout title="Warning" type="warn">
@@ -66,23 +63,16 @@ pnpm install @redenv/cli
   <Tab value="yarn">yarn add package</Tab>
 </Tabs>
 
-### Accordions
-
-<Accordions>
-  <Accordion title="What is Redenv?">
-    Redenv is a secure secret management solution.
-  </Accordion>
-  <Accordion title="How do I get started?">
-    Check out the quickstart guide!
-  </Accordion>
-</Accordions>
-
 ### Steps
 
 <Steps>
   <Step>
     <h4>Install the CLI</h4>
     <p>Run the installation command in your terminal.</p>
+  </Step>
+  <Step>
+    <h4>Login</h4>
+    <p>Authenticate with your account.</p>
   </Step>
   <Step>
     <h4>Login</h4>

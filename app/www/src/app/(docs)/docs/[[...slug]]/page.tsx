@@ -68,7 +68,7 @@ export default async function Page({ params }: PageProps) {
         prev={prev}
         next={next}
       >
-        <MDX components={getMDXComponents({})} />
+        <MDX components={getMDXComponents()} />
       </DocsContent>
 
       <DocsTOC toc={page.data.toc} />

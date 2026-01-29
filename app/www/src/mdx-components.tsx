@@ -92,10 +92,7 @@ const Paragraph = ({
   children,
   ...props
 }: React.HTMLAttributes<HTMLParagraphElement>) => (
-  <p
-    className="text-muted-foreground leading-7 mb-5 not-first:mt-0"
-    {...props}
-  >
+  <p className="text-muted-foreground leading-7 mb-5 not-first:mt-0" {...props}>
     {children}
   </p>
 );
@@ -159,7 +156,7 @@ const UnorderedList = ({
   ...props
 }: React.HTMLAttributes<HTMLUListElement>) => (
   <ul
-    className="my-5 ml-6 list-none space-y-2 text-muted-foreground"
+    className="my-5 ml-2 list-none space-y-2 text-muted-foreground [&>li]:relative [&>li]:pl-6 [&>li]:before:absolute [&>li]:before:left-1 [&>li]:before:top-[0.6rem] [&>li]:before:h-1.5 [&>li]:before:w-1.5 [&>li]:before:rounded-full [&>li]:before:bg-primary/50"
     {...props}
   >
     {children}
@@ -171,7 +168,7 @@ const OrderedList = ({
   ...props
 }: React.HTMLAttributes<HTMLOListElement>) => (
   <ol
-    className="my-5 ml-6 list-decimal space-y-2 text-muted-foreground marker:text-muted-foreground/50"
+    className="my-5 ml-2 list-none space-y-2 text-muted-foreground [counter-reset:item] [&>li]:relative [&>li]:pl-8 [&>li]:before:absolute [&>li]:before:left-0 [&>li]:before:top-1/2 [&>li]:before:-translate-y-1/2 [&>li]:before:h-[80%] [&>li]:before:w-auto [&>li]:before:aspect-square [&>li]:before:rounded-full [&>li]:before:bg-primary/10 [&>li]:before:text-primary [&>li]:before:text-[0.65rem] [&>li]:before:font-bold [&>li]:before:flex [&>li]:before:items-center [&>li]:before:justify-center [&>li]:before:content-[counter(item)] [&>li]:before:[counter-increment:item]"
     {...props}
   >
     {children}
@@ -182,10 +179,7 @@ const ListItem = ({
   children,
   ...props
 }: React.HTMLAttributes<HTMLLIElement>) => (
-  <li
-    className="relative pl-2 leading-7 before:absolute before:left-[-1rem] before:top-[0.6rem] before:h-1.5 before:w-1.5 before:rounded-full before:bg-primary/50"
-    {...props}
-  >
+  <li className="leading-7" {...props}>
     {children}
   </li>
 );
@@ -332,7 +326,6 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     hr: HorizontalRule,
     img: Image,
 
-    // Custom Components (use in MDX like: <Callout variant="warning">...</Callout>)
     Callout,
     Card,
     Cards,

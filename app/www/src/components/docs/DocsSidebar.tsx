@@ -2,11 +2,13 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useMemo } from "react";
-import { Link } from "@heroui/react";
+import { Button, Link } from "@heroui/react";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Search } from "lucide-react";
 import type { PageTree } from "fumadocs-core/server";
 import { cn } from "@/lib/utils";
+import { Github } from "@/components/icons/Github";
+import { REDENV_GITHUB_URL } from "@/consts";
 
 interface DocsSidebarProps {
   tree: PageTree.Root;
@@ -210,7 +212,7 @@ export function DocsSidebar({ tree }: DocsSidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-4 pb-6 scrollbar-thin">
+      <nav className="flex-1 overflow-y-auto px-4 pb-6 scrollbar-hide">
         {filteredTree.children.map((item, index) => (
           <SidebarItem key={index} item={item} />
         ))}
@@ -221,6 +223,20 @@ export function DocsSidebar({ tree }: DocsSidebarProps) {
           </div>
         )}
       </nav>
+
+      {/* Footer */}
+      <div className="p-2 border-t border-border/40">
+        <Button
+          as={Link}
+          isIconOnly
+          href={REDENV_GITHUB_URL}
+          target="_blank"
+          className="text-muted-foreground"
+          variant="light"
+        >
+          <Github className="size-5" />
+        </Button>
+      </div>
     </aside>
   );
 }
