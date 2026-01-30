@@ -2,12 +2,13 @@
 
 import { Link } from "@heroui/react";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RedenvLabsLogo } from "@/components/icons/RedenvLabsLogo";
 import { cn } from "@/lib/utils";
 import { REDENV_LABS_URL } from "@/consts";
 import { useMobileMenu } from "@/components/MobileMenuContext";
+import { useSearch } from "@/components/search/SearchProvider";
 
 const navItems: { label: string; href: string; active: boolean; disabled?: boolean }[] = [
   { label: "Docs", href: "/docs", active: true },
@@ -17,6 +18,7 @@ const navItems: { label: string; href: string; active: boolean; disabled?: boole
 export function AppNavbar() {
   const pathname = usePathname();
   const { isOpen, toggle } = useMobileMenu();
+  const { open: openSearch } = useSearch();
 
   return (
     <header
@@ -26,7 +28,7 @@ export function AppNavbar() {
     >
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
-          {/* Logo & Brand */}
+          {/* Logo */}
           <div className="flex items-center justify-between w-full gap-6">
             <div className="flex items-center gap-3 group">
               <div className="relative">
@@ -81,6 +83,25 @@ export function AppNavbar() {
                   );
                 })}
               </nav>
+              {/* Search trigger */}
+              <button
+                onClick={openSearch}
+                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/3 border border-white/8 text-xs text-white/30 hover:text-white/50 hover:border-white/15 transition-all"
+              >
+                <Search size={13} />
+                <span>Search</span>
+                <kbd className="ml-1 px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[10px] font-mono">
+                  ⌘K
+                </kbd>
+              </button>
+              {/* Mobile search button */}
+              <button
+                onClick={openSearch}
+                className="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+                aria-label="Search"
+              >
+                <Search size={18} />
+              </button>
               {/* Mobile menu button */}
               <button
                 onClick={toggle}

@@ -12,7 +12,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   return (
-    <RootProvider>
+    <RootProvider
+      search={{
+        enabled: false,
+      }}
+    >
       <QueryClientProvider client={queryClient}>
         <Suspense fallback={null}>
           <Progress />

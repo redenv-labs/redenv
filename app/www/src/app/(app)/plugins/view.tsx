@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { useMotionValue, useInView, animate } from "framer-motion";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { PluginsHero } from "@/components/plugins/PluginsHero";
 import { FeaturedPlugin } from "@/components/plugins/FeaturedPlugin";
 import { CategoryFilter } from "@/components/plugins/CategoryFilter";
@@ -13,8 +14,31 @@ export function PluginsView({ plugins }: { plugins: Plugin[] }) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-80px" });
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const initialQuery = searchParams.get("q") || "";
+
   const [activeCategory, setActiveCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+
+  useEffect(() => {
+    const q = searchParams.get("q") || "";
+    setSearchQuery(q);
+  }, [searchParams]);
+
+  // sync url
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    const params = new URLSearchParams(searchParams.toString());
+    if (query) {
+      params.set("q", query);
+    } else {
+      params.delete("q");
+    }
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -34,11 +58,13 @@ export function PluginsView({ plugins }: { plugins: Plugin[] }) {
   }
 
   const featuredPlugin = plugins.find((p) => p.featured);
-  const regularPlugins = plugins;
 
   return (
     <main className="relative min-h-screen">
-      <PluginsHero searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+      <PluginsHero
+        searchQuery={searchQuery}
+        onSearchChange={handleSearchChange}
+      />
 
       <section
         ref={sectionRef}
@@ -60,11 +86,11 @@ export function PluginsView({ plugins }: { plugins: Plugin[] }) {
         <CategoryFilter
           activeCategory={activeCategory}
           onCategoryChange={setActiveCategory}
-          plugins={regularPlugins}
+          plugins={plugins}
         />
 
         <PluginGrid
-          plugins={regularPlugins}
+          plugins={plugins}
           searchQuery={searchQuery}
           activeCategory={activeCategory}
           mouseX={mouseX}

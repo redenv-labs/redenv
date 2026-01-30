@@ -1,9 +1,11 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Search } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const container = {
+const containerVariants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
@@ -21,8 +23,23 @@ export function PluginsHero({
   onSearchChange,
 }: {
   searchQuery: string;
-  onSearchChange: (value: string) => void;
+  onSearchChange: (query: string) => void;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    setMousePosition({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
   return (
     <section className="relative pt-32 pb-16 px-6">
       {/* Radial glow */}
@@ -31,7 +48,7 @@ export function PluginsHero({
       </div>
 
       <motion.div
-        variants={container}
+        variants={containerVariants}
         initial="hidden"
         animate="show"
         className="relative max-w-4xl mx-auto text-center"
@@ -61,21 +78,102 @@ export function PluginsHero({
           visual dashboards and secret rotation.
         </motion.p>
 
-        {/* Search */}
-        <motion.div variants={item} className="relative max-w-xl mx-auto">
-          <div className="relative">
-            <Search
-              size={18}
-              className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground z-10"
+        {/* Inline search input */}
+        <motion.div
+          variants={item}
+          className="relative max-w-xl mx-auto"
+          ref={containerRef}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          onMouseMove={handleMouseMove}
+        >
+          <div className="group relative flex items-center gap-3 w-full rounded-2xl px-5 py-4 text-sm overflow-hidden">
+            {/* Animated gradient border */}
+            <div className="absolute inset-0 rounded-2xl p-px overflow-hidden">
+              <div
+                className={cn(
+                  "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500",
+                  isFocused && "opacity-100",
+                )}
+                style={{
+                  background: `conic-gradient(from 180deg at 50% 50%,
+                    transparent 0deg,
+                    color-mix(in srgb, var(--primary) 30%, transparent) 60deg,
+                    color-mix(in srgb, var(--primary) 50%, transparent) 120deg,
+                    transparent 180deg,
+                    transparent 360deg
+                  )`,
+                  animation: "spin 4s linear infinite",
+                }}
+              />
+              <div className="absolute inset-px rounded-2xl bg-neutral-950/95 backdrop-blur-xl" />
+            </div>
+
+            <div
+              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+              style={{
+                background: isHovered
+                  ? `radial-gradient(400px circle at ${mousePosition.x}px ${mousePosition.y}px, color-mix(in srgb, var(--primary) 20%, transparent), transparent 40%)`
+                  : "none",
+              }}
             />
-            <input
-              type="search"
-              aria-label="Search plugins"
-              placeholder="Search plugins..."
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full bg-white/3 backdrop-blur-xl border border-white/8 rounded-full pl-12 pr-6 py-4 text-sm text-white placeholder:text-white/25 outline-none focus:border-white/20 focus:bg-white/5 transition-all"
-            />
+
+            {/* Glass surface */}
+            <div className="absolute inset-px rounded-2xl bg-linear-to-b from-white/4 to-transparent pointer-events-none" />
+
+            {/* Static border */}
+            <div className="absolute inset-0 rounded-2xl border border-white/6 group-hover:border-white/10 transition-colors duration-300 pointer-events-none" />
+
+            <motion.div
+              className="absolute inset-0 pointer-events-none"
+              animate={{
+                x: ["0%", "200%"],
+              }}
+              transition={{
+                duration: 1.5,
+                ease: "easeInOut",
+                repeat: Infinity,
+                repeatDelay: 2,
+              }}
+            >
+              <div
+                className="absolute inset-y-0 w-1/3 -left-1/3"
+                style={{
+                  background:
+                    "linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)",
+                }}
+              />
+            </motion.div>
+
+            {/* Content */}
+            <div className="relative flex items-center gap-3 w-full z-10">
+              <div className="relative">
+                <Search
+                  size={18}
+                  className="text-white/30 group-hover:text-white/50 transition-colors duration-300"
+                />
+              </div>
+
+              <input
+                ref={inputRef}
+                type="text"
+                onBlur={() => setIsFocused(false)}
+                onFocus={() => setIsFocused(true)}
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder="Search plugins..."
+                className="flex-1 bg-transparent text-white placeholder:text-white/25 outline-none tracking-wide"
+              />
+
+              {searchQuery && (
+                <button
+                  onClick={() => onSearchChange("")}
+                  className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] font-mono text-white/30 hover:text-white/50 transition-colors"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
         </motion.div>
       </motion.div>
