@@ -103,16 +103,16 @@ export const GridBeams = ({
     const update = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // 1. Draw Static Grid (moving forward)
+      // Draw Static Grid (moving forward)
       globalZ += 1;
       drawGrid(globalZ);
 
-      // 2. Spawn and Draw Beams
+      // Spawn and Draw Beams
       if (Math.random() > 0.9) spawnBeam();
 
       activeBeams.forEach((beam, i) => {
         if (beam.axis === "z") {
-          beam.z -= beam.speed; // Move towards camera
+          beam.z -= beam.speed;
 
           if (beam.z < -beam.length) {
             activeBeams.splice(i, 1);
@@ -139,10 +139,6 @@ export const GridBeams = ({
           ctx.stroke();
           ctx.shadowBlur = 0;
         } else {
-          // X axis movement? Maybe stick to Z for flow
-          // Lets make X axis beams stick to a Z plane and move X?
-          // Simplifying: Just Z axis beams look like "Data Highway"
-          // Lets convert X active beams to Z for now to keep it uniform speed feeling
           beam.axis = "z";
         }
       });

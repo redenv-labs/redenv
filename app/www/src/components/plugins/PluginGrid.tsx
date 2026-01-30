@@ -3,7 +3,7 @@
 import { useMemo, type MouseEvent } from "react";
 import { motion, MotionValue } from "framer-motion";
 import { PluginCard } from "./PluginCard";
-import type { Plugin } from "@/data/plugins";
+import type { Plugin } from "@/types/plugins";
 import { Search } from "lucide-react";
 
 export function PluginGrid({

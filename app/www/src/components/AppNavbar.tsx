@@ -26,7 +26,7 @@ export function AppNavbar() {
     >
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
-          {/* Left: Logo & Brand */}
+          {/* Logo & Brand */}
           <div className="flex items-center justify-between w-full gap-6">
             <div className="flex items-center gap-3 group">
               <div className="relative">
@@ -51,7 +51,7 @@ export function AppNavbar() {
               </div>
             </div>
 
-            {/* Right: Actions */}
+            {/* Actions */}
             <div className="flex items-center justify-end w-full gap-3">
               {/* Desktop Navigation */}
               <nav className="hidden md:flex items-center gap-1">

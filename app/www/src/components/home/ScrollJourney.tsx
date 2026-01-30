@@ -61,7 +61,6 @@ export function ScrollJourney() {
         {/* Content */}
         <div className="relative z-10 h-full flex flex-col items-center justify-center px-6">
           <div className="w-full max-w-6xl mx-auto">
-            {/* Section Header - Fades out as you scroll */}
             <div
               className="text-center mb-8 lg:mb-12"
               style={{
@@ -85,10 +84,8 @@ export function ScrollJourney() {
             <div className="flex flex-col items-center justify-center gap-8">
               <JourneyVisual progress={progress} />
 
-              {/* Step title and description below visual */}
               <StepContent progress={progress} />
 
-              {/* Step indicators */}
               <StepIndicator progress={progress} />
             </div>
           </div>

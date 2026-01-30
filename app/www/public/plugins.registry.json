@@ -3,37 +3,5 @@
     "url": "https://raw.githubusercontent.com/redenv-labs/redenv-studio-plugin/main/registry.json",
     "official": true,
     "featured": true
-  },
-  {
-    "url": "https://raw.githubusercontent.com/redenv-labs/github-actions/main/registry.json",
-    "official": true
-  },
-  {
-    "url": "https://raw.githubusercontent.com/redenv-labs/audit-log/main/registry.json",
-    "official": true
-  },
-  {
-    "url": "https://raw.githubusercontent.com/redenv-labs/vscode/main/registry.json",
-    "official": true
-  },
-  {
-    "url": "https://raw.githubusercontent.com/redenv-labs/docker/main/registry.json",
-    "official": true
-  },
-  {
-    "url": "https://raw.githubusercontent.com/redenv-labs/rotate/main/registry.json",
-    "official": true
-  },
-  {
-    "url": "https://raw.githubusercontent.com/redenv-labs/vercel/main/registry.json",
-    "official": true
-  },
-  {
-    "url": "https://raw.githubusercontent.com/community/redenv-health/main/registry.json",
-    "official": false
-  },
-  {
-    "url": "https://raw.githubusercontent.com/community/redenv-diff/main/registry.json",
-    "official": false
   }
 ]

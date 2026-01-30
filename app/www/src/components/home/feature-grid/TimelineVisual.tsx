@@ -12,17 +12,14 @@ export const TimelineVisual = () => {
     { v: "1.3.0", date: "Jan 25", status: "current" },
   ];
 
-  // Calculate progress percentage based on dot positions (justify-between)
   const progressPercent = (activeVersion / (versions.length - 1)) * 100;
 
   return (
     <div className="mt-auto relative w-full">
-      {/* Timeline track */}
       <div className="relative h-16 flex items-center">
         {/* Background line */}
         <div className="absolute inset-x-0 top-1/2 h-px bg-white/10" />
 
-        {/* Active progress - aligned to dot positions */}
         <motion.div
           className="absolute left-0 top-1/2 h-px bg-linear-to-r from-amber-500/50 to-amber-500"
           initial={{ width: "0%" }}

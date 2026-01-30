@@ -11,7 +11,6 @@ interface PageProps {
 }
 
 function getAdjacentPages(slug: string[] | undefined) {
-  // Walk the page tree to get pages in sidebar order
   const tree = source.getPageTree();
   const ordered: { title: string; url: string }[] = [];
 
@@ -41,7 +40,6 @@ export default async function Page({ params }: PageProps) {
 
   const MDX = page.data.body;
 
-  // Build breadcrumbs from slug
   const breadcrumbs = (resolvedParams.slug || []).map(
     (segment, index, arr) => ({
       label:
@@ -53,7 +51,6 @@ export default async function Page({ params }: PageProps) {
     }),
   );
 
-  // Build edit URL
   const editUrl = `${REDENV_GITHUB_URL}/edit/main/app/www/content/docs/${resolvedParams.slug?.join("/") || "index"}.mdx`;
 
   const { prev, next } = getAdjacentPages(resolvedParams.slug);

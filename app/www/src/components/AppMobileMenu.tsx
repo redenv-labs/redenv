@@ -57,7 +57,7 @@ export function AppMobileMenu() {
           >
             {isDocsPage ? (
               <>
-                {/* Docs: horizontal tab-style nav */}
+                {/* horizontal tab-style nav */}
                 <div className="px-3 pt-3 pb-2 border-b border-border/20">
                   <div className="flex items-center gap-1">
                     {navItems.map((item) => (

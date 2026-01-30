@@ -4,8 +4,7 @@ import { Check } from "lucide-react";
 import ShikiHighlighter from "react-shiki";
 
 export const TerminalVisual = ({ progress }: { progress: number }) => {
-  const stepProgress = Math.min(1, progress * 5); // 0-20% of total
-  // Typing completes faster (at 40% of step progress instead of 100%)
+  const stepProgress = Math.min(1, progress * 5); // 0-20%
   const typingProgress = Math.min(1, stepProgress * 2.5);
   const typedChars = Math.floor(typingProgress * (SECRET_VALUE.length + 15));
   const command = `redenv add API_KEY ${SECRET_VALUE}`;

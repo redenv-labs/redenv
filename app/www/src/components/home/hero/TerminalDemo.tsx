@@ -31,7 +31,7 @@ export function TerminalDemo({ className }: TerminalDemoProps) {
 
         {/* Terminal Body */}
         <div className="p-5 font-mono text-[13px] leading-relaxed space-y-4">
-          {/* Command 1: Setup */}
+          {/* Command 1 */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -46,7 +46,7 @@ export function TerminalDemo({ className }: TerminalDemoProps) {
             </div>
           </motion.div>
 
-          {/* Command 2: Register */}
+          {/* Command 2 */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -69,7 +69,7 @@ export function TerminalDemo({ className }: TerminalDemoProps) {
             </div>
           </motion.div>
 
-          {/* Command 3: Add Secret */}
+          {/* Command 3 */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -95,7 +95,7 @@ export function TerminalDemo({ className }: TerminalDemoProps) {
             </div>
           </motion.div>
 
-          {/* Command 4: Current prompt with cursor */}
+          {/* Command 4 */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

@@ -29,7 +29,7 @@ export const Globe = () => {
           className="absolute inset-0 rounded-full border border-blue-500/20"
         />
 
-        {/* Middle ring - tilted */}
+        {/* Middle ring */}
         <motion.div
           animate={{ rotate: -360 }}
           transition={{ duration: 25, repeat: Infinity, ease: "linear" }}

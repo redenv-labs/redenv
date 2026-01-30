@@ -81,7 +81,7 @@ export const FeatureGrid = () => {
 
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-5 auto-rows-[minmax(200px,auto)]">
-        {/* Card 1: Zero-Knowledge (Hero Card) */}
+        {/* Card 1 */}
         <SpotlightCard
           className="col-span-1 md:col-span-6 lg:col-span-8 row-span-2"
           spotlightColor="rgba(16, 185, 129, 0.12)"
@@ -120,7 +120,7 @@ export const FeatureGrid = () => {
           </div>
         </SpotlightCard>
 
-        {/* Card 2: Global Edge Network */}
+        {/* Card 2 */}
         <SpotlightCard
           className="col-span-1 md:col-span-6 lg:col-span-4 row-span-2"
           spotlightColor="rgba(59, 130, 246, 0.12)"
@@ -173,7 +173,7 @@ export const FeatureGrid = () => {
           </div>
         </SpotlightCard>
 
-        {/* Card 3: Version History */}
+        {/* Card 3 */}
         <SpotlightCard
           className="col-span-1 md:col-span-3 lg:col-span-4 row-span-1"
           spotlightColor="rgba(245, 158, 11, 0.12)"
@@ -203,7 +203,7 @@ export const FeatureGrid = () => {
           </div>
         </SpotlightCard>
 
-        {/* Card 4: Smart Type Casting */}
+        {/* Card 4 */}
         <SpotlightCard
           className="col-span-1 md:col-span-3 lg:col-span-8 row-span-1"
           spotlightColor="rgba(236, 72, 153, 0.12)"

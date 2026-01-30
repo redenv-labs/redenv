@@ -1,10 +1,3 @@
-export type PluginCategory =
-  | "dashboard"
-  | "ci-cd"
-  | "security"
-  | "developer-tools"
-  | "monitoring";
-
 export type PluginStatus = "stable" | "beta" | "new";
 
 export interface Plugin {
@@ -15,7 +8,7 @@ export interface Plugin {
   longDescription?: string;
   version: string;
   author: string;
-  category: PluginCategory;
+  category: string;
   official: boolean;
   status: PluginStatus;
   installCommand: string;
@@ -23,11 +16,3 @@ export interface Plugin {
   docsUrl?: string;
   featured?: boolean;
 }
-
-export const categoryLabels: Record<PluginCategory, string> = {
-  dashboard: "Dashboard",
-  "ci-cd": "CI/CD",
-  security: "Security",
-  "developer-tools": "Dev Tools",
-  monitoring: "Monitoring",
-};

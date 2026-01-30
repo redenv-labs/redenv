@@ -43,7 +43,7 @@ export const TypedCode = () => {
 
       {/* Code content */}
       <div className="p-5 min-h-45 relative">
-        {/* Line 1: Import */}
+        {/* Line 1 */}
         <div className="flex items-center">
           <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">
             1
@@ -61,14 +61,14 @@ export const TypedCode = () => {
           )}
         </div>
 
-        {/* Line 2: Empty */}
+        {/* Line 2 */}
         <div className="flex items-center h-5">
           <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">
             2
           </span>
         </div>
 
-        {/* Line 3: Load secrets */}
+        {/* Line 3 */}
         <div className="flex items-center">
           <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">
             3
@@ -86,14 +86,14 @@ export const TypedCode = () => {
           )}
         </div>
 
-        {/* Line 4: Empty */}
+        {/* Line 4 */}
         <div className="flex items-center h-5">
           <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">
             4
           </span>
         </div>
 
-        {/* Line 5: toInt example */}
+        {/* Line 5 */}
         <div className="flex items-center relative">
           <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">
             5
@@ -134,7 +134,7 @@ export const TypedCode = () => {
           )}
         </div>
 
-        {/* Line 6: toBool example */}
+        {/* Line 6 */}
         <div className="flex items-center">
           <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">
             6
@@ -155,7 +155,7 @@ export const TypedCode = () => {
           )}
         </div>
 
-        {/* Line 7: toJSON example */}
+        {/* Line 7 */}
         <div className="flex items-center">
           <span className="text-white/20 select-none mr-4 w-4 text-right text-xs">
             7

@@ -46,7 +46,7 @@ export function CTAFooter() {
           className="text-center"
         >
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/3 mb-8">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
@@ -60,7 +60,7 @@ export function CTAFooter() {
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 tracking-tight">
             Ready to secure
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-orange-400 to-amber-400">
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-primary via-orange-400 to-amber-400">
               your secrets?
             </span>
           </h2>
@@ -109,7 +109,7 @@ export function CTAFooter() {
             className="inline-flex items-center"
           >
             <div className="group relative flex items-center">
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-amber-500/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="absolute -inset-1 bg-linear-to-r from-primary/20 to-amber-500/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <div className="relative flex items-center bg-neutral-900/80 backdrop-blur-sm rounded-full border border-white/10 pl-6 pr-2 h-12 gap-4">
                 <code className="font-mono text-sm text-white/60">
                   <span className="select-none text-white/30">$ </span>

@@ -4,7 +4,9 @@ import { MotionValue } from "framer-motion";
 import { SpotlightCard } from "@/components/home/feature-grid/SpotlightCard";
 import { CopyButton } from "@/components/CopyButton";
 import { PluginBadge } from "./PluginBadge";
-import { categoryLabels, type Plugin } from "@/data/plugins";
+import { type Plugin } from "@/types/plugins";
+import { ExternalLink, GitFork, User } from "lucide-react";
+import { Link } from "@heroui/react";
 
 export function PluginCard({
   plugin,
@@ -30,45 +32,62 @@ export function PluginCard({
       index={index}
       enable3dRotation={false}
       isInView={isInView}
-      className="min-h-70"
     >
       <div className="relative p-6 flex flex-col h-full">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="min-w-0">
-              <h3 className="text-base font-semibold text-white truncate">
-                {plugin.name}
-              </h3>
-              <p className="text-[11px] text-white/25 font-mono">
-                v{plugin.version}
-              </p>
-            </div>
+        {/* badges row */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <PluginBadge type={plugin.official ? "official" : "community"} />
+            {plugin.status !== "stable" && <PluginBadge type={plugin.status} />}
           </div>
-          <PluginBadge type={plugin.official ? "official" : "community"} />
+          <span className="text-[10px] px-2.5 py-1 rounded-full bg-white/5 border border-white/8 text-white/30 uppercase tracking-wider font-medium">
+            {plugin.category}
+          </span>
         </div>
 
-        {/* Description */}
-        <p className="text-sm text-white/35 leading-relaxed mb-5 flex-1 line-clamp-3">
+        <div className="mb-3">
+          <h3 className="text-lg font-semibold text-white leading-tight">
+            {plugin.name}
+          </h3>
+          <span className="text-[11px] text-white/20 font-mono">
+            v{plugin.version}
+          </span>
+        </div>
+
+        {/* description */}
+        <p className="text-sm text-white/35 leading-relaxed flex-1 line-clamp-3 mb-5">
           {plugin.description}
         </p>
 
-        {/* Bottom row */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] px-2.5 py-1 rounded-full bg-white/5 border border-white/8 text-white/40 uppercase tracking-wider font-medium">
-              {categoryLabels[plugin.category]}
-            </span>
-            {plugin.status !== "stable" && (
-              <PluginBadge type={plugin.status} />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-1.5 text-white/25">
+            <User size={12} />
+            <span className="text-[11px] font-medium">{plugin.author}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            {plugin.docsUrl && (
+              <Link
+                href={plugin.docsUrl}
+                className="text-white/20 hover:text-white/50 transition-colors"
+              >
+                <ExternalLink size={13} />
+              </Link>
+            )}
+            {plugin.githubUrl && (
+              <Link
+                href={plugin.githubUrl}
+                target="_blank"
+                className="text-white/20 hover:text-white/50 transition-colors"
+              >
+                <GitFork size={13} />
+              </Link>
             )}
           </div>
         </div>
 
-        {/* Install command */}
-        <div className="mt-4 pt-4 border-t border-white/5">
-          <div className="flex items-center justify-between">
-            <code className="text-[11px] font-mono text-white/30 truncate">
+        <div className="pt-4 border-t border-white/5">
+          <div className="flex items-center justify-between bg-white/2 rounded-lg px-3 py-2">
+            <code className="text-xs font-mono text-white/35 truncate">
               <span className="text-white/15 select-none">$ </span>
               {plugin.installCommand}
             </code>

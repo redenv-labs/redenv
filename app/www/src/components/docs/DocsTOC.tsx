@@ -21,13 +21,11 @@ export function DocsTOC({ toc }: DocsTOCProps) {
 
     if (headings.length === 0) return;
 
-    // At the bottom of the page, activate the last heading
     if (window.innerHeight + scrollY >= document.documentElement.scrollHeight - 10) {
       setActiveId(headings[headings.length - 1].id);
       return;
     }
 
-    // Find the last heading that has scrolled past the offset
     let activeHeading = headings[0].id;
     for (const heading of headings) {
       if (heading.top - offset <= scrollY) {
@@ -93,7 +91,7 @@ export function DocsTOC({ toc }: DocsTOCProps) {
           <ul className="space-y-1">
             {toc.map((item: any) => {
               const isActive = activeId === item.url.slice(1);
-              const depth = item.depth - 2; // h2 = 0, h3 = 1, etc.
+              const depth = item.depth - 2;
 
               return (
                 <li key={item.url} className="relative">

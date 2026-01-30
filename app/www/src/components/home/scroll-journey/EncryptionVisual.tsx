@@ -15,8 +15,7 @@ export const EncryptionVisual = ({ progress }: { progress: number }) => {
 
     const chars =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-    // Slower scrambling - use eased progress
-    const easedProgress = stepProgress * stepProgress; // Quadratic easing
+    const easedProgress = stepProgress * stepProgress;
     const scrambleCount = Math.floor(easedProgress * SECRET_VALUE.length);
 
     let result = "";
@@ -30,9 +29,8 @@ export const EncryptionVisual = ({ progress }: { progress: number }) => {
     setScrambled(result + (stepProgress > 0.8 ? "..." : ""));
   }, [stepProgress]);
 
-  // Slower animations
-  const lockScale = 0.9 + stepProgress * 0.2; // Subtler scale (0.9 to 1.1)
-  const lockRotation = stepProgress * 180; // Half rotation instead of full
+  const lockScale = 0.9 + stepProgress * 0.2;
+  const lockRotation = stepProgress * 180;
 
   return (
     <div className="w-full max-w-md flex flex-col items-center gap-6">
@@ -57,7 +55,6 @@ export const EncryptionVisual = ({ progress }: { progress: number }) => {
 
         {/* Orbiting particles */}
         {[...Array(6)].map((_, i) => {
-          // Slower orbit - reduced from 4π to 2π
           const angle = (i / 6) * Math.PI * 2 + stepProgress * Math.PI * 2;
           const x = Math.cos(angle) * 40;
           const y = Math.sin(angle) * 40;

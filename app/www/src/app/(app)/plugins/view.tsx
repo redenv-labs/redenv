@@ -2,14 +2,14 @@
 
 import { useRef, useState, type MouseEvent } from "react";
 import { useMotionValue, useInView, animate } from "framer-motion";
-import { PluginsHero } from "./PluginsHero";
-import { FeaturedPlugin } from "./FeaturedPlugin";
-import { CategoryFilter } from "./CategoryFilter";
-import { PluginGrid } from "./PluginGrid";
+import { PluginsHero } from "@/components/plugins/PluginsHero";
+import { FeaturedPlugin } from "@/components/plugins/FeaturedPlugin";
+import { CategoryFilter } from "@/components/plugins/CategoryFilter";
+import { PluginGrid } from "@/components/plugins/PluginGrid";
 import { Footer } from "@/components/Footer";
-import type { Plugin } from "@/data/plugins";
+import type { Plugin } from "@/types/plugins";
 
-export function PluginsClient({ plugins }: { plugins: Plugin[] }) {
+export function PluginsView({ plugins }: { plugins: Plugin[] }) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-80px" });
 
@@ -34,7 +34,7 @@ export function PluginsClient({ plugins }: { plugins: Plugin[] }) {
   }
 
   const featuredPlugin = plugins.find((p) => p.featured);
-  const regularPlugins = plugins.filter((p) => !p.featured);
+  const regularPlugins = plugins;
 
   return (
     <main className="relative min-h-screen">
@@ -47,7 +47,7 @@ export function PluginsClient({ plugins }: { plugins: Plugin[] }) {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        {featuredPlugin && !searchQuery && activeCategory === "all" && (
+        {featuredPlugin && !searchQuery && (
           <FeaturedPlugin
             plugin={featuredPlugin}
             mouseX={mouseX}

@@ -89,7 +89,7 @@ export function Navbar() {
               </Link>
             </div>
 
-            {/* Right Side: Nav + Actions */}
+            {/* Right Side */}
             <div className="flex items-center gap-6">
               {/* Desktop Nav Links */}
               <nav className="hidden md:flex items-center gap-6 text-sm font-medium">

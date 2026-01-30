@@ -36,7 +36,6 @@ export const SpotlightCard = ({
   const localX = useMotionValue(0);
   const localY = useMotionValue(0);
 
-  // 3D tilt effect
   const rotateX = useSpring(0, { stiffness: 200, damping: 20 });
   const rotateY = useSpring(0, { stiffness: 200, damping: 20 });
 
@@ -48,7 +47,6 @@ export const SpotlightCard = ({
     localX.set(x);
     localY.set(y);
 
-    // Calculate tilt (subtle)
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
     rotateY.set(((x - centerX) / centerX) * 3);

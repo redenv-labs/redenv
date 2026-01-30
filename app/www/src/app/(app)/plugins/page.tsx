@@ -1,5 +1,5 @@
 import { getPlugins } from "@/lib/plugins";
-import { PluginsClient } from "@/components/plugins/PluginsClient";
+import { PluginsView } from "./view";
 import type { Metadata } from "next";
 
 export const revalidate = 3600;
@@ -12,5 +12,5 @@ export const metadata: Metadata = {
 
 export default async function PluginsPage() {
   const plugins = await getPlugins();
-  return <PluginsClient plugins={plugins} />;
+  return <PluginsView plugins={plugins} />;
 }

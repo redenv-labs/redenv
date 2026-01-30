@@ -4,7 +4,7 @@ import { MotionValue } from "framer-motion";
 import { SpotlightCard } from "@/components/home/feature-grid/SpotlightCard";
 import { CopyButton } from "@/components/CopyButton";
 import { PluginBadge } from "./PluginBadge";
-import type { Plugin } from "@/data/plugins";
+import type { Plugin } from "@/types/plugins";
 import { ExternalLink } from "lucide-react";
 import { Link } from "@/components/Link";
 
@@ -23,7 +23,7 @@ export function FeaturedPlugin({
 }) {
   return (
     <div className="relative mb-16">
-      {/* Oversized ambient glow */}
+      {/* glow */}
       <div className="absolute -inset-20 bg-primary/6 rounded-full blur-[140px] pointer-events-none" />
 
       <SpotlightCard
@@ -34,7 +34,7 @@ export function FeaturedPlugin({
         index={0}
         isInView={isInView}
       >
-        <div className="relative p-8 md:p-10 flex flex-col md:flex-row gap-8 md:gap-12 items-start">
+        <div className="relative p-6 sm:p-8 md:p-10 flex flex-col md:flex-row gap-8 md:gap-12 items-start">
           {/* Left content */}
           <div className="flex-1 min-w-0">
             {/* Featured badge */}

@@ -7,7 +7,7 @@ import { UsageVisual } from "./UsageVisual";
 export const JourneyVisual = ({ progress }: { progress: number }) => {
   return (
     <div className="relative w-full max-w-lg mx-auto flex items-center justify-center min-h-80">
-      {/* Step 1: Terminal */}
+      {/* Step 1 */}
       <div
         className="absolute inset-0 flex items-center justify-center transition-opacity duration-500"
         style={{
@@ -18,7 +18,7 @@ export const JourneyVisual = ({ progress }: { progress: number }) => {
         <TerminalVisual progress={progress} />
       </div>
 
-      {/* Step 2: Encryption */}
+      {/* Step 2 */}
       <div
         className="absolute inset-0 flex items-center justify-center transition-opacity duration-500"
         style={{
@@ -29,7 +29,7 @@ export const JourneyVisual = ({ progress }: { progress: number }) => {
         <EncryptionVisual progress={progress} />
       </div>
 
-      {/* Step 3: Storage */}
+      {/* Step 3 */}
       <div
         className="absolute inset-0 flex items-center justify-center transition-opacity duration-500"
         style={{
@@ -40,7 +40,7 @@ export const JourneyVisual = ({ progress }: { progress: number }) => {
         <StorageVisual progress={progress} />
       </div>
 
-      {/* Step 4: Global */}
+      {/* Step 4 */}
       <div
         className="absolute inset-0 flex items-center justify-center transition-opacity duration-500"
         style={{
@@ -51,7 +51,7 @@ export const JourneyVisual = ({ progress }: { progress: number }) => {
         <GlobalVisual progress={progress} />
       </div>
 
-      {/* Step 5: Usage */}
+      {/* Step 5 */}
       <div
         className="absolute inset-0 flex items-center justify-center transition-opacity duration-500"
         style={{

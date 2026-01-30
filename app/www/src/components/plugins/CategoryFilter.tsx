@@ -1,11 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  categoryLabels,
-  type Plugin,
-  type PluginCategory,
-} from "@/data/plugins";
+import { type Plugin } from "@/types/plugins";
 
 export function CategoryFilter({
   activeCategory,
@@ -16,19 +12,23 @@ export function CategoryFilter({
   onCategoryChange: (category: string) => void;
   plugins: Plugin[];
 }) {
-  const categories = Object.keys(categoryLabels) as PluginCategory[];
+  const categories = plugins.map((p) => p.category);
 
   const counts: Record<string, number> = { all: plugins.length };
   for (const p of plugins) {
     counts[p.category] = (counts[p.category] || 0) + 1;
   }
 
-  const allCategories = [
-    ...categories
-      .filter((c) => counts[c])
-      .map((c) => ({ key: c, label: categoryLabels[c] })),
-  ] as { key: string; label: string }[];
-
+  const allCategories = categories
+    .filter((c) => counts[c] !== undefined)
+    .map((c) => ({
+      key: c
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, ""),
+      label: c,
+    }));
+    
   if (counts.all > 0) {
     allCategories.unshift({ key: "all", label: "All" });
   }

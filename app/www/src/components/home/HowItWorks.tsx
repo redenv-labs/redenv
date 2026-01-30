@@ -91,7 +91,7 @@ export function HowItWorks() {
 
         {/* Steps */}
         <div className="relative">
-          {/* Connection line (desktop) */}
+          {/* Connection line */}
           <div className="hidden lg:block absolute top-24 left-0 right-0 h-px">
             <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent" />
           </div>

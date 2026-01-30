@@ -1,4 +1,4 @@
-import type { Plugin, PluginCategory, PluginStatus } from "@/data/plugins";
+import type { Plugin, PluginStatus } from "@/types/plugins";
 import registry from "~/public/plugins.registry.json";
 
 /**
@@ -11,8 +11,8 @@ export interface RegistryEntry {
   official?: boolean;
   /** Whether to feature this plugin at the top of the page */
   featured?: boolean;
-  /** Category override (takes precedence over author's registry.json) */
-  category?: PluginCategory;
+  /** Category override */
+  category?: string;
 }
 
 /**
@@ -25,27 +25,15 @@ interface PluginRegistryJSON {
   description: string;
   version: string;
   author: string;
-  category: PluginCategory;
+  category: string;
   status?: PluginStatus;
   installCommand: string;
   repository?: string;
   docs?: string;
 }
 
-const VALID_CATEGORIES = new Set<PluginCategory>([
-  "dashboard",
-  "ci-cd",
-  "security",
-  "developer-tools",
-  "monitoring",
-]);
-
 const VALID_STATUSES = new Set<PluginStatus>(["stable", "beta", "new"]);
 
-/**
- * Validates and narrows an unknown value to PluginRegistryJSON.
- * Returns null if validation fails.
- */
 function validateRegistryJSON(data: unknown): PluginRegistryJSON | null {
   if (!data || typeof data !== "object") return null;
 
@@ -58,7 +46,8 @@ function validateRegistryJSON(data: unknown): PluginRegistryJSON | null {
   if (typeof d.installCommand !== "string" || !d.installCommand) return null;
   if (
     typeof d.category !== "string" ||
-    !VALID_CATEGORIES.has(d.category as PluginCategory)
+    !d.category.trim() ||
+    d.category.toLowerCase().includes("official")
   )
     return null;
 
@@ -68,7 +57,7 @@ function validateRegistryJSON(data: unknown): PluginRegistryJSON | null {
     description: d.description,
     version: d.version,
     author: d.author,
-    category: d.category as PluginCategory,
+    category: d.category,
     status:
       typeof d.status === "string" &&
       VALID_STATUSES.has(d.status as PluginStatus)
@@ -80,16 +69,12 @@ function validateRegistryJSON(data: unknown): PluginRegistryJSON | null {
   };
 }
 
-/**
- * Fetches a single plugin's registry.json from the author's URL.
- * Returns null on any failure (network, parse, validation).
- */
 async function fetchPluginRegistry(
   entry: RegistryEntry,
 ): Promise<Plugin | null> {
   try {
     const res = await fetch(entry.url, {
-      next: { revalidate: 3600 }, // 1 hour ISR
+      next: { revalidate: 3600 }, // 1 hour
     });
 
     if (!res.ok) return null;
@@ -97,10 +82,6 @@ async function fetchPluginRegistry(
     const raw = await res.json();
     const data = validateRegistryJSON(raw);
     if (!data) return null;
-
-    if (data.category.toLowerCase().includes("official")) {
-      return null;
-    }
 
     return {
       id: data.name,
@@ -122,10 +103,6 @@ async function fetchPluginRegistry(
   }
 }
 
-/**
- * Reads the central registry index and fetches all plugin registries in parallel.
- * Gracefully skips any that fail.
- */
 export async function getPlugins(): Promise<Plugin[]> {
   const entries = registry as RegistryEntry[];
 
