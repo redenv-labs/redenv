@@ -54,7 +54,7 @@ export function PluginsHero({
         className="relative max-w-4xl mx-auto text-center"
       >
         <motion.div variants={item}>
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/3 text-xs font-medium text-white/50 mb-8">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-muted-foreground/10 bg-white/3 text-xs font-medium text-muted-foreground/70 mb-8">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             Ecosystem
           </span>
@@ -62,7 +62,7 @@ export function PluginsHero({
 
         <motion.h1
           variants={item}
-          className="text-5xl md:text-6xl lg:text-7xl font-black tracking-[-0.03em] text-white mb-6"
+          className="text-5xl md:text-6xl lg:text-7xl font-black tracking-[-0.03em] text-foreground mb-6"
         >
           Extend{" "}
           <span className="text-transparent bg-clip-text bg-linear-to-r from-primary via-red-400 to-orange-400">
@@ -72,7 +72,7 @@ export function PluginsHero({
 
         <motion.p
           variants={item}
-          className="text-lg md:text-xl text-white/35 max-w-2xl mx-auto mb-12 leading-relaxed"
+          className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 leading-relaxed"
         >
           Plugins that integrate with your workflow, from CI/CD pipelines to
           visual dashboards and secret rotation.
@@ -87,7 +87,7 @@ export function PluginsHero({
           onMouseLeave={() => setIsHovered(false)}
           onMouseMove={handleMouseMove}
         >
-          <div className="group relative flex items-center gap-3 w-full rounded-2xl px-5 py-4 text-sm overflow-hidden">
+          <div className="group relative flex items-center gap-3 w-full rounded-2xl px-4 py-4 text-sm overflow-hidden">
             {/* Animated gradient border */}
             <div className="absolute inset-0 rounded-2xl p-px overflow-hidden">
               <div
@@ -106,9 +106,10 @@ export function PluginsHero({
                   animation: "spin 4s linear infinite",
                 }}
               />
-              <div className="absolute inset-px rounded-2xl bg-neutral-950/95 backdrop-blur-xl" />
+              <div className="absolute inset-px rounded-2xl bg-secondary/95 backdrop-blur-xl" />
             </div>
 
+            {/* Radial gradient */}
             <div
               className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
               style={{
@@ -119,10 +120,10 @@ export function PluginsHero({
             />
 
             {/* Glass surface */}
-            <div className="absolute inset-px rounded-2xl bg-linear-to-b from-white/4 to-transparent pointer-events-none" />
+            <div className="absolute inset-px rounded-2xl bg-linear-to-b from-muted-foreground/10 to-transparent pointer-events-none" />
 
             {/* Static border */}
-            <div className="absolute inset-0 rounded-2xl border border-white/6 group-hover:border-white/10 transition-colors duration-300 pointer-events-none" />
+            <div className="absolute inset-0 rounded-2xl border-border/50 transition-colors duration-300 pointer-events-none" />
 
             <motion.div
               className="absolute inset-0 pointer-events-none"
@@ -150,7 +151,7 @@ export function PluginsHero({
               <div className="relative">
                 <Search
                   size={18}
-                  className="text-white/30 group-hover:text-white/50 transition-colors duration-300"
+                  className="text-muted-foreground group-hover:text-primary transition-colors duration-300"
                 />
               </div>
 
@@ -162,7 +163,7 @@ export function PluginsHero({
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder="Search plugins..."
-                className="flex-1 bg-transparent text-white placeholder:text-white/25 outline-none tracking-wide"
+                className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground outline-none tracking-wide"
               />
 
               {searchQuery && (
