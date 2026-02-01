@@ -1,0 +1,283 @@
+---
+title: Quickstart
+description: Get up and running with Redenv in under 5 minutes. Learn how to create your first project, add secrets, and use them in your application.
+---
+
+Get up and running with Redenv in under 5 minutes. This guide will walk you through creating your first project, adding secrets, and using them in an application.
+
+## Prerequisites
+
+- [Redenv CLI installed](/docs/installation)
+- An [Upstash Redis](https://console.upstash.com) instance (free tier works!)
+
+## Connect to Upstash
+
+If you haven't already, configure the CLI with your Upstash credentials:
+
+```bash
+redenv setup
+```
+
+**What you'll need:**
+
+- **REST URL**: `https://your-db.upstash.io`
+- **REST Token**: Your authentication token
+
+Both are available in your Upstash Console under your Redis database.
+
+<Callout type="warn">
+  These credentials are stored securely in your system keychain, not in
+  plaintext files.
+</Callout>
+
+## Register a Project
+
+Navigate to your project directory and register it with Redenv:
+
+```bash
+cd /path/to/your/project
+redenv register my-awesome-app
+```
+
+**You'll be prompted to:**
+
+1. **Create a Master Password**: This is the **only key** to your secrets. Choose a strong password and store it securely (password manager recommended).
+2. **Confirm the password**: Type it again to confirm.
+
+<Callout type="error">
+  **CRITICAL**: Your Master Password is **never stored or transmitted**. If you
+  lose it, your secrets cannot be recovered. Consider using `redenv backup` for
+  disaster recovery.
+</Callout>
+
+**What just happened?**
+
+- A project named `my-awesome-app` was created in your Redis database
+- A Project Encryption Key (PEK) was generated and encrypted with your Master Password
+- A `.redenv` file was created in your project directory
+
+```ts title="redenv.config.ts"
+import { defineConfig } from "@redenv/core";
+
+export default defineConfig({
+  environment: "development",
+  name: "my-awesome-app",
+});
+```
+
+<Callout type="info">
+  The **redenv.config.ts** file is safe to commit to git - it contains no
+  sensitive information.
+</Callout>
+
+## Add Your First Secret
+
+Add an environment variable to your project:
+
+```bash
+redenv add API_KEY "sk_test_abc123xyz"
+```
+
+**The secret is now:**
+
+- <span className="text-green-500">✔</span> Encrypted with AES-256-GCM
+- <span className="text-green-500">✔</span> Stored in Upstash Redis
+- <span className="text-green-500">✔</span> Versioned (version 1)
+- <span className="text-green-500">✔</span> Associated with user and timestamp
+
+Add more secrets:
+
+```bash
+redenv add DATABASE_URL "postgresql://user:pass@localhost:5432/db"
+redenv add DEBUG "true"
+redenv add PORT "3000"
+```
+
+## View Your Secrets
+
+List all secrets in the current environment:
+
+```bash
+redenv list
+```
+
+Output:
+
+```bash
+📦 Variables for redenv (development):
+
+BING_WEBMASTER_API_KEY
+└─ value
+
+CLOUDINARY_API_KEY
+└─ value
+
+CLOUDINARY_API_SECRET
+└─ value
+
+CLOUDINARY_NAME
+└─ value
+```
+
+View a specific secret:
+
+```bash
+redenv view API_KEY
+```
+
+Output:
+
+```
+sk_test_abc123xyz
+```
+
+## Use Secrets in Your Application
+
+Now integrate Redenv into your application for dynamic, runtime secret access.
+
+<Tabs items={['JavaScript/TypeScript', 'Python']}>
+  <Tab value="JavaScript/TypeScript">
+    ### JavaScript/TypeScript (Node.js, Next.js, etc.)
+
+    **1. Install the client:**
+
+    ```npm
+    npm install @redenv/client
+    npm install -D @redenv/core
+    ```
+
+    **2. Create a Service Token:**
+
+    Your application needs a Service Token to access secrets (not your Master Password):
+
+    ```bash
+    redenv token create --name "nextjs-app"
+    ```
+
+    Output:
+    ```bash
+    Project Name:      pras
+    Public Token ID:   stk_w7tOXWS0wADU8eZM
+    Secret Token Key:  redenv_sk_/dq5etL+cUZilX0xi8vPa46wdl+K96ta
+    ```
+
+    **3. Set environment variables:**
+
+    Add these to your deployment environment (Vercel, Netlify, etc.):
+
+    ```bash
+    REDENV_TOKEN_ID=tok_abc123
+    REDENV_TOKEN_KEY=redenv_sk_xyz789...
+    UPSTASH_REDIS_URL=https://your-db.upstash.io
+    UPSTASH_REDIS_TOKEN=your-token
+    ```
+
+    **4. Create a Redenv client:**
+
+    ```typescript title="lib/redenv.ts"
+    import { Redenv } from "@redenv/client";
+
+    export const redenv = new Redenv({
+      project: "my-awesome-app",
+      environment: "development", // or "production"
+      tokenId: process.env.REDENV_TOKEN_ID!,
+      token: process.env.REDENV_TOKEN_KEY!,
+      upstash: {
+        url: process.env.UPSTASH_REDIS_URL!,
+        token: process.env.UPSTASH_REDIS_TOKEN!
+      }
+    });
+
+    await redenv.init(); // optional: pre-fetches secrets into process.env at startup
+    ```
+
+    **5. Load secrets in your app:**
+
+    ```typescript title="app/api/route.ts"
+    import { redenv } from "@/lib/redenv";
+
+    export async function GET() {
+      const secrets = await redenv.load();
+
+      // Secrets are now available
+      const apiKey = secrets.get("API_KEY");
+      const dbUrl = secrets.get("DATABASE_URL");
+
+      // Also auto-populated in process.env
+      console.log(process.env.API_KEY); // Same value
+
+      return Response.json({ status: "ok" });
+    }
+    ```
+
+    <Callout type="info">
+    **Caching is built-in:**
+    - First call: Fetches from Redis
+    - Subsequent calls: Served from LRU cache (default: 5min TTL, 24h stale-while-revalidate)
+    - Secrets update in background without blocking requests
+    </Callout>
+
+  </Tab>
+  
+  <Tab value="Python">
+    ### Python (FastAPI, Flask, Django, Scripts)
+
+    **1. Install the client:**
+
+    ```bash
+    pip install redenv
+    ```
+
+    **2. Create a Service Token** (same as above):
+
+    ```bash
+    redenv token create --name "python-app"
+    ```
+
+    **3. Use in your app:**
+
+    **Async (FastAPI, modern apps):**
+
+    ```python
+    import os
+    from redenv import Redenv
+
+    async def startup():
+        client = Redenv({
+            "project": "my-awesome-app",
+            "environment": "development",
+            "token_id": os.getenv("REDENV_TOKEN_ID"),
+            "token": os.getenv("REDENV_TOKEN_KEY"),
+            "upstash": {
+                "url": os.getenv("UPSTASH_REDIS_URL"),
+                "token": os.getenv("UPSTASH_REDIS_TOKEN")
+            }
+        })
+
+        # Load secrets (populates os.environ)
+        secrets = await client.load()
+
+        # Access secrets
+        api_key = secrets.get("API_KEY")
+        db_url = secrets.get("DATABASE_URL")
+    ```
+
+    **Sync (Flask, scripts):**
+
+    ```python
+    from redenv import RedenvSync
+
+    client = RedenvSync({ ... })
+    secrets = client.load()
+
+    print(secrets.get("API_KEY"))
+    ```
+
+  </Tab>
+</Tabs>
+
+## Need Help?
+
+- **Stuck?** Check [Troubleshooting](/docs/cli/overview#troubleshooting)
+- **Questions?** [Open an issue](https://github.com/redenv-labs/redenv/issues)
+- **Security concerns?** Read [Security Model](/docs/concepts/encryption)

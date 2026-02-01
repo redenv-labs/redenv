@@ -1,0 +1,280 @@
+---
+title: CLI Overview
+description: Learn about the Redenv CLI, its features, installation, and basic usage patterns.
+---
+
+The Redenv CLI is a powerful command-line tool for managing encrypted secrets across environments. It provides 24+ commands covering the complete secret management lifecycle.
+
+## Features
+
+- 🔐 **Zero-Knowledge Encryption**: AES-256-GCM with PBKDF2 key derivation
+- 📦 **Project Management**: Multiple projects with isolated vaults
+- 🌍 **Multi-Environment**: Separate dev, staging, production configs
+- 📜 **Version History**: Complete audit trail with instant rollbacks
+- 🔑 **Service Tokens**: Secure application access without Master Password
+- 🔄 **Import/Export**: Migrate from `.env` files seamlessly
+- 🎭 **Secret Expansion**: Reference other secrets with `${VAR}` syntax
+- 🔌 **Plugin System**: Extend with custom commands (e.g., [@redenv/studio](https://github.com/redenv-labs/redenv-studio-plugin))
+
+## Installation
+
+See the [Installation Guide](/docs/installation) for detailed instructions.
+
+**Quick install:**
+
+<Tabs items={["bun", "npm", "pnpm", "yarn"]}>
+  <Tab value="bun">```bash bun add -g @redenv/cli ```</Tab>
+  <Tab value="npm">```bash npm install -g @redenv/cli ```</Tab>
+  <Tab value="pnpm">```bash pnpm add -g @redenv/cli ```</Tab>
+  <Tab value="yarn">```bash yarn global add @redenv/cli ```</Tab>
+</Tabs>
+
+## First-Time Setup
+
+Connect the CLI to your Upstash Redis instance:
+
+```bash
+redenv setup
+```
+
+This prompts for:
+
+- **Upstash Redis REST URL**
+- **Upstash Redis Token**
+
+Credentials are stored securely in your system keychain.
+
+## Command Categories
+
+The CLI provides commands in several categories:
+
+### Core Secret Management
+
+- `add` - Add or update a secret
+- `edit` - Edit a secret interactively
+- `view` - View a secret's value
+- `list` - List all secrets in current environment
+- `remove` - Delete a secret
+
+### Project & Environment
+
+- `register` - Create a new project
+- `drop` - Delete a project completely
+- `switch` - Change active project or environment
+- `setup` - Configure Upstash credentials
+
+### Advanced Operations
+
+- `import` - Import secrets from `.env` file
+- `export` - Export secrets to `.env` format
+- `clone` - Copy secrets between environments
+- `diff` - Compare two environments
+- `sync` - Add a secret to multiple environments
+
+### History & Versioning
+
+- `history view` - See all versions of a secret
+- `history limit` - Set version retention limit
+- `rollback` - Restore a previous version
+
+### Security & Access
+
+- `token create` - Generate a Service Token
+- `token list` - View all Service Tokens
+- `token revoke` - Invalidate a token
+- `change-password` - Update Master Password
+- `logout` - Clear cached credentials
+
+### Backup & Maintenance
+
+- `backup` - Export encrypted project metadata
+- `restore` - Import project metadata from backup
+- `doctor` - Diagnose configuration issues
+
+### Execution
+
+- `shell` - Run a command with secrets injected as environment variables
+
+## Common Workflows
+
+### Creating a New Project
+
+```bash
+# Register the project
+redenv register my-app
+
+# Add secrets
+redenv add API_KEY "sk_test_123"
+redenv add DATABASE_URL "postgresql://localhost/myapp_dev"
+
+# List to verify
+redenv list
+```
+
+### Working with Multiple Environments
+
+```bash
+# Start in development (default)
+redenv add API_KEY "sk_test_123"
+
+# Switch to production
+redenv switch env production
+redenv add API_KEY "sk_live_xyz"
+
+# Compare environments
+redenv diff development production
+
+# Clone dev to staging
+redenv clone development staging
+```
+
+### Migrating from `.env`
+
+```bash
+# Register project
+redenv register my-app
+
+# Import existing .env file
+redenv import .env
+
+# Verify
+redenv list
+```
+
+### Creating Application Access
+
+```bash
+# Create a read-only token for production app
+redenv token create app-production --read-only
+
+# Output includes Token ID and Secret Key
+# Store these in your deployment environment
+```
+
+### Running Commands with Secrets
+
+```bash
+# Run a script with secrets as environment variables
+redenv shell -- npm run dev
+
+# Or a single command
+redenv shell -- node script.js
+```
+
+## Global Options
+
+Most commands support these global flags:
+
+- `--help`, `-h` - Show help for a command
+- `--version`, `-v` - Show CLI version
+
+## Configuration File
+
+Create a `redenv.config.ts` in your project root for advanced configuration:
+
+```typescript
+import { defineConfig } from "@redenv/core";
+
+export default defineConfig({
+  name: "my-app",
+  environment: "development",
+  // Optional: Add plugins
+  plugins: [],
+});
+```
+
+The CLI will read this file and use it as defaults.
+
+## Environment Discovery
+
+The CLI looks for configuration in this order:
+
+1. `.redenv` file in current directory
+2. `.redenv` file in parent directories (walks up)
+3. `redenv.config.ts` file
+4. Global config from `redenv setup`
+
+## Password Management
+
+Your Master Password is required for most operations. The CLI caches it securely in your system keychain during a session.
+
+**Logout to clear:**
+
+```bash
+redenv logout
+```
+
+This removes the cached password and tokens from the keychain.
+
+## Troubleshooting
+
+### CLI not found
+
+Ensure your global bin directory is in PATH:
+
+```bash
+# For npm
+npm config get prefix
+
+# Then add to PATH
+export PATH="$(npm config get prefix)/bin:$PATH"
+```
+
+### Permission denied
+
+On macOS/Linux, avoid using `sudo`. Fix npm permissions instead:
+
+```bash
+mkdir ~/.npm-global
+npm config set prefix '~/.npm-global'
+echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+```
+
+### Keychain errors
+
+If the CLI can't access your keychain:
+
+- **macOS**: Grant access when prompted
+- **Linux**: Install `gnome-keyring` or `libsecret`:
+  ```bash
+  # Ubuntu/Debian
+  sudo apt install gnome-keyring libsecret-1-0
+  ```
+- **Windows (WSL)**: Keychain may not be available; credentials stored in fallback location
+
+### "Project not found"
+
+Make sure you're in the correct directory or have a `.redenv` file:
+
+```bash
+# Check current project
+cat .redenv
+
+# Or explicitly specify
+redenv switch project my-app
+```
+
+### "Config not found"
+
+Run `redenv setup` first to configure Upstash credentials.
+
+## Performance
+
+The CLI is optimized for speed:
+
+- **Startup**: &lt;50ms (cold start)
+- **Most commands**: &lt;200ms
+- **Large projects** (1000+ secrets): &lt;500ms
+
+Encryption/decryption uses native crypto APIs for maximum performance.
+
+## Shell Completion
+
+Completion scripts are not yet available, but planned for a future release.
+
+## Next Steps
+
+- [Commands Reference](/docs/cli/commands) - Complete command documentation
+- [Quickstart](/docs/quickstart) - Step-by-step tutorial
+- [Core Concepts](/docs/concepts/encryption) - Understand how Redenv works

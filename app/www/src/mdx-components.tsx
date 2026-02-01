@@ -16,7 +16,9 @@ import {
 } from "@/components/mdx/CodeBlock";
 import { ComponentProps } from "react";
 import { cn } from "./lib/utils";
-import * as Twoslash from 'fumadocs-twoslash/ui';
+import * as Twoslash from "fumadocs-twoslash/ui";
+import { ImageZoom } from "fumadocs-ui/components/image-zoom";
+import Image from "next/image";
 
 // =============================================================================
 // TYPOGRAPHY
@@ -268,23 +270,6 @@ const HorizontalRule = (props: React.HTMLAttributes<HTMLHRElement>) => (
   <hr className="my-10 border-border/30" {...props} />
 );
 
-const Image = ({
-  src,
-  alt,
-  ...props
-}: React.ImgHTMLAttributes<HTMLImageElement>) => (
-  <figure className="my-8">
-    <div className="overflow-hidden rounded-xl border border-border/50">
-      <img src={src} alt={alt} className="w-full" {...props} />
-    </div>
-    {alt && (
-      <figcaption className="mt-3 text-center text-sm text-muted-foreground/60">
-        {alt}
-      </figcaption>
-    )}
-  </figure>
-);
-
 // =============================================================================
 // EXPORT
 // =============================================================================
@@ -293,7 +278,7 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
   return {
     ...defaultMdxComponents,
     ...Twoslash,
-    
+
     // Typography
     h1: H1,
     h2: H2,
@@ -325,7 +310,14 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
 
     // Other
     hr: HorizontalRule,
-    img: Image,
+    img: ({
+      className,
+      ...props
+    }: React.ImgHTMLAttributes<HTMLImageElement>) => (
+      <ImageZoom className={cn(className, "rounded-xl")} {...(props as any)} />
+    ),
+    
+    Image,
 
     Callout,
     Card,
@@ -344,7 +336,6 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
       <Tab className={cn(className, "bg-background/40")} {...props} />
     ),
 
-    // Spread any additional components
     ...components,
   };
 }

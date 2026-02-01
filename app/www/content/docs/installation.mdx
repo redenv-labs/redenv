@@ -1,0 +1,59 @@
+---
+title: Installation
+description: Install the Redenv CLI to start managing encrypted secrets from your terminal.
+---
+
+## CLI
+
+Install the Redenv CLI globally using your preferred package manager:
+
+```bash tab="bun"
+bun add -g @redenv/cli
+```
+
+```bash tab="npm"
+npm install -g @redenv/cli
+```
+
+```bash tab="pnpm"
+pnpm add -g @redenv/cli
+```
+
+```bash tab="yarn"
+yarn global add @redenv/cli
+```
+
+Verify the installation:
+
+```bash
+redenv --version
+```
+
+<Callout type="info">
+  Requires **Node.js 16+** and an [Upstash Redis](https://console.upstash.com) instance (free tier works).
+</Callout>
+
+## Runtime SDKs
+
+SDKs let your application fetch secrets at runtime. Install the one for your language:
+
+```bash tab="JavaScript / TypeScript"
+bun install @redenv/client
+bun install -D @redenv/core
+```
+
+```bash tab="Python"
+pip install redenv
+```
+
+The `@redenv/core` dev dependency is required for config files and plugins. SDKs are optional — the CLI works standalone for injecting secrets via `redenv run`. See the [JavaScript SDK](/docs/sdk/javascript) or [Python SDK](/docs/sdk/python) docs for usage.
+
+## Troubleshooting
+
+### Keychain access errors
+
+On first run, Redenv stores your Upstash credentials in the system keychain.
+
+- **macOS** — Grant keychain access when prompted
+- **Linux** — Install `gnome-keyring` or `libsecret`
+- **Windows (WSL)** — May need manual credential storage

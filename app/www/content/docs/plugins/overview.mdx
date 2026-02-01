@@ -1,0 +1,190 @@
+---
+title: Plugins Overview
+description: Learn how Redenv's plugin system works and how to extend the CLI with custom commands.
+---
+
+Redenv features an extensible plugin system that allows you to add custom commands to the CLI.
+
+## What are Plugins?
+
+Plugins are npm packages that extend the Redenv CLI with additional commands. They integrate seamlessly with the core CLI and have access to the same project configuration and Redis connection.
+
+## Official Plugins
+
+### Studio Plugin
+
+The official visual dashboard for managing secrets.
+
+**Package:** `@redenv/studio`
+
+**Installation:**
+
+```bash
+npm install -D @redenv/studio
+```
+
+**Configuration:**
+
+```typescript
+// redenv.config.ts
+import { defineConfig } from "@redenv/core";
+import { studioPlugin } from "@redenv/studio";
+
+export default defineConfig({
+  name: "my-app",
+  plugins: [studioPlugin],
+});
+```
+
+**Usage:**
+
+```bash
+redenv studio
+```
+
+**Features:**
+
+- Visual secret management
+- Environment switching
+- Token management
+- Version history viewer
+- Runs locally (no data sent to external servers)
+
+[Learn more](/docs/plugins/studio)
+
+## Creating Custom Plugins
+
+Plugins are TypeScript/JavaScript modules that export a `RedenvPlugin` object.
+
+### Plugin Structure
+
+```typescript
+import type { RedenvPlugin } from "@redenv/core";
+
+export const myPlugin: RedenvPlugin = {
+  name: "my-plugin",
+  version: "1.0.0",
+  commands: [
+    {
+      name: "my-command",
+      description: "Custom command description",
+      action: async (args, options, context) => {
+        // Your command logic
+        console.log("Running custom command!");
+      },
+    },
+  ],
+};
+```
+
+### Plugin Context
+
+Each command receives a `context` object with:
+
+| Property              | Type            | Description                      |
+| --------------------- | --------------- | -------------------------------- |
+| `config`              | `ProjectConfig` | Current project configuration    |
+| `redis`               | `Redis`         | Upstash Redis client instance    |
+| `cwd`                 | `string`        | Current working directory        |
+| `redisUrl`            | `string`        | Redis REST URL                   |
+| `redisToken`          | `string`        | Redis authentication token       |
+| `getEphemeralToken()` | `Function`      | Generate temporary Service Token |
+
+### Command Arguments
+
+```typescript
+{
+  name: "deploy",
+  description: "Deploy secrets to environment",
+  args: [
+    {
+      name: "environment",
+      description: "Target environment",
+      required: true
+    }
+  ],
+  flags: [
+    {
+      name: "force",
+      short: "f",
+      description: "Force deployment",
+      defaultValue: false
+    }
+  ],
+  action: async (args, options, context) => {
+    const env = args.environment;    // From args
+    const force = options.force;     // From flags
+
+    // Your logic
+  }
+}
+```
+
+### Using the Context
+
+```typescript
+action: async (args, options, context) => {
+  // Access Redis
+  const data = await context.redis.get("some-key");
+
+  // Access project config
+  console.log(`Project: ${context.config.name}`);
+
+  // Generate ephemeral token
+  const token = await context.getEphemeralToken();
+  console.log(`Token: ${token.tokenId}`);
+};
+```
+
+## Publishing Plugins
+
+### Package Structure
+
+```
+my-redenv-plugin/
+├── package.json
+├── src/
+│   └── index.ts
+└── README.md
+```
+
+### package.json
+
+```json
+{
+  "name": "@yourname/redenv-my-plugin",
+  "version": "1.0.0",
+  "keywords": ["redenv", "plugin"],
+  "peerDependencies": {
+    "@redenv/core": "^1.0.0"
+  }
+}
+```
+
+### Publishing
+
+```bash
+npm publish
+```
+
+## Installing Third-Party Plugins
+
+```bash
+npm install -D @yourname/redenv-my-plugin
+```
+
+```typescript
+// redenv.config.ts
+import { defineConfig } from "@redenv/core";
+import { myPlugin } from "@yourname/redenv-my-plugin";
+
+export default defineConfig({
+  name: "my-app",
+  plugins: [myPlugin],
+});
+```
+
+## Next Steps
+
+- [Studio Plugin](/docs/plugins/studio) - Official visual dashboard
+- [Core API](/docs/concepts/encryption) - Understanding Redenv internals

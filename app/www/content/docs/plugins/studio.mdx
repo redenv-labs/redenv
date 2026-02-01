@@ -1,0 +1,168 @@
+---
+title: Studio Plugin
+description: Visual dashboard for managing Redenv secrets with a modern web interface.
+---
+
+The Studio plugin provides a visual, web-based interface for managing your Redenv secrets. It runs entirely locally on your machine, maintaining the same zero-knowledge security model as the CLI.
+
+## Features
+
+- Visual secret management with drag-and-drop
+- Environment switching in the UI
+- Service Token creation and management
+- Version history viewer with rollback
+- Real-time secret editing
+- Dark mode support
+
+## Installation
+
+```bash
+npm install -D @redenv/studio
+```
+
+## Configuration
+
+Add the plugin to your `redenv.config.ts`:
+
+```typescript
+import { defineConfig } from "@redenv/core";
+import { studioPlugin } from "@redenv/studio";
+
+export default defineConfig({
+  name: "my-app",
+  environment: "development",
+  plugins: [studioPlugin],
+});
+```
+
+## Usage
+
+Launch the studio:
+
+```bash
+redenv studio
+```
+
+The dashboard opens in your default browser at `http://localhost:3333`.
+
+**Command Options:**
+
+```bash
+# Custom port
+redenv studio --port 8080
+
+# Specific project
+redenv studio --project my-app
+
+# Help
+redenv studio --help
+```
+
+## Features Overview
+
+### Secret Management
+
+- View all secrets in a table
+- Add new secrets inline
+- Edit existing secrets with live preview
+- Delete secrets with confirmation
+- Search and filter secrets
+
+### Environment Switching
+
+- Quick environment selector
+- Create new environments on-the-fly
+- Clone environments visually
+- Compare environments side-by-side
+
+### Version History
+
+- View complete version history per secret
+- Visual timeline of changes
+- One-click rollback to previous versions
+- Diff view between versions
+
+### Token Management
+
+- Create read-only and read-write tokens
+- View all active tokens
+- Revoke tokens instantly
+- Copy token credentials securely
+
+## Security
+
+The Studio plugin runs locally and maintains zero-knowledge encryption:
+
+- No data sent to external servers
+- All encryption/decryption happens locally
+- Uses your Master Password (prompts on first use)
+- Same security model as the CLI
+
+## Keyboard Shortcuts
+
+| Shortcut       | Action               |
+| -------------- | -------------------- |
+| `Cmd/Ctrl + K` | Open command palette |
+| `Cmd/Ctrl + N` | New secret           |
+| `Cmd/Ctrl + E` | Switch environment   |
+| `Escape`       | Close dialogs        |
+
+## Customization
+
+### Theme
+
+Studio respects your system theme (light/dark) automatically.
+
+### Port Configuration
+
+Change the default port:
+
+```bash
+redenv studio --port 4000
+```
+
+Or set in config:
+
+```typescript
+export default defineConfig({
+  name: "my-app",
+  plugins: [studioPlugin({ port: 4000 })],
+});
+```
+
+## Troubleshooting
+
+### Port already in use
+
+Change the port:
+
+```bash
+redenv studio --port 3334
+```
+
+### Studio won't start
+
+Check that you have a valid `.redenv` file in your project:
+
+```bash
+cat .redenv
+```
+
+### Can't access after starting
+
+Ensure the URL is correct:
+
+```
+http://localhost:3333
+```
+
+Check firewall settings if accessing from another device.
+
+## GitHub Repository
+
+[redenv-labs/redenv-studio-plugin](https://github.com/redenv-labs/redenv-studio-plugin)
+
+## Next Steps
+
+- [Plugin System](/docs/plugins/overview) - Learn about creating plugins
+- [CLI Overview](/docs/cli/overview) - Command-line alternative

@@ -1,6 +1,120 @@
 ---
-title: Introduction
-description: Zero-knowledge, end-to-end encrypted secret management for modern teams.
+title: Welcome to Redenv
+description: A zero-knowledge, end-to-end encrypted secret management system designed to replace traditional .env files with secure, version-controlled, and dynamic secret management.
 ---
 
-Welcome to **Redenv** - a secure, zero-knowledge secret management system that replaces traditional `.env` files with encrypted, versioned secrets stored in the cloud.
+**Redenv** is a zero-knowledge, end-to-end encrypted secret management system designed to replace traditional `.env` files. It provides a secure, version-controlled, and dynamic way to manage application secrets using Upstash Redis as a centralized backend.
+
+## Why Redenv?
+
+Modern applications face two critical challenges with secret management:
+
+### The `.env` Problem
+
+- **Synchronization nightmare** across teams and environments
+- **Insecure sharing** via Slack, email, or text messages
+- **No version control** or audit trail
+- **"Works on my machine"** syndrome
+
+### The Serverless Problem
+
+- **Rebuild to rotate**: Changing a secret requires full redeployment
+- **Configuration coupled with code**: Simple config changes need CI/CD pipelines
+- **Slow emergency response**: Leaked keys take minutes to rotate
+
+## How Redenv Solves This
+
+Redenv decouples configuration from deployment with:
+
+- 🔐 **Zero-Knowledge Encryption**: AES-256-GCM encryption ensures your secrets are never stored in plaintext
+- 📦 **Centralized Storage**: Single source of truth in your Upstash Redis instance
+- ⏱️ **Version History**: Complete audit trail with instant rollbacks
+- ⚡ **Dynamic Updates**: Rotate secrets without redeploying (seconds vs. minutes)
+- 🛠️ **Developer-First**: Powerful CLI and runtime SDKs for any workflow
+
+## Quick Example
+
+```bash
+# Install CLI
+bun add -g @redenv/cli
+
+# Connect to Upstash
+redenv setup
+
+# Register project
+redenv register my-app
+
+# Add a secret
+redenv add API_KEY "super-secret-value"
+```
+
+```typescript
+// Use in your app
+import { Redenv } from "@redenv/client";
+
+const redenv = new Redenv({
+  project: "my-app",
+  tokenId: process.env.REDENV_TOKEN_ID,
+  token: process.env.REDENV_TOKEN_KEY,
+  upstash: { url: "...", token: "..." },
+});
+
+const env = await redenv.load(); // Secrets loaded & cached
+console.log(env.API_KEY); // Access securely
+```
+
+## What's Included
+
+### Core Packages
+
+- **[@redenv/cli](/docs/cli/overview)** - Complete CLI for managing secrets with 24+ commands
+- **[@redenv/client](/docs/sdk/javascript)** - JavaScript/TypeScript runtime client with smart caching
+- **[redenv (Python)](/docs/sdk/python)** - Python client with async/sync support
+- **[@redenv/core](/docs/concepts/encryption)** - Universal cryptographic primitives
+
+### Key Features
+
+- **Service Tokens**: Secure, scoped access for applications and CI/CD
+- **Secret Expansion**: Reference other secrets with `${VAR}` syntax
+- **Plugin System**: Extend functionality (e.g., [@redenv/studio](/docs/plugins/studio))
+- **Multi-Environment**: Separate dev, staging, and production secrets
+- **Backup/Restore**: Built-in disaster recovery
+
+## Architecture Highlights
+
+- **Master Password**: Used only by developers via CLI, never stored
+- **Service Tokens**: For application access, can be read-only or read-write
+- **End-to-End Encryption**: Zero-knowledge model - Upstash never sees plaintext
+- **PBKDF2**: 310,000 iterations for key derivation (OWASP recommended)
+
+## Next Steps
+
+<Cards>
+  <Card title="Installation Guide" href="/docs/installation">
+    Set up the CLI and SDKs
+  </Card>
+  <Card title="Quickstart Tutorial" href="/docs/quickstart">
+    Your first secret in 5 minutes
+  </Card>
+  <Card title="Core Concepts" href="/docs/concepts/encryption">
+    Understand how it works
+  </Card>
+  <Card title="CLI Commands" href="/docs/cli/commands">
+    Complete command reference
+  </Card>
+  <Card title="JavaScript SDK" href="/docs/sdk/javascript">
+    For Node.js/Deno/Bun apps
+  </Card>
+  <Card title="Python SDK" href="/docs/sdk/python">
+    For Python applications
+  </Card>
+</Cards>
+
+## Community & Support
+
+- **GitHub**: [redenv-labs/redenv](https://github.com/redenv-labs/redenv)
+- **Issues**: [Bug reports & feature requests](https://github.com/redenv-labs/redenv/issues)
+- **NPM**: [@redenv/cli](https://www.npmjs.com/package/@redenv/cli), [@redenv/client](https://www.npmjs.com/package/@redenv/client)
+- **PyPI**: [redenv](https://pypi.org/project/redenv/)
+
+Built with ❤️ for the Upstash community.

@@ -1,0 +1,197 @@
+---
+title: Encryption & Security
+description: Understand Redenv's zero-knowledge encryption model, how your secrets are protected, and the cryptographic primitives used.
+---
+
+Your secrets never leave your machine unencrypted. Not during transit, not at rest, not ever. Redenv is built on a **zero-knowledge, end-to-end encryption model** — the backend only ever sees ciphertext.
+
+<Callout type="info">
+  **TL;DR** — Redenv encrypts everything client-side with **AES-256-GCM** before
+  it touches the network. The server has no way to decrypt your data. Think of
+  it like a safe-deposit box where only you hold the key.
+</Callout>
+
+## How Redenv Compares
+
+Before diving into the details, here's why this architecture matters:
+
+| Aspect         | Redenv                           | AWS Secrets Manager | HashiCorp Vault            |
+| -------------- | -------------------------------- | ------------------- | -------------------------- |
+| Encryption     | **Client-side** (Zero-knowledge) | Server-side         | Server-side                |
+| Trust Model    | No trust in backend              | Trust AWS IAM       | Trust Vault infrastructure |
+| Key Management | User-managed (Master Password)   | AWS-managed         | Various backends           |
+| Cost           | Low (Upstash free tier)          | Per secret/API call | Infrastructure costs       |
+
+With server-side encryption, you trust the provider not to read your data. With Redenv, **trust is replaced by math** — even if the database is fully compromised, your secrets remain encrypted.
+
+## Zero-Knowledge Model
+
+The core principle: **Upstash Redis (the backend) never sees your secrets in plaintext**.
+
+All encryption and decryption happens client-side:
+
+- **CLI** — Encrypts/decrypts using your Master Password
+- **Application** — Encrypts/decrypts using a Service Token
+
+The server stores only encrypted blobs and has no way to decrypt them.
+
+## Key Hierarchy
+
+Redenv uses a layered key system. Understanding these four concepts unlocks the entire security model:
+
+| Key                              | What It Is                                | Who Holds It                                        |
+| -------------------------------- | ----------------------------------------- | --------------------------------------------------- |
+| **Master Password**              | Your password — never stored anywhere     | You (in your head / password manager)               |
+| **KEK** (Key Encryption Key)     | Derived from Master Password via PBKDF2   | Ephemeral — exists only in memory during operations |
+| **PEK** (Project Encryption Key) | Random 256-bit key unique to each project | Stored **encrypted** in Redis (wrapped by KEK)      |
+| **Service Token**                | Contains its own encrypted copy of PEK    | Your application's environment variables            |
+
+The Master Password unlocks the KEK, which unlocks the PEK, which encrypts your actual secrets. Service Tokens provide an alternative path to the PEK so applications can decrypt without the Master Password.
+
+## Encryption Flows
+
+### 1. Project Registration
+
+When you create a new project, your Master Password derives a KEK via PBKDF2, which encrypts a randomly generated PEK. Only the encrypted PEK and salt are stored — your password never touches the network.
+
+![Project Registration Flow](/diagrams/project-registration.svg)
+
+### 2. Adding a Secret
+
+Your Master Password re-derives the KEK to unlock the PEK, which then encrypts your secret value. Only ciphertext is stored in Redis.
+
+![Adding a Secret Flow](/diagrams/adding-secret.svg)
+
+### 3. Service Token Creation
+
+Service Tokens give your applications access without exposing the Master Password. A random Secret Token Key derives its own Token Key via PBKDF2, which re-encrypts the PEK. The Secret Token Key is shown only once — treat it like a password.
+
+![Service Token Creation Flow](/diagrams/service-token-creation.svg)
+
+### 4. Application Decryption
+
+When your app starts, the Secret Token Key (from env vars) derives the Token Key, which decrypts the PEK, which decrypts all secrets. The entire chain happens in-memory — Redis never sees plaintext.
+
+![Application Decryption Flow](/diagrams/application-decryption.svg)
+
+## Cryptographic Primitives
+
+Redenv uses standard, battle-tested cryptography via the **Web Crypto API** — no custom crypto, no rolling our own.
+
+### AES-256-GCM
+
+|              |                                     |
+| ------------ | ----------------------------------- |
+| **Type**     | Authenticated encryption            |
+| **Key Size** | 256 bits                            |
+| **Used For** | Encrypting all secrets and metadata |
+
+Every encrypted value includes:
+
+- **IV** (12 bytes) — randomly generated per encryption, ensures identical values produce different ciphertext
+- **Auth Tag** (16 bytes) — detects tampering
+- **Ciphertext** — the encrypted data
+
+AES-256-GCM provides both confidentiality and integrity in a single operation, and is hardware-accelerated on modern CPUs.
+
+### PBKDF2-HMAC-SHA256
+
+|                |                                     |
+| -------------- | ----------------------------------- |
+| **Type**       | Password-based key derivation       |
+| **Iterations** | 310,000 (OWASP 2023 recommendation) |
+| **Used For**   | Deriving KEK from Master Password   |
+
+<Callout type="info">
+  **Why 310,000 iterations?** This is the current OWASP recommendation for
+  PBKDF2-HMAC-SHA256. It makes brute-force password guessing computationally
+  expensive (~100-200ms per attempt on modern hardware) while remaining fast
+  enough for interactive use. Each project has a unique salt, preventing rainbow
+  table attacks.
+</Callout>
+
+### Randomness
+
+All cryptographic operations use **CSPRNG** via `crypto.getRandomValues()` — the same source of randomness used by TLS, SSH, and every major cryptographic system.
+
+## Security Guarantees
+
+### What Redenv Protects Against
+
+- **Database breach** — attackers get only encrypted blobs, useless without your password
+- **Network interception** — data is encrypted before it hits HTTPS, giving you double encryption
+- **Insider threats** — Upstash staff cannot read your secrets
+- **Accidental exposure** — secrets are never logged or cached in plaintext on the server
+- **Data tampering** — GCM authentication tags detect any modification
+
+### What You Must Protect
+
+<Callout type="error">
+  Redenv's security is only as strong as your weakest link. Guard these
+  carefully:
+</Callout>
+
+- **Master Password** — if lost, secrets cannot be recovered. If stolen, an attacker can decrypt everything.
+- **Service Tokens** — treat like passwords. Rotate immediately if leaked.
+- **Upstash Credentials** — required to access the database (but not sufficient to decrypt secrets)
+
+### Out of Scope
+
+Redenv **cannot** protect against:
+
+- Compromised client machines (malware with keylogger)
+- Memory dumps of running applications
+- Social engineering to obtain the Master Password
+- Physical access to unlocked developer machines
+
+These are inherent limitations of any client-side encryption system — not specific to Redenv.
+
+## Best Practices
+
+### For Developers
+
+1. **Use a strong Master Password** — 20+ characters, mix of character types
+2. **Store it in a password manager** — never rely on memory alone
+3. **Don't share it** — each developer should use their own service token
+4. **Rotate periodically** — use `redenv change-password`
+5. **Logout when done** — `redenv logout` clears cached credentials
+
+### For Applications
+
+1. **Use read-only tokens** when possible — limits blast radius if leaked
+2. **Rotate tokens regularly** — create new, revoke old
+3. **One token per environment** — separate dev, staging, prod
+4. **Store tokens securely** — use platform secrets (GitHub Secrets, Vercel env vars), not code
+
+### For Production
+
+1. **Separate environments** — never share keys between dev and prod
+2. **Backup project metadata** — use `redenv backup` regularly
+3. **Document token ownership** — know which tokens belong to which apps
+4. **Implement a rotation policy** — rotate tokens at least quarterly
+
+## Compliance & Standards
+
+Redenv's cryptography aligns with:
+
+- **OWASP** — 310,000 PBKDF2 iterations (2023 recommendation)
+- **NIST** — AES-256 and SHA-256 usage
+- **Web Crypto API** — standardized primitives available across all runtimes
+
+<Callout type="info">
+  Redenv is suitable for most applications. For highly regulated industries
+  (finance, healthcare), consult your security team to verify it meets your
+  compliance requirements.
+</Callout>
+
+## Audit & Transparency
+
+- **Open Source** — all cryptographic code is available on [GitHub](https://github.com/redenv-labs/redenv)
+- **Web Crypto API** — uses standardized, well-audited browser APIs
+- **No Custom Crypto** — relies entirely on proven primitives
+
+## Next Steps
+
+- [Service Tokens](/docs/concepts/tokens) — how tokens work and management best practices
+- [CLI Commands](/docs/cli/commands) — full reference for all Redenv commands
+- [Version History](/docs/concepts/versioning) — encrypted historical versions

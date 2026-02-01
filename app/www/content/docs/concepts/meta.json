@@ -1,4 +1,11 @@
 {
   "title": "Core Concepts",
-  "pages": ["encryption", "environments", "secrets"]
+  "pages": [
+    "encryption",
+    "environments",
+    "secrets",
+    "tokens",
+    "versioning",
+    "expansion"
+  ]
 }

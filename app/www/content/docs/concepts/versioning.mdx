@@ -1,0 +1,265 @@
+---
+title: Version History & Rollbacks
+description: Track every change to your secrets and rollback to previous versions instantly with Redenv's built-in version control.
+---
+
+Every time you add or edit a secret in Redenv, a new **version** is created. This provides a complete audit trail and enables instant rollbacks.
+
+## How Versioning Works
+
+Each secret maintains an array of versions, ordered from newest to oldest:
+
+```
+API_KEY
+├── Version 3 (current)  - sk_live_new_key     - 2026-01-31 12:00
+├── Version 2            - sk_live_rotated     - 2026-01-30 15:00
+└── Version 1 (original) - sk_live_initial     - 2026-01-25 10:00
+```
+
+**Every version includes:**
+
+- **Value**: The encrypted secret value
+- **Version Number**: Sequential integer (1, 2, 3, ...)
+- **User**: Who made the change
+- **Timestamp**: When it was created
+
+## Viewing History
+
+See all versions of a secret:
+
+```bash
+redenv history view API_KEY
+```
+
+Output:
+
+```
+History for 'API_KEY' in 'production':
+
+Version  User     Created              Value (truncated)
+3        alice    2026-01-31 12:00:00  sk_live_new_...
+2        bob      2026-01-30 15:00:00  sk_live_rota...
+1        alice    2026-01-25 10:00:00  sk_live_init...
+```
+
+<Callout type="info">
+  By default, values are truncated for security. Use `--full` to see complete
+  values.
+</Callout>
+
+## Rolling Back
+
+Restore a previous version:
+
+```bash
+# Rollback to version 2
+redenv rollback API_KEY --version 2
+```
+
+This **creates a new version** (version 4) with the content from version 2:
+
+```
+API_KEY
+├── Version 4 (current)  - sk_live_rotated     - 2026-01-31 12:05 (rollback)
+├── Version 3            - sk_live_new_key     - 2026-01-31 12:00
+├── Version 2            - sk_live_rotated     - 2026-01-30 15:00
+└── Version 1 (original) - sk_live_initial     - 2026-01-25 10:00
+```
+
+<Callout type="warn">
+  Rollback doesn't delete versions—it creates a new one. This preserves the
+  complete history.
+</Callout>
+
+### Rollback to Previous Version
+
+Shorthand to rollback to the immediately previous version:
+
+```bash
+redenv rollback API_KEY
+# Equivalent to: redenv rollback API_KEY --version 2
+```
+
+## Version Limits
+
+By default, Redenv stores **all versions** forever. You can set a limit to save storage:
+
+```bash
+# Keep only the last 10 versions
+redenv history limit 10
+```
+
+When the limit is reached, the **oldest** versions are automatically deleted.
+
+**To check the current limit:**
+
+```bash
+redenv history limit
+```
+
+Output:
+
+```
+Current history limit: 10 versions
+```
+
+**To remove the limit** (keep all versions):
+
+```bash
+redenv history limit --unlimited
+```
+
+<Callout type="info">
+  Version limits apply **per secret**, not globally. A limit of 10 means each
+  secret keeps its 10 most recent versions.
+</Callout>
+
+## Accessing Versions in Applications
+
+The SDKs support fetching specific versions programmatically.
+
+### JavaScript/TypeScript
+
+```typescript
+// Get version 5
+const v5 = await redenv.getVersion("API_KEY", 5);
+
+// Get the previous version (1 version older than current)
+const prev = await redenv.getVersion("API_KEY", 1, "index");
+
+// Get the oldest version
+const oldest = await redenv.getVersion("API_KEY", -1);
+```
+
+**Modes:**
+
+- `mode: "id"` (default): Use version number (1, 2, 3, ...)
+- `mode: "index"`: Use array index (0 = latest, 1 = previous, -1 = oldest)
+
+### Python
+
+```python
+# Get version 5
+v5 = await client.get_version("API_KEY", 5)
+
+# Get previous version
+prev = await client.get_version("API_KEY", 1, mode="index")
+
+# Get oldest version
+oldest = await client.get_version("API_KEY", -1)
+```
+
+## Use Cases
+
+### 1. Emergency Rollback
+
+A newly deployed secret breaks production:
+
+```bash
+# Immediately rollback to the working version
+redenv rollback DATABASE_URL
+```
+
+Applications using the SDK will get the old value on the next cache refresh (default: 5 minutes).
+
+### 2. Audit Trail
+
+Investigate when a secret changed:
+
+```bash
+redenv history view STRIPE_KEY
+```
+
+Useful for compliance, security audits, or debugging.
+
+### 3. Time Travel for Testing
+
+Test how your app behaves with an old configuration:
+
+```typescript
+// In a test environment
+const oldConfig = await redenv.getVersion("FEATURE_FLAG", 5);
+// Test with old feature flag value
+```
+
+### 4. Gradual Rollout
+
+Keep old and new versions, test with both:
+
+```typescript
+// 10% of users get new secret
+const secretVersion = Math.random() < 0.1 ? 2 : 1;
+const apiKey = await redenv.getVersion("API_KEY", secretVersion);
+```
+
+## Version Metadata
+
+Each version stores:
+
+- **value**: The encrypted secret
+- **version**: The version number (immutable)
+- **user**: The username from `redenv setup` (or "unknown")
+- **createdAt**: ISO 8601 timestamp
+
+<Callout type="info">
+  The `user` field is informational only. It's set by the CLI based on the
+  system username when the secret was created.
+</Callout>
+
+## History Storage
+
+All versions are stored encrypted in Redis, under the same key as the secret:
+
+```
+Key: production:my-app
+Field: API_KEY
+Value: [
+  { value: "...", version: 3, user: "alice", createdAt: "..." },
+  { value: "...", version: 2, user: "bob", createdAt: "..." },
+  { value: "...", version: 1, user: "alice", createdAt: "..." }
+]
+```
+
+Each array element is encrypted individually.
+
+## Best Practices
+
+1. **Set reasonable limits**: 10-50 versions is usually sufficient
+2. **Document major changes**: Use comments in your git commits when changing secrets
+3. **Test rollbacks**: Practice in staging before relying on them in production
+4. **Monitor history size**: Large histories can slow down fetches
+5. **Backup before bulk operations**: Use `redenv backup` before imports or clones
+
+## Version Limits and Performance
+
+**Storage:**
+
+- Each version adds ~100-500 bytes (depending on secret size)
+- 1000 secrets with 10 versions each ≈ 500KB-5MB
+- Redis free tier: 10GB (plenty of room)
+
+**Fetch Performance:**
+
+- Current version (latest): Instant
+- Older versions: Requires array scan (still &lt;10ms for 100 versions)
+
+<Callout type="info">
+  For most use cases, keeping 10-20 versions per secret is a good balance
+  between history and performance.
+</Callout>
+
+## Comparison with Git
+
+| Feature         | Redenv              | Git                      |
+| --------------- | ------------------- | ------------------------ |
+| Granularity     | Per secret          | Per file/repo            |
+| Rollback        | Instant             | Requires commit + push   |
+| History         | In Redis            | In .git directory        |
+| Audit           | Built-in            | Requires commit messages |
+| Merge conflicts | N/A (single source) | Possible                 |
+
+## Next Steps
+
+- [Backup & Restore](/docs/cli/commands#backup) - Protect your version history
+- [CLI Commands](/docs/cli/commands) - Complete reference
+- [Secret Expansion](/docs/concepts/expansion) - Reference other secrets

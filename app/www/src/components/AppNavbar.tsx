@@ -108,33 +108,33 @@ export function AppNavbar() {
                       animation: "spin 4s linear infinite",
                     }}
                   />
-                  <div className="absolute inset-px rounded-xl bg-neutral-950/90 backdrop-blur-xl" />
+                  <div className="absolute inset-px rounded-xl bg-secondary/95 backdrop-blur-xl" />
                 </div>
 
                 {/* Glass surface */}
-                <div className="absolute inset-px rounded-xl bg-linear-to-b from-white/4 to-transparent pointer-events-none" />
+                <div className="absolute inset-px rounded-xl bg-linear-to-b from-muted-foreground/5 to-transparent pointer-events-none" />
 
                 {/* Static border */}
-                <div className="absolute inset-0 rounded-xl border border-white/6 group-hover:border-white/12 transition-colors duration-300 pointer-events-none" />
+                <div className="absolute inset-0 rounded-xl border border-border/50 group-hover:border-border transition-colors duration-300 pointer-events-none" />
 
                 {/* Content */}
                 <div className="relative flex items-center gap-2 z-10">
                   <div className="relative">
                     <Search
                       size={13}
-                      className="text-white/30 group-hover:text-white/50 transition-colors duration-300"
+                      className="text-muted-foreground group-hover:text-foreground transition-colors duration-300"
                     />
                     <div className="absolute inset-0 blur-md opacity-0 group-hover:opacity-40 transition-opacity duration-300">
                       <Search size={13} className="text-primary" />
                     </div>
                   </div>
-                  <span className="text-white/30 group-hover:text-white/50 transition-colors duration-300">
+                  <span className="text-muted-foreground group-hover:text-foreground transition-colors duration-300">
                     Search
                   </span>
                   <kbd className="relative inline-flex items-center justify-center px-1.5 py-0.5 rounded-md text-[10px] font-medium font-mono overflow-hidden">
-                    <div className="absolute inset-0 bg-linear-to-b from-white/8 to-white/3 rounded-md" />
-                    <div className="absolute inset-0 border border-white/8 rounded-md" />
-                    <span className="relative text-white/35 group-hover:text-white/45 transition-colors">
+                    <div className="absolute inset-0 bg-linear-to-b from-muted-foreground/10 to-muted/50 rounded-md" />
+                    <div className="absolute inset-0 border border-border/50 rounded-md" />
+                    <span className="relative text-muted-foreground group-hover:text-foreground/70 transition-colors">
                       ⌘K
                     </span>
                   </kbd>
