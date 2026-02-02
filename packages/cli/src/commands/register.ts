@@ -49,8 +49,13 @@ export const action = async (
     );
   }
 
+  const spinner = ora("Checking project status...").start();
+  const metaKey = `meta@${sanitizedProject}`;
+  const projectExists = (await redis.exists(metaKey)) > 0;
+  spinner.stop();
+
   const localConfig = await loadProjectConfig();
-  if (localConfig && localConfig.name === sanitizedProject) {
+  if (localConfig && localConfig.name === sanitizedProject && projectExists) {
     console.log(
       chalk.yellow(
         `This directory is already registered with project "${sanitizedProject}".`
@@ -59,17 +64,12 @@ export const action = async (
     return;
   }
 
-  const spinner = ora("Checking project status...").start();
-  const metaKey = `meta@${sanitizedProject}`;
-  const projectExists = (await redis.exists(metaKey)) > 0;
-  spinner.stop();
-
   // --- Flow for connecting to an EXISTING remote project ---
   if (projectExists) {
     console.log(
       chalk.blue(`Project "${sanitizedProject}" already exists remotely.`)
     );
-    if (!options.pek) await unlockProject(sanitizedProject as string); // This verifies the password
+    if (!options.pek) await unlockProject(sanitizedProject as string);
 
     const data = {
       name: sanitizedProject,
@@ -126,7 +126,8 @@ export const action = async (
       createdAt: new Date().toISOString(),
     };
     await redis.hset(metaKey, metadata);
-
+    spinner.stop();
+    
     const data = {
       name: sanitizedProject,
       environment: sanitizedEnv,

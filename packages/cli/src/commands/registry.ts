@@ -23,7 +23,6 @@ import { action as historyLimit } from "./history/limit";
 import { action as historyView } from "./history/view";
 
 import { action as switchEnv } from "./switch/env";
-import { action as switchProject } from "./switch/project";
 
 import { action as tokenCreate } from "./token/create";
 import { action as tokenList } from "./token/list";
@@ -52,7 +51,6 @@ export const commandActions: Record<string, (...args: any[]) => Promise<void>> =
   "history:view": historyView,
   "history:limit": historyLimit,
   "switch:env": switchEnv,
-  "switch:project": switchProject,
   "token:create": tokenCreate,
   "token:list": tokenList,
   "token:revoke": tokenRevoke,

@@ -1,6 +1,5 @@
 import { Command } from "commander";
 import { switchEnvCommand } from "./env";
-import { switchProjectCommand } from "./project";
 
 export function switchCommand(program: Command) {
   const switchCmd = program
@@ -10,5 +9,4 @@ export function switchCommand(program: Command) {
     );
 
   switchEnvCommand(switchCmd);
-  switchProjectCommand(switchCmd);
 }

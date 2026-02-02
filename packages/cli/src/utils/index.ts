@@ -13,7 +13,7 @@ export class ContextSwitchRequest extends Error {
 
   constructor(
     message: string,
-    newContext: { newProject?: string; newEnv?: string }
+    newContext: { newProject?: string; newEnv?: string },
   ) {
     super(message);
     this.name = "ContextSwitchRequest";
@@ -86,59 +86,49 @@ export const getReferences = (value: string): string[] => {
   return matches.map((m) => m[1]!);
 };
 
-export const writeProjectConfig = async (config: Record<string, unknown>) => {
+export const writeProjectConfig = async ({
+  _filepath,
+  ...config
+}: Record<string, unknown>) => {
+  void _filepath; // ignore filepath
   const currentConfig = await loadProjectConfig();
   const existingPath = currentConfig?._filepath;
 
-  // SCENARIO 1: Existing JSON Config -> Safe to Merge & Write
-  if (existingPath && existingPath.endsWith(".json")) {
-    let existingContent: Record<string, unknown> = {};
+  if (existingPath) {
+    let content: string;
     try {
-      existingContent = JSON.parse(fs.readFileSync(existingPath, "utf8"));
+      content = fs.readFileSync(existingPath, "utf8");
     } catch (err) {
       throw new RedenvError(
         `Failed to read project config: ${(err as Error).message}`,
-        "MISSING_CONFIG"
+        "MISSING_CONFIG",
       );
     }
 
-    const newContent = sortObject({ ...existingContent, ...config });
+    const updated = updateConfigFields(content, config);
 
-    // Safety: ensure internal keys don't leak into the file
-    delete newContent._filepath;
+    if (updated === content) {
+      throw new RedenvError(
+        `Could not update fields in ${existingPath}. Please update it manually.`,
+        "MISSING_CONFIG",
+      );
+    }
 
-    fs.writeFileSync(existingPath, JSON.stringify(newContent, null, 2));
+    fs.writeFileSync(existingPath, updated);
     console.log(chalk.green(`✔ Updated configuration: ${existingPath}`));
     return;
   }
 
-  // SCENARIO 2: Existing JS/TS Config -> Unsafe to Write
-  if (existingPath) {
-    console.log(
-      chalk.yellow(
-        `⚠  Configuration found at ${existingPath}.\n` +
-          `   Automatic updates are only supported for JSON files.\n` +
-          `   Please update this file manually.` +
-          `\n` +
-          `Changes that were skipped: ${JSON.stringify(config, null, 2)}`
-      )
-    );
-    return;
-  }
-
-  // SCENARIO 3: No Config -> Create New Defaults (TS)
+  // No config found → create new TS config
   const targetPath = "redenv.config.ts";
 
-  // Double check file doesn't exist (in case lilconfig missed it or race condition)
   if (fs.existsSync(targetPath)) {
     console.log(
-      chalk.yellow(`⚠  ${targetPath} already exists. Skipping creation.`)
+      chalk.yellow(`⚠  ${targetPath} already exists. Skipping creation.`),
     );
     return;
   }
 
-  // We don't merge 'currentConfig' here because if we reached this point,
-  // currentConfig is undefined (no config found).
   const configContent = sortObject({
     name: config.name,
     environment: config.environment || "development",
@@ -153,8 +143,30 @@ export default defineConfig(${JSON.stringify(configContent, null, 2)});
   fs.writeFileSync(targetPath, tsContent);
 };
 
+/**
+ * Replaces scalar string fields in a config file's text content.
+ * Only touches `key: "value"` or `key: 'value'` patterns, preserving
+ * everything else (plugins, imports, formatting, etc).
+ */
+export function updateConfigFields(
+  content: string,
+  fields: Record<string, unknown>,
+): string {
+  let updated = content;
+  for (const [key, value] of Object.entries(fields)) {
+    if (typeof value !== "string") continue;
+
+    const fieldRegex = new RegExp(`(${key}\\s*:\\s*)(['"]).*?\\2`);
+
+    if (fieldRegex.test(updated)) {
+      updated = updated.replace(fieldRegex, `$1"${value}"`);
+    }
+  }
+  return updated;
+}
+
 function sortObject(obj: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(
-    Object.entries(obj).sort((a, b) => a[0].localeCompare(b[0]))
+    Object.entries(obj).sort((a, b) => a[0].localeCompare(b[0])),
   );
 }

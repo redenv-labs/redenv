@@ -115,8 +115,6 @@ export async function loadProjectConfig(): Promise<ProjectConfig | undefined> {
       `${moduleName}.config.ts`,
       `${moduleName}.config.mjs`,
       `${moduleName}.config.cjs`,
-      `${moduleName}.config.json`,
-      "package.json", // Optional: check package.json property
     ],
     loaders: {
       ".js": loadJiti,

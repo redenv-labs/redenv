@@ -2,11 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0] - 2026-02-03
+
+### Changed
+
+- Config writer now updates TS/JS files in-place via targeted field replacement, preserving plugins and imports.
+- Dropped JSON config file support.
+
+### Removed
+
+- `switch project` command.
+
 ## [1.6.0] - 2026-02-02
 
 ### Changed
 
-- Updated `@redenv/core` to v[Unreleased] to include include improved atomic writng logic.
+- Updated `@redenv/core` to v1.2.0 to include include improved atomic writng logic.
 - `add` command now forces interactive mode when inline value contains `${...}` references.
 - `edit` command is now fully interactive — removed inline `[value]` argument.
 

@@ -12,9 +12,6 @@ import { fetchEnvironments } from "../../utils/redis";
 import { select, input } from "@inquirer/prompts";
 
 export function switchEnvCommand(program: Command) {
-  // -------------------------------
-  // Switch environment
-  // -------------------------------
   program
     .command("env")
     .description("Switch between different environments")
