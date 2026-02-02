@@ -7,7 +7,6 @@ from redenv.utils import set_secret
 from redenv.crypto import derive_key, generate_salt, random_bytes, encrypt, buffer_to_hex, decrypt
 from redenv.types import RedenvOptions, UpstashConfig
 
-# Credentials from client/example.ts
 UPSTASH_URL = os.getenv("UPSTASH_URL")
 UPSTASH_TOKEN = os.getenv("UPSTASH_TOKEN")
 

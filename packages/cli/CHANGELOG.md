@@ -2,11 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.6.0] - 2026-02-02
 
 ### Changed
 
 - Updated `@redenv/core` to v[Unreleased] to include include improved atomic writng logic.
+- `add` command now forces interactive mode when inline value contains `${...}` references.
+- `edit` command is now fully interactive — removed inline `[value]` argument.
 
 ## [1.5.1] - 2026-01-25
 
