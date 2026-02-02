@@ -20,7 +20,6 @@ export function editCommand(program: Command) {
   program
     .command("edit")
     .argument("<key>", "The ENV key to modify")
-    .argument("[value]", "The new value (optional)")
     .description("Update an existing environment variable’s value")
     .option("-p, --project <name>", "Specify the project name")
     .option("-e, --env <env>", "Specify the environment")
@@ -29,7 +28,6 @@ export function editCommand(program: Command) {
 
 export const action = async (
   key: string,
-  valueArg: string | undefined,
   options: any,
 ) => {
   const projectConfig = await loadProjectConfig();
@@ -97,28 +95,8 @@ export const action = async (
   }
 
   const availableKeys = existingKeys.filter((k) => !k.startsWith("__"));
-  let newValue = valueArg || "";
+  let newValue = "";
   let isValid = false;
-
-  if (newValue) {
-    // Direct value path (Non-interactive validation)
-    const refs = getReferences(newValue);
-    const missingRefs = refs.filter((r) => !existingKeys.includes(r));
-
-    if (missingRefs.length > 0) {
-      console.log(
-        chalk.red(`✘ Unknown key(s) referenced: ${missingRefs.join(", ")}`),
-      );
-      console.log(
-        chalk.gray(`  Available keys: ${availableKeys.sort().join(", ") || "(none)"}
-`),
-      );
-      // Don't exit here, fall through to interactive loop so user can fix it
-      isValid = false;
-    } else {
-      isValid = true;
-    }
-  }
 
   // Prompt Loop
   while (!isValid) {

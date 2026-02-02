@@ -69,8 +69,6 @@ export const action = async (
 
     // Pre-fetch keys once to avoid network lag in loop
     const redisKey = `${environment}:${projectName}`;
-    // We need to unlock first to check existence? No, hexists doesn't need PEK.
-    // But we need to check if key exists to prevent overwrite.
     const [exists, existingKeys] = await Promise.all([
       redis.hexists(redisKey, key).then((r) => r > 0),
       redis.hkeys(redisKey),
@@ -93,20 +91,12 @@ export const action = async (
 
     let isValid = false;
     if (value) {
-      // Direct value path (Non-interactive validation)
       const refs = getReferences(value);
-      const missingRefs = refs.filter((r) => !existingKeys.includes(r));
-
-      if (missingRefs.length > 0) {
+      if (refs.length > 0) {
         console.log(
-          chalk.red(`✘ Unknown key(s) referenced: ${missingRefs.join(", ")}`),
+          chalk.yellow("⚠ References detected. Switching to interactive mode for accurate input.\n"),
         );
-        console.log(
-          chalk.gray(
-            `  Available keys: ${availableKeys.sort().join(", ") || "(none)"}\n`,
-          ),
-        );
-        isValid = false;
+        value = "";
       } else {
         isValid = true;
       }
