@@ -3,169 +3,183 @@ title: Secret Expansion
 description: Use variable references to compose secrets, reduce duplication, and maintain consistency across your configuration.
 ---
 
-**Secret Expansion** lets you reference other secrets in your values using the `${VAR_NAME}` syntax. This helps reduce duplication and maintain consistency.
+**Secret Expansion** lets you reference one secret inside another using `${VAR_NAME}` syntax. Change the base value once and every dependent secret updates automatically — no manual edits needed.
+
+<Callout type="info">
+  Expansion happens **at runtime** when secrets are loaded, not when they're stored. The encrypted value in Redis contains the raw reference (`${BASE_URL}/api`), not the resolved result.
+</Callout>
 
 ## Basic Usage
 
-Define a base value and reference it elsewhere:
-
 ```bash
-# Set base URL
+# Set a base value
 redenv add BASE_URL "https://api.example.com"
 
 # Reference it in other secrets
-redenv add AUTH_URL "\${BASE_URL}/auth"
-redenv add WEBHOOK_URL "\${BASE_URL}/webhooks"
-redenv add GRAPHQL_URL "\${BASE_URL}/graphql"
+redenv add AUTH_URL 
+› ${BASE_URL}/auth
+
+redenv add WEBHOOK_URL 
+› ${BASE_URL}/webhooks
+
+redenv add GRAPHQL_URL 
+› ${BASE_URL}/graphql
 ```
 
-When you retrieve the secrets:
+When you retrieve secrets, references are resolved:
 
 ```bash
 redenv view AUTH_URL
 # Output: https://api.example.com/auth
-
-redenv view WEBHOOK_URL
-# Output: https://api.example.com/webhooks
 ```
 
-<Callout type="info">
-  Expansion happens **at runtime** when you load secrets, not when they're
-  stored. The encrypted value in Redis contains the reference, not the expanded
-  value.
-</Callout>
-
-## How It Works
-
-1. **Storage**: References are stored as-is (encrypted): `"\${BASE_URL}/auth"`
-2. **Retrieval**: The SDK/CLI fetches all secrets
-3. **Expansion**: References are resolved recursively
-4. **Result**: You get the fully expanded value
-
-This means:
-
-- ✅ Changing `BASE_URL` automatically updates all dependent secrets
-- ✅ No need to manually update multiple values
-- ✅ Consistency guaranteed across all references
-
-## Syntax
-
-### Valid References
-
-```bash
-# Simple reference
-redenv add API_URL "\${BASE_URL}/api"
-
-# Multiple references
-redenv add FULL_URL "\${PROTOCOL}://\${HOST}:\${PORT}"
-
-# In the middle
-redenv add MESSAGE "Hello \${USER}, welcome to \${APP_NAME}"
-
-# No spaces needed
-redenv add PATH "\${HOME}/data/\${ENV}/logs"
-```
-
-### Escaping
-
-To use a literal `${...}` without expansion:
-
-```bash
-# Escape with a backslash
-redenv add TEMPLATE "echo \\\${MY_VAR}"
-```
-
-This will store and return the literal string: `echo ${MY_VAR}`
+Change `BASE_URL` and all dependent secrets update on the next load.
 
 <Callout type="warn">
-  Shell escaping can be tricky. Use the interactive prompt if you're having
-  issues: ```bash redenv add TEMPLATE # Then type: echo \${MY_VAR}```
+  Values containing `${...}` references **must** be entered through the interactive prompt. If you pass a reference as an inline argument, the CLI will detect it and switch to interactive mode automatically.
 </Callout>
+
+## Syntax Rules
+
+| Rule | Example | Result |
+| --- | --- | --- |
+| Simple reference | `${BASE_URL}/api` | Resolves `BASE_URL` |
+| Multiple references | `${PROTOCOL}://${HOST}:${PORT}` | Resolves all three |
+| Inline reference | `Hello ${USER}, welcome` | Resolves `USER` in place |
+| Case-sensitive | `${base_url}` won't match `BASE_URL` | Left unexpanded |
+| Allowed characters | Letters, digits, underscores only | `${API_KEY_V2}` works |
+| Invalid names | `${BASE-URL}`, `${API.KEY}` | Won't be recognized |
 
 ## Nested References
 
-References can reference other references:
+References can chain through multiple levels:
 
 ```bash
 redenv add PROTOCOL "https"
-redenv add HOST "api.example.com"
-redenv add BASE_URL "\${PROTOCOL}://\${HOST}"
-redenv add API_URL "\${BASE_URL}/v1"
-```
 
-Result:
+redenv add HOST "api.example.com"
+
+redenv add BASE_URL 
+› ${PROTOCOL}://${HOST}
+
+redenv add API_URL 
+› ${BASE_URL}/v1
+```
 
 ```
 API_URL → https://api.example.com/v1
 ```
 
-The expansion engine resolves all references recursively.
+The expansion engine resolves all levels recursively and caches each resolved key to avoid redundant work.
 
-## Circular References
+## Escaping
 
-Redenv detects and prevents circular dependencies:
+To store a literal `${...}` without Redenv expanding it, add a single backslash prefix:
 
 ```bash
-redenv add A "\${B}"
-redenv add B "\${A}"
+redenv add TEMPLATE 
+› \${BASE_URL} is a placeholder
 ```
 
-When you try to load:
+When loaded, the escaped reference is returned as a literal string:
+
+```
+TEMPLATE → ${BASE_URL} is a placeholder
+```
+
+### Backslash Rules
+
+Backslashes before `${...}` follow a consistent pattern based on count:
+
+| Stored value | Backslashes | Rule | Expanded result |
+| --- | --- | --- | --- |
+| `${VAR}` | 0 | even — expand | value of `VAR` |
+| `\${VAR}` | 1 | odd — escape | `${VAR}` |
+| `\\${VAR}` | 2 | even — expand | `\` + value of `VAR` |
+| `\\\${VAR}` | 3 | odd — escape | `\${VAR}` |
+| `\\\\${VAR}` | 4 | even — expand | `\\` + value of `VAR` |
+| `\\\\\${VAR}` | 5 | odd — escape | `\\${VAR}` |
+
+**The rule:** every pair of `\\` becomes a single literal `\`. A remaining lone `\` before `${` escapes the reference.
+
+- **Even** backslash count → `n/2` literal backslashes + reference is **expanded**
+- **Odd** backslash count → `floor(n/2)` literal backslashes + reference is kept as **literal**
+
+## Circular Dependency Detection
+
+Redenv detects and rejects circular references at load time:
+
+```bash
+redenv add A 
+› ${B}
+
+redenv add B 
+› ${A}
+```
 
 ```
 Error: Circular dependency detected: A -> B -> A
 ```
 
-<Callout type="error">
-  Circular references will cause errors at runtime. Make sure your reference
-  graph is acyclic.
+Self-references (`A` referencing `${A}`) are caught the same way.
+
+## Missing References
+
+If a referenced secret doesn't exist, the reference is **left as-is** — no error is thrown:
+
+```bash
+redenv add API_URL
+› ${BASE_URL}/api
+# BASE_URL is not set yet
+```
+
+```
+API_URL → ${BASE_URL}/api
+```
+
+<Callout type="info">
+  This is intentional — it lets you define references before their dependencies exist. Once `BASE_URL` is added, `API_URL` resolves on the next load.
 </Callout>
 
 ## Accessing Raw Values
 
-Sometimes you need the unexpanded value (e.g., for debugging):
+Both SDKs expose a `.raw` property with the unexpanded values:
 
-### JavaScript/TypeScript
-
-```typescript
+```typescript tab="JavaScript/TypeScript" title="app.ts"
 const secrets = await redenv.load();
 
-console.log(secrets.API_URL); // Expanded: https://api.example.com/api
+console.log(secrets.API_URL);     // Expanded: https://api.example.com/api
 console.log(secrets.raw.API_URL); // Raw: ${BASE_URL}/api
 ```
 
-The `raw` property contains the literal stored values before expansion.
-
-### Python
-
-```python
+```python tab="Python" title="app.py"
 secrets = await client.load()
 
 print(secrets["API_URL"])      # Expanded: https://api.example.com/api
 print(secrets.raw["API_URL"])  # Raw: ${BASE_URL}/api
 ```
 
-## Use Cases
+## CLI Expansion Behavior
 
-### 1. Multi-Environment URLs
+Three CLI commands expand references automatically:
+
+| Command | Behavior |
+| --- | --- |
+| `redenv view <key>` | Shows original and expanded value side-by-side if they differ |
+| `redenv list` | Displays expanded values for all secrets |
+| `redenv export` | Writes expanded values to `.env` file |
+
+To export **without** expansion, use the `--raw` flag:
 
 ```bash
-# Development
-redenv switch env development
-redenv add API_BASE "http://localhost:3000"
-
-# Production
-redenv switch env production
-redenv add API_BASE "https://api.prod.com"
-
-# Both environments
-redenv add AUTH_ENDPOINT "\${API_BASE}/auth"
-redenv add DATA_ENDPOINT "\${API_BASE}/data"
+redenv export --raw
 ```
 
-Now `AUTH_ENDPOINT` automatically adjusts per environment.
+If a circular dependency is detected during export, Redenv falls back to raw values automatically with a warning.
 
-### 2. Database Connection Strings
+## Use Cases
+
+### Database Connection Strings
 
 ```bash
 redenv add DB_HOST "postgres.example.com"
@@ -174,142 +188,45 @@ redenv add DB_NAME "myapp_prod"
 redenv add DB_USER "app_user"
 redenv add DB_PASS "secret123"
 
-redenv add DATABASE_URL "postgresql://\${DB_USER}:\${DB_PASS}@\${DB_HOST}:\${DB_PORT}/\${DB_NAME}"
+redenv add DATABASE_URL
+› postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}
 ```
 
-Change any component, and the full URL updates automatically.
+Change any component and `DATABASE_URL` updates automatically.
 
-### 3. Feature Flags with Composition
+### Multi-Environment URLs
 
 ```bash
-redenv add ENVIRONMENT "production"
-redenv add DEBUG "false"
-redenv add LOG_LEVEL "\${ENVIRONMENT}_\${DEBUG}"
+# In development
+redenv add API_BASE "http://localhost:3000"
+
+# In production
+redenv add API_BASE "https://api.prod.com"
+
+# Same references work in both environments
+redenv add AUTH_ENDPOINT
+› ${API_BASE}/auth
+
+redenv add DATA_ENDPOINT
+› ${API_BASE}/data
 ```
 
-Result: `LOG_LEVEL` → `production_false`
-
-### 4. API Versioning
+### API Versioning
 
 ```bash
 redenv add API_VERSION "v2"
 redenv add API_BASE "https://api.example.com"
-redenv add API_URL "\${API_BASE}/\${API_VERSION}"
+
+redenv add API_URL
+› ${API_BASE}/${API_VERSION}
 ```
 
-Update `API_VERSION` once, and all services get the new version.
-
-## Limitations
-
-### Missing References
-
-If a referenced secret doesn't exist:
-
-```bash
-redenv add FULL_URL "\${BASE_URL}/api"
-# But BASE_URL is not set
-```
-
-The reference remains unexpanded:
-
-```
-FULL_URL → ${BASE_URL}/api
-```
-
-<Callout type="info">
-  Missing references are **not** an error—they're left as-is. This allows you to
-  set references before their dependencies exist.
-</Callout>
-
-### Case Sensitivity
-
-References are **case-sensitive**:
-
-```bash
-redenv add BASE_URL "https://example.com"
-redenv add API_URL "\${base_url}/api"  # Won't match BASE_URL
-```
-
-Result: `API_URL` → `${base_url}/api` (unexpanded)
-
-### Alphanumeric Only
-
-Variable names must be alphanumeric with underscores:
-
-- ✅ `${BASE_URL}`
-- ✅ `${API_KEY_V2}`
-- ✅ `${HOST_123}`
-- ❌ `${BASE-URL}` (hyphens not allowed)
-- ❌ `${API.KEY}` (dots not allowed)
-
-## Performance
-
-Expansion happens in-memory and is very fast:
-
-- **100 secrets with 10 references each**: &lt;1ms
-- **Circular dependency detection**: &lt;5ms for complex graphs
-
-The expansion is cached, so subsequent loads are instant.
+Update `API_VERSION` once and all services pick up the change.
 
 ## Best Practices
 
-1. **Use a prefix for base values**: `BASE_URL`, `ROOT_PATH` (clearer intent)
-2. **Keep reference depth low**: Max 3-4 levels deep for readability
-3. **Document dependencies**: Note which secrets reference others
-4. **Test in development first**: Verify expansions before production
-5. **Avoid circular refs**: Design your reference graph carefully
-
-## Expansion in SDKs
-
-Both SDKs expand references automatically on `.load()`:
-
-### JavaScript/TypeScript
-
-```typescript
-const secrets = await redenv.load();
-// All secrets are expanded
-console.log(secrets.API_URL); // Fully resolved
-```
-
-### Python
-
-```python
-secrets = await client.load()
-# All secrets are expanded
-print(secrets["API_URL"])  # Fully resolved
-```
-
-You don't need to do anything special—expansion is transparent.
-
-## Debugging
-
-To debug expansion issues:
-
-1. **Check raw values**:
-
-   ```typescript
-   console.log(secrets.raw.API_URL);
-   ```
-
-2. **List all secrets**:
-
-   ```bash
-   redenv list --full
-   ```
-
-3. **View dependencies**:
-
-   ```bash
-   redenv export | grep "\${"
-   ```
-
-4. **Test individual secrets**:
-   ```bash
-   redenv view API_URL
-   ```
-
-## Next Steps
-
-- [Secret Management](/docs/concepts/secrets) - Basic CRUD operations
-- [Environments](/docs/concepts/environments) - Environment-specific expansions
-- [CLI Commands](/docs/cli/commands) - Complete reference
+1. **Use the interactive prompt for references** — don't pass `${...}` values as inline arguments
+2. **Use clear prefixes for base values** — `BASE_URL`, `ROOT_PATH` signal that other secrets depend on them
+3. **Keep reference depth shallow** — 3-4 levels max for readability and debuggability
+4. **Test expansions before production** — use `redenv view` to verify resolved values
+5. **Use `--raw` for debugging** — `redenv export --raw` shows exactly what's stored

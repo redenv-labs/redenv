@@ -3,87 +3,55 @@ title: Service Tokens
 description: Learn how to create and manage Service Tokens for secure application access to Redenv secrets.
 ---
 
-**Service Tokens** are the recommended way for applications and CI/CD pipelines to access secrets without using your Master Password.
+Your Master Password is for you. **Service Tokens are for your applications.** They let apps decrypt secrets without ever seeing your password — and you can revoke them instantly if something goes wrong.
 
-## What is a Service Token?
+<Callout type="info">
+  **How it works** — Each Service Token contains its own encrypted copy of the Project Encryption Key (PEK). The token can decrypt secrets, but only for the project it was created for. See [Encryption & Security](/docs/concepts/encryption) for the full cryptographic details.
+</Callout>
 
-A Service Token consists of two parts:
+## Anatomy of a Service Token
 
-- **Token ID**: Public identifier (e.g., `tok_abc123`)
-- **Secret Key**: Encrypted copy of the Project Encryption Key (e.g., `redenv_sk_xyz...`)
+A Service Token has two parts:
 
-The Secret Key allows an application to decrypt secrets, but is **scoped** and can be revoked at any time.
+| Part | Example | Purpose |
+| --- | --- | --- |
+| **Token ID** | `stk_uW0...` | Public identifier — safe to log, store in configs |
+| **Secret Key** | `redenv_sk_CrK...` | Decrypts the PEK — **treat like a password** |
+
+The Token ID identifies which encrypted PEK to fetch from Redis. The Secret Key derives a Token Key via PBKDF2, which decrypts the PEK, which decrypts your secrets.
 
 ## Creating Tokens
 
-Create a new Service Token:
-
 ```bash
-redenv token create my-app-production
+redenv token create -n my-app-production
 ```
 
 Output:
 
-```
-✔ Token created successfully!
-
-Token ID: tok_abc123
-Token Key: redenv_sk_xyz789abcdefghijklmnopqrstuvwxyz...
-
-⚠️  Save this token key! It will NOT be shown again.
+```bash
+Project Name:      redenv
+Public Token ID:   stk_uW0...
+Secret Token Key:  redenv_sk_CrK...
 ```
 
 <Callout type="error">
-  **The Secret Key is shown only once!** Store it immediately in your password
-  manager or deployment environment.
-</Callout>
-
-### Read-Only Tokens
-
-For applications that only need to read secrets:
-
-```bash
-redenv token create my-app-production --read-only
-```
-
-Read-only tokens:
-
-- ✅ Can decrypt and read secrets
-- ✅ Can access version history
-- ❌ **Cannot** add/edit/remove secrets
-
-This limits the blast radius if a token is leaked.
-
-<Callout type="info">
-  **Best Practice**: Use read-only tokens for all production applications unless
-  they explicitly need to write secrets.
+  **The Secret Key is shown only once.** Copy it immediately to your password manager or deployment environment. It cannot be recovered — if lost, create a new token and revoke the old one.
 </Callout>
 
 ## Listing Tokens
-
-View all tokens for the current project:
 
 ```bash
 redenv token list
 ```
 
-Output:
+| Name | Description | Token ID             | Created At             |
+| ---- | ----------- | -------------------- | ---------------------- |
+| test | no thanks   | stk_yYt2HXRprwYgpvwv | 1/16/2026, 10:21:37 AM |
+| app  | idk         | stk_g38OHzGnUOoiARfh | 1/16/2026, 5:02:41 PM  |
 
-```
-Project: my-app
-
-┌──────────────┬─────────────────────┬───────────┬─────────────────────┐
-│ ID           │ Name                │ Access    │ Created             │
-├──────────────┼─────────────────────┼───────────┼─────────────────────┤
-│ tok_abc123   │ my-app-production   │ read-only │ 2026-01-31 10:00:00 │
-│ tok_def456   │ my-app-staging      │ read-write│ 2026-01-30 15:30:00 │
-│ tok_ghi789   │ ci-cd-pipeline      │ read-write│ 2026-01-29 09:15:00 │
-└──────────────┴─────────────────────┴───────────┴─────────────────────┘
-```
+Only Token IDs are shown — Secret Keys are never stored and cannot be retrieved.
 
 ## Revoking Tokens
-
-Immediately invalidate a token:
 
 ```bash
 redenv token revoke tok_abc123
@@ -92,179 +60,114 @@ redenv token revoke tok_abc123
 After revocation:
 
 - The token can no longer decrypt secrets
-- Applications using it will fail authentication
-- The token ID is removed from the project metadata
+- Applications using it will fail immediately
+- The token is removed from the project metadata
 
 <Callout type="warn">
-  **This is immediate and cannot be undone.** Make sure you've updated all
-  applications using the token before revoking.
+  **Revocation is immediate and irreversible.** Make sure you've updated all applications using the token before revoking.
 </Callout>
 
 ## Using Tokens in Applications
 
-### JavaScript/TypeScript
+Set these environment variables in your deployment platform:
 
-```typescript
+```bash title=".env.local"
+REDENV_TOKEN_ID=stk_uW0...
+REDENV_TOKEN_KEY=redenv_sk_CrK...
+UPSTASH_REDIS_URL=https://...
+UPSTASH_REDIS_TOKEN=...
+```
+
+Then initialize the SDK:
+
+```typescript tab="JavaScript/TypeScript" title="lib/redenv.ts"
 import { Redenv } from "@redenv/client";
 
 const redenv = new Redenv({
   project: "my-app",
   environment: "production",
-  tokenId: process.env.REDENV_TOKEN_ID!, // tok_abc123
-  token: process.env.REDENV_TOKEN_KEY!, // redenv_sk_xyz...
+  tokenId: process.env.REDENV_TOKEN_ID!,
+  token: process.env.REDENV_TOKEN_KEY!,
   upstash: {
     url: process.env.UPSTASH_REDIS_URL!,
     token: process.env.UPSTASH_REDIS_TOKEN!,
   },
 });
 
+// Load and decrypt all secrets
 const secrets = await redenv.load();
+console.log(secrets.API_KEY);
 ```
 
-### Python
-
-```python
+```python tab="Python" title="lib/redenv.py"
 import os
 from redenv import Redenv
 
 client = Redenv({
     "project": "my-app",
     "environment": "production",
-    "token_id": os.getenv("REDENV_TOKEN_ID"),    # tok_abc123
-    "token": os.getenv("REDENV_TOKEN_KEY"),      # redenv_sk_xyz...
+    "token_id": os.getenv("REDENV_TOKEN_ID"),
+    "token": os.getenv("REDENV_TOKEN_KEY"),
     "upstash": {
         "url": os.getenv("UPSTASH_REDIS_URL"),
         "token": os.getenv("UPSTASH_REDIS_TOKEN")
     }
 })
 
+# Load and decrypt all secrets
 secrets = await client.load()
+print(secrets["API_KEY"])
 ```
 
-## Token Storage
+## Where to Store Tokens
 
-### Local Development
-
-Store in a `.env.local` file (gitignored):
-
-```bash
-REDENV_TOKEN_ID=tok_abc123
-REDENV_TOKEN_KEY=redenv_sk_xyz...
-UPSTASH_REDIS_URL=https://...
-UPSTASH_REDIS_TOKEN=...
-```
-
-### Production (Vercel)
-
-Add as environment variables in the Vercel dashboard:
-
-```
-REDENV_TOKEN_ID=tok_abc123
-REDENV_TOKEN_KEY=redenv_sk_xyz...
-```
-
-### CI/CD (GitHub Actions)
-
-Store as repository secrets:
-
-```yaml
-- name: Deploy
-  env:
-    REDENV_TOKEN_ID: ${{ secrets.REDENV_TOKEN_ID }}
-    REDENV_TOKEN_KEY: ${{ secrets.REDENV_TOKEN_KEY }}
-  run: |
-    # Your deployment script
-```
-
-## Token Security
-
-### What Tokens Protect
-
-✅ **No Master Password exposure**: Applications never see your Master Password
-✅ **Revocable**: Instantly disable access without changing secrets
-✅ **Scoped**: Read-only tokens limit damage if leaked
-✅ **Auditable**: See which tokens exist and when they were created
-
-### Token Leakage Response
-
-If a token is leaked:
-
-1. **Immediately revoke** the token:
-
-   ```bash
-   redenv token revoke tok_abc123
-   ```
-
-2. **Create a new token**:
-
-   ```bash
-   redenv token create replacement-token --read-only
-   ```
-
-3. **Update your deployment** with the new token
-
-4. **Consider rotating secrets** if the leaked token had read-write access
+| Platform | Where to put token credentials |
+| --- | --- |
+| **Local dev** | `.env.local` (gitignored) |
+| **GitHub Actions** | Repository Secrets |
+| **Vercel** | Environment Variables |
+| **Docker** | `--env-file` or secrets manager |
+| **AWS** | Parameter Store or Secrets Manager (for the token, not the secrets themselves) |
 
 <Callout type="info">
-  **Good news**: Revoking a token does NOT require changing your secrets or
-  redeploying your application with new secret values. You only need to update
-  the token itself.
+  Yes, you're storing Redenv tokens in another secrets system — but those systems only hold the **token**, not your actual secrets. Even if the token store is breached, the attacker still needs Upstash credentials to reach the encrypted data.
 </Callout>
 
-## Token Naming Best Practices
+## Why Tokens Matter
 
-Use descriptive names that indicate:
+- **No Master Password exposure** — applications never see your password
+- **Instantly revocable** — disable access without changing any secrets
+- **Auditable** — see which tokens exist and when they were created
+- **Scoped per project** — a token for Project A cannot access Project B
 
-- **Environment**: `prod`, `staging`, `dev`
-- **Purpose**: `app`, `ci-cd`, `backup-script`
-- **Owner**: `github-actions`, `vercel-deploy`
-
-**Examples:**
-
-- `app-production-readonly`
-- `ci-cd-staging`
-- `backup-script-readwrite`
-- `vercel-prod-app`
-
-## Token Rotation
-
-**Recommended rotation schedule:**
-
-- **Production tokens**: Every 90 days
-- **CI/CD tokens**: Every 180 days
-- **Development tokens**: Annually
-
-**Rotation process:**
-
-1. Create new token with same permissions
-2. Update application/CI environment variables
-3. Verify application works with new token
-4. Revoke old token
-
-## Read-Only vs. Read-Write
+{/* ## Read-Only vs. Read-Write
 
 | Feature          | Read-Only                 | Read-Write                               |
 | ---------------- | ------------------------- | ---------------------------------------- |
-| Load secrets     | ✅                        | ✅                                       |
-| Access history   | ✅                        | ✅                                       |
-| Add/edit secrets | ❌                        | ✅                                       |
-| Remove secrets   | ❌                        | ✅                                       |
+| Load secrets     | Yes                       | Yes                                      |
+| Access history   | Yes                       | Yes                                      |
+| Add/edit secrets | No                        | Yes                                      |
+| Remove secrets   | No                        | Yes                                      |
 | Use case         | Production apps, CI reads | Feature flags, dynamic config, CI writes |
 
 <Callout type="info">
   **Most applications should use read-only tokens.** Read-write tokens are
-  primarily useful for: - Feature flag services that update Redenv - Admin
-  dashboards - Automated secret rotation scripts
-</Callout>
+  primarily useful for feature flag services, admin dashboards, and automated
+  secret rotation scripts.
+</Callout> */}
 
 ## Token Limits
 
-- **Max tokens per project**: Unlimited
-- **Token revocation**: Instant
-- **Token key length**: 256 characters (fixed)
+| Limit | Value |
+| --- | --- |
+| Max tokens per project | Unlimited |
+| Token revocation speed | Instant |
+| Token key length | 256 characters (fixed) |
 
-## Next Steps
+## Best Practices
 
-- [Encryption & Security](/docs/concepts/encryption) - How tokens work under the hood
-- [Environments](/docs/concepts/environments) - Separate tokens per environment
-- [CLI Commands](/docs/cli/commands) - Token management reference
+1. **One token per environment** — separate tokens for dev, staging, and prod
+2. **Rotate quarterly** — create a new token, update deployments, revoke the old one
+3. **Revoke immediately on leak** — even if you're unsure, revoke first and ask questions later
+4. **Name tokens descriptively** — `prod-api-server` is better than `token-1`
+5. **Never commit tokens** — use `.gitignore` and platform-level secrets

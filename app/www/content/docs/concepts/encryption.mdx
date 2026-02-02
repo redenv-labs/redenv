@@ -158,10 +158,9 @@ These are inherent limitations of any client-side encryption system — not spec
 
 ### For Applications
 
-1. **Use read-only tokens** when possible — limits blast radius if leaked
-2. **Rotate tokens regularly** — create new, revoke old
-3. **One token per environment** — separate dev, staging, prod
-4. **Store tokens securely** — use platform secrets (GitHub Secrets, Vercel env vars), not code
+1. **Rotate tokens regularly** — create new, revoke old
+2. **One token per environment** — separate dev, staging, prod
+3. **Store tokens securely** — use platform secrets (GitHub Secrets, Vercel env vars), not code
 
 ### For Production
 
@@ -189,9 +188,3 @@ Redenv's cryptography aligns with:
 - **Open Source** — all cryptographic code is available on [GitHub](https://github.com/redenv-labs/redenv)
 - **Web Crypto API** — uses standardized, well-audited browser APIs
 - **No Custom Crypto** — relies entirely on proven primitives
-
-## Next Steps
-
-- [Service Tokens](/docs/concepts/tokens) — how tokens work and management best practices
-- [CLI Commands](/docs/cli/commands) — full reference for all Redenv commands
-- [Version History](/docs/concepts/versioning) — encrypted historical versions

@@ -11,10 +11,10 @@ An environment is a isolated namespace for secrets within a project. Think of it
 
 **Examples:**
 
-- `development`: Local development secrets
-- `staging`: Pre-production testing
-- `production`: Live application secrets
-- `test`: CI/CD test environment
+- **development**: Local development secrets
+- **staging**: Pre-production testing
+- **production**: Live application secrets
+- **test**: CI/CD test environment
 
 Each environment has its own complete set of secrets with independent version histories.
 
@@ -54,18 +54,20 @@ redenv switch env production
 redenv switch env qa-testing
 ```
 
-Your current environment is stored in the `.redenv` file:
+Your current environment is stored in the **redenv.config.ts** file:
 
-```json
-{
-  "name": "my-app",
-  "environment": "production" // Current active environment
-}
+```ts title="redenv.config.ts"
+import { defineConfig } from "@redenv/core";
+
+export default defineConfig({
+  name: "my-app",
+  environment: "production", // Current active environment
+});
 ```
 
 <Callout type="warn">
-  The `.redenv` file tracks your **local** environment preference. Other team
-  members can work in different environments simultaneously.
+  The **redenv.config.ts** file tracks your **local** environment preference.
+  Other team members can work in different environments simultaneously.
 </Callout>
 
 ## Managing Secrets Per Environment
@@ -132,50 +134,9 @@ Your application specifies which environment to load via the SDK configuration:
 
 Environments are completely isolated:
 
-✅ **Secrets don't overlap**: Changing `API_KEY` in `development` won't affect `production`
-✅ **Independent versioning**: Each environment has its own version history
-✅ **Separate tokens**: You can create environment-specific Service Tokens
-
-## Common Environment Patterns
-
-### 1. Three-Tier (Classic)
-
-```
-my-app
-├── development (local dev)
-├── staging     (pre-production)
-└── production  (live)
-```
-
-### 2. Feature Branching
-
-```
-my-app
-├── development
-├── feature-auth (dedicated to a feature branch)
-├── feature-payments
-└── production
-```
-
-### 3. Multi-Region
-
-```
-my-app
-├── development
-├── production-us-east
-├── production-eu-west
-└── production-ap-south
-```
-
-### 4. Customer-Specific
-
-```
-my-app
-├── development
-├── prod-customer-a
-├── prod-customer-b
-└── prod-customer-c
-```
+- **Secrets don't overlap**: Changing `API_KEY` in `development` won't affect `production`
+- **Independent versioning**: Each environment has its own version history
+- **Separate tokens**: You can create environment-specific Service Tokens
 
 ## Cloning Environments
 
@@ -183,7 +144,7 @@ To copy all secrets from one environment to another:
 
 ```bash
 # Clone production -> staging
-redenv clone production staging
+redenv clone --from production --to staging
 ```
 
 This is useful for:
@@ -192,34 +153,34 @@ This is useful for:
 - Refreshing staging with production data
 - Creating test environments
 
-<Callout type="warn">
-  **Be careful!** Cloning will **overwrite** all secrets in the target
-  environment. This operation cannot be undone (but you can rollback individual
-  secrets).
-</Callout>
-
 ## Comparing Environments
 
 See what's different between environments:
 
 ```bash
-redenv diff development production
+redenv diff
 ```
 
 Output:
 
-```
-Differences between 'development' and 'production':
+```bash
+🔍 Comparing "selected 1" ↔ "selected 2" for project "redenv"
 
-Only in development:
-  - TEST_MODE
+🔹 Only in development
+  • TEST_MODE="test"
 
-Only in production:
-  - PRODUCTION_API_URL
+🟡 Changed
+  • API_KEY
+      selected 1: "sk_test_..."
+      selected 2: "sk_live_..."
+  • DATABASE_URL
+      selected 1: "postgresql://localhost/..."
+      selected 2: "postgresql://prod-host/..."
 
-Different values:
-  - API_KEY: 'sk_test_...' vs 'sk_live_...'
-  - DATABASE_URL: 'postgresql://localhost/...' vs 'postgresql://prod-host/...'
+🟢 Same
+  • DEBUG
+
+✨ Diff complete.
 ```
 
 ## Syncing Secrets Across Environments
@@ -227,14 +188,8 @@ Different values:
 Add the same secret to multiple environments at once:
 
 ```bash
-# Add to both development and staging
-redenv sync KEY "value" --environments development,staging
+redenv sync
 ```
-
-<Callout type="info">
-  This is useful for non-sensitive shared configuration like API endpoints or
-  feature flags that should be consistent across environments.
-</Callout>
 
 ## Environment Naming Conventions
 
@@ -252,68 +207,24 @@ redenv sync KEY "value" --environments development,staging
 
 ## Deleting Environments
 
-While there's no dedicated "delete environment" command, you can remove all secrets:
+To permanently remove an environment and all its secrets, use the `drop` command:
 
 ```bash
-# Switch to the environment
-redenv switch env old-feature
+# Delete a specific environment
+redenv drop env staging
 
-# Remove each secret
-redenv remove SECRET_NAME --all-keys
-```
-
-Or use the `drop` command to remove the entire project (all environments):
-
-```bash
-redenv drop my-app
+# Delete multiple environments
+redenv drop env staging qa-testing
 ```
 
 <Callout type="error">
-  This is destructive and cannot be undone. Use `redenv backup` first!
+  **This action is irreversible.** All secrets and version history for the
+  environment will be permanently deleted. Always run `redenv backup` before
+  dropping environments.
 </Callout>
-
-## Environment Variables in CI/CD
-
-When deploying to different environments, set the environment name via an environment variable:
-
-**GitHub Actions:**
-
-```yaml
-- name: Deploy to Production
-  env:
-    REDENV_ENVIRONMENT: production
-    REDENV_TOKEN_ID: ${{ secrets.REDENV_TOKEN_ID }}
-    REDENV_TOKEN_KEY: ${{ secrets.REDENV_TOKEN_KEY }}
-  run: |
-    # Your deployment script
-```
-
-**Vercel:**
-
-```bash
-# Set different tokens per deployment environment
-# Production
-REDENV_ENVIRONMENT=production
-REDENV_TOKEN_ID=tok_prod_123
-REDENV_TOKEN_KEY=redenv_sk_prod_...
-
-# Preview
-REDENV_ENVIRONMENT=staging
-REDENV_TOKEN_ID=tok_staging_456
-REDENV_TOKEN_KEY=redenv_sk_staging_...
-```
 
 ## Best Practices
 
 1. **Separate tokens per environment**: Don't use the same service token for dev and prod
 2. **Use meaningful names**: Be explicit (`production`, not `prod`)
-3. **Document your environments**: Keep a README explaining what each environment is for
-4. **Limit who can access production**: Use read-only tokens for most services
-5. **Sync configuration, not secrets**: Use `sync` for non-sensitive shared config only
-6. **Backup before major changes**: `redenv backup` before cloning or bulk operations
-
-## Next Steps
-
-- [Service Tokens](/docs/concepts/tokens) - Create environment-specific access tokens
-- [Secret Management](/docs/concepts/secrets) - Working with secrets
-- [CLI Commands](/docs/cli/commands) - Complete reference
+3. **Backup before major changes**: `redenv backup` before cloning or bulk operations
