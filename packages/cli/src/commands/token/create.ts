@@ -25,18 +25,16 @@ const generateRandomString = (length: number) => {
 export function createTokenCommand(program: Command) {
   program
     .command("create")
-    .argument("[project]", "The project to create a token for")
+    .option("-p, --project <project>", "The project to create a token for")
     .option("-n, --name <name>", "A name for the token")
     .option("-d, --description <text>", "A description for the token")
     .description("Create a new Service Token to grant access to an application")
     .action(action);
 }
 
-export const action = async (project: string, options: any) => {
+export const action = async (options: any) => {
   let projectName =
-    sanitizeName(project) ||
-    (await loadProjectConfig())?.name ||
-    options.project;
+    sanitizeName(options.project) || (await loadProjectConfig())?.name;
 
   if (!projectName) {
     const projects = await fetchProjects();
@@ -48,7 +46,7 @@ export const action = async (project: string, options: any) => {
       select({
         message: "Select project to create a token for:",
         choices: projects.map((p) => ({ name: p, value: p })),
-      })
+      }),
     );
   }
 
@@ -58,7 +56,7 @@ export const action = async (project: string, options: any) => {
       input({
         message: "Enter a name for this token (e.g., Vercel Production):",
         validate: (n) => n.length > 0 || "Name cannot be empty.",
-      })
+      }),
     ));
 
   const description =
@@ -66,7 +64,7 @@ export const action = async (project: string, options: any) => {
     (await safePrompt(() =>
       input({
         message: "Enter a description for this token (optional):",
-      })
+      }),
     ));
 
   let spinner: Ora | undefined;
@@ -87,7 +85,7 @@ export const action = async (project: string, options: any) => {
     if (!metadata) {
       throw new RedenvError(
         "Failed to retrieve project metadata.",
-        "PROJECT_NOT_FOUND"
+        "PROJECT_NOT_FOUND",
       );
     }
 
@@ -110,28 +108,28 @@ export const action = async (project: string, options: any) => {
 
     console.log(
       chalk.yellow(
-        "\n┌───────────────────────────────────────────────────────────────────┐"
-      )
+        "\n┌───────────────────────────────────────────────────────────────────┐",
+      ),
     );
     console.log(
       chalk.yellow("│ ") +
         chalk.bold.red("IMPORTANT:") +
         " The Secret Token Key is shown " +
         chalk.bold("ONCE") +
-        ". Store it securely. │"
+        ". Store it securely. │",
     );
     console.log(
       chalk.yellow(
-        "└───────────────────────────────────────────────────────────────────┘\n"
-      )
+        "└───────────────────────────────────────────────────────────────────┘\n",
+      ),
     );
     console.log(
-      chalk.cyan("  Your application will need these three values:\n")
+      chalk.cyan("  Your application will need these three values:\n"),
     );
     console.log(`    ${chalk.bold("Project Name:")}      ${projectName}`);
     console.log(`    ${chalk.bold("Public Token ID:")}   ${publicTokenId}`);
     console.log(
-      `    ${chalk.bold("Secret Token Key:")}  ${chalk.green(secretToken)}`
+      `    ${chalk.bold("Secret Token Key:")}  ${chalk.green(secretToken)}`,
     );
   } catch (err) {
     const error = err as Error;
@@ -145,7 +143,7 @@ export const action = async (project: string, options: any) => {
 
     if (error.name !== "ExitPromptError") {
       console.log(
-        chalk.red(`\n✘ An unexpected error occurred: ${error.message}`)
+        chalk.red(`\n✘ An unexpected error occurred: ${error.message}`),
       );
     }
     process.exit(1);

@@ -12,14 +12,14 @@ import { parseServiceTokens } from ".";
 export function listTokenCommand(program: Command) {
   program
     .command("list")
-    .argument("[project]", "The project to list tokens for")
     .description("List all active Service Tokens for a project")
+    .option("-p, --project <project>", "The project to list tokens for")
     .action(action);
 }
 
-export const action = async (project: string, options: any) => {
+export const action = async (options: any) => {
   let projectName =
-    sanitizeName(project) || (await loadProjectConfig())?.name || options.project;
+    sanitizeName(options.project) || (await loadProjectConfig())?.name;
 
   if (!projectName) {
     const projects = await fetchProjects();

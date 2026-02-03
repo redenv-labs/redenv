@@ -11,21 +11,19 @@ import { parseServiceTokens } from ".";
 export function revokeTokenCommand(program: Command) {
   program
     .command("revoke")
-    .argument("[project]", "The project to revoke a token from")
     .argument("[token-ids...]", "The ID(s) of the token to revoke")
+    .option("-p, --project <project>", "The project to revoke a token from")
     .description("Revoke a Service Token to remove an application's access")
     .action(action);
 }
 
 export const action = async (
-  project: string,
   tokenIds: string[],
   options: any
 ) => {
   let projectName =
-    sanitizeName(project) ||
-    (await loadProjectConfig())?.name ||
-    options.project;
+    sanitizeName(options.project) ||
+    (await loadProjectConfig())?.name;
 
   if (!projectName) {
     const projects = await fetchProjects();

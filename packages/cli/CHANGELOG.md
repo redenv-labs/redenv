@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- **Token Commands:** Changed `[project]` argument to `-p, --project` option for consistency with other commands.
+
 ## [1.8.0] - 2026-02-03
 
 ### Fixed
