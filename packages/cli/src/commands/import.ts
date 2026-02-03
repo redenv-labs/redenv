@@ -14,7 +14,7 @@ import {
 import { writeSecret } from "@redenv/core";
 import { fetchEnvironments, fetchProjects } from "../utils/redis";
 import dotenv from "dotenv";
-import { unlockProject } from "../core/keys";
+import { createProject, unlockProject } from "../core/keys";
 import { decrypt } from "@redenv/core";
 import { redis } from "../core/upstash";
 
@@ -38,6 +38,7 @@ export const action = async (filePath: string, options: any) => {
   const config = options.skipConfig ? null : await loadProjectConfig();
   let projectName = sanitizeName(options.project) || config?.name;
   let environment = sanitizeName(options.env) || config?.environment;
+  let isNewProject = false;
 
   if (!projectName) {
     const projects = await fetchProjects();
@@ -58,6 +59,7 @@ export const action = async (filePath: string, options: any) => {
           validate: nameValidator,
         })
       );
+      isNewProject = true;
     }
   }
 
@@ -83,7 +85,14 @@ export const action = async (filePath: string, options: any) => {
     }
   }
 
-  const pek = options.pek ?? (await unlockProject(projectName as string));
+  let pek: CryptoKey;
+  if (options.pek) {
+    pek = options.pek;
+  } else if (isNewProject) {
+    pek = await createProject(projectName as string);
+  } else {
+    pek = await unlockProject(projectName as string);
+  }
 
   const spinner = ora("Parsing .env file...").start();
   let parsed: Record<string, string> = {};

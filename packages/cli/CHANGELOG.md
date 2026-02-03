@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.0] - 2026-02-03
+
+### Fixed
+
+- **Import New Project:** The "New Project" option in `import` command now properly creates project metadata (PEK, salt, etc.) instead of failing with "project not found".
+
+### Changed
+
+- Extracted project creation logic into shared `createProject()` function for better code reuse.
+- Simplified `register` command to use the shared project creation utility.
+
 ## [1.7.0] - 2026-02-03
 
 ### Changed

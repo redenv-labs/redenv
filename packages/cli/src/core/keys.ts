@@ -1,11 +1,20 @@
 import { password, confirm } from "@inquirer/prompts";
 import { safePrompt } from "../utils";
 import { redis } from "./upstash";
-import { deriveKey, decrypt, exportKey, importKey } from "@redenv/core";
+import {
+  deriveKey,
+  decrypt,
+  encrypt,
+  exportKey,
+  importKey,
+  generateRandomKey,
+  generateSalt,
+  bufferToHex,
+  RedenvError,
+} from "@redenv/core";
 import ora, { type Ora } from "ora";
 import keytar from "keytar";
 import chalk from "chalk";
-import { RedenvError } from "@redenv/core";
 
 const KEYTAR_SERVICE = "redenv-cli";
 
@@ -147,4 +156,77 @@ export async function verifyPassword(projectName: string): Promise<void> {
 export async function forgetProjectKey(projectName: string): Promise<boolean> {
   keyCache.delete(projectName);
   return keytar.deletePassword(KEYTAR_SERVICE, projectName);
+}
+
+/**
+ * Creates a new project with a master password.
+ * Generates PEK, encrypts it, and stores metadata in Redis.
+ * @param projectName The name of the project to create.
+ * @param options Optional settings like historyLimit.
+ * @returns The Project Encryption Key (PEK) as a CryptoKey.
+ */
+export async function createProject(
+  projectName: string,
+  options: { historyLimit?: number } = {}
+): Promise<CryptoKey> {
+  const historyLimit = options.historyLimit ?? 10;
+
+  const masterPassword = await safePrompt(() =>
+    password({
+      message: `Create a Master Password for project "${projectName}":`,
+      mask: "*",
+      validate: (p) =>
+        p.length >= 8 || "Password must be at least 8 characters long.",
+    })
+  );
+
+  await safePrompt(() =>
+    password({
+      message: "Confirm Master Password:",
+      mask: "*",
+      validate: (value) =>
+        value === masterPassword || "Passwords do not match.",
+    })
+  );
+
+  const spinner = ora("Encrypting and registering project...").start();
+
+  try {
+    const salt = generateSalt();
+    const projectEncryptionKey = await generateRandomKey();
+    const passwordDerivedKey = await deriveKey(masterPassword, salt);
+
+    const exportedPEK = await exportKey(projectEncryptionKey);
+    const encryptedPEK = await encrypt(exportedPEK, passwordDerivedKey);
+
+    const metaKey = `meta@${projectName}`;
+    const metadata = {
+      encryptedPEK: encryptedPEK,
+      salt: bufferToHex(salt as any),
+      historyLimit: historyLimit,
+      kdf: "pbkdf2",
+      algorithm: "aes-256-gcm",
+      createdAt: new Date().toISOString(),
+    };
+    await redis.hset(metaKey, metadata);
+
+    spinner.succeed(
+      chalk.green(
+        `Project "${projectName}" registered and encrypted successfully!`
+      )
+    );
+    console.log(
+      chalk.yellow("  Remember your Master Password. It cannot be recovered.")
+    );
+
+    // cache in memory
+    keyCache.set(projectName, projectEncryptionKey);
+
+    return projectEncryptionKey;
+  } catch (err) {
+    spinner.fail(
+      chalk.red(`Failed to register project: ${(err as Error).message}`)
+    );
+    throw err;
+  }
 }

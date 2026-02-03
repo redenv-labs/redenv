@@ -1,20 +1,10 @@
 import chalk from "chalk";
-import {  loadProjectConfig } from "../core/config";
+import { loadProjectConfig } from "../core/config";
 import { Command } from "commander";
-import { safePrompt, sanitizeName, writeProjectConfig } from "../utils";
-import { password } from "@inquirer/prompts";
+import { sanitizeName, writeProjectConfig } from "../utils";
 import ora from "ora";
-import {
-  deriveKey,
-  encrypt,
-  generateRandomKey,
-  generateSalt,
-  exportKey,
-  bufferToHex,
-  RedenvError,
-} from "@redenv/core";
 import { redis } from "../core/upstash";
-import { unlockProject } from "../core/keys";
+import { unlockProject, createProject } from "../core/keys";
 
 export function registerCommand(program: Command) {
   program
@@ -86,65 +76,22 @@ export const action = async (
 
   // --- Flow for creating a NEW project ---
   console.log(chalk.blue(`Creating new project "${sanitizedProject}"...`));
-  const masterPassword = await safePrompt(() =>
-    password({
-      message: `Create a Master Password for project "${sanitizedProject}":`,
-      mask: "*",
-      validate: (p) =>
-        p.length >= 8 || "Password must be at least 8 characters long.",
-    })
-  );
-  await safePrompt(() =>
-    password({
-      message: "Confirm Master Password:",
-      mask: "*",
-      validate: (value) =>
-        value === masterPassword || "Passwords do not match.",
-    })
-  );
 
-  spinner.start("Encrypting and registering project...");
+  const historyLimit = parseInt(options.historyLimit, 10);
+  if (isNaN(historyLimit) || historyLimit < 0) {
+    console.log(chalk.red("✘ History limit must be a non-negative number."));
+    return;
+  }
+
   try {
-    const salt = generateSalt();
-    const projectEncryptionKey = await generateRandomKey();
-    const passwordDerivedKey = await deriveKey(masterPassword, salt);
+    await createProject(sanitizedProject as string, { historyLimit });
 
-    const exportedPEK = await exportKey(projectEncryptionKey);
-    const encryptedPEK = await encrypt(exportedPEK, passwordDerivedKey);
-
-    const historyLimit = parseInt(options.historyLimit, 10);
-    if (isNaN(historyLimit) || historyLimit < 0) {
-      throw new RedenvError("History limit must be a non-negative number.", "UNKNOWN_ERROR");
-    }
-
-    const metadata = {
-      encryptedPEK: encryptedPEK,
-      salt: bufferToHex(salt as any),
-      historyLimit: historyLimit,
-      kdf: "pbkdf2",
-      algorithm: "aes-256-gcm",
-      createdAt: new Date().toISOString(),
-    };
-    await redis.hset(metaKey, metadata);
-    spinner.stop();
-    
     const data = {
       name: sanitizedProject,
       environment: sanitizedEnv,
     };
     await writeProjectConfig(data);
-
-    spinner.succeed(
-      chalk.green(
-        `Project "${sanitizedProject}" registered and encrypted successfully!`
-      )
-    );
-    console.log(
-      chalk.yellow("  Remember your Master Password. It cannot be recovered.")
-    );
-  } catch (err) {
-    spinner.fail(
-      chalk.red(`Failed to register project: ${(err as Error).message}`)
-    );
+  } catch {
+    // Error already logged by createProject
   }
 };
