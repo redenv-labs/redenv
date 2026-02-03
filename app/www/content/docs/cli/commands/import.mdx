@@ -1,0 +1,103 @@
+---
+title: import
+description: Import environment variables from a .env file.
+---
+
+The `import` command reads a `.env` file and encrypts its contents into your Redenv project.
+
+## Usage
+
+```bash
+redenv import <file>
+```
+
+## Arguments
+
+| Name   | Required | Description           |
+| ------ | -------- | --------------------- |
+| `file` | Yes      | Path to the .env file |
+
+## Options
+
+| Flag                   | Description                 |
+| ---------------------- | --------------------------- |
+| `-p, --project <name>` | Project name                |
+| `-e, --env <env>`      | Environment                 |
+| `--skip-config`        | Ignore local project config |
+
+## Examples
+
+```bash
+# Import from .env
+redenv import .env
+
+# Import to specific environment
+redenv import .env.production --env production
+
+# Import to new project
+redenv import .env --project new-app
+```
+
+## Interactive Flow
+
+```bash
+$ redenv import .env
+
+? Select project:
+❯ my-app
+  other-project
+  New Project
+
+? Select environment:
+❯ development
+  staging
+  New environment
+
+? Enter your Master Password: ********
+
+✔ Parsed .env file
+✔ Loaded existing vars
+
+⚠ The following keys already exist in development:my-app:
+~ API_KEY   current="sk_old..." | new="sk_new..."
+
+? Do you want to override these existing keys? Yes
+
+Keys to import:
++ DATABASE_URL="postgresql://..."
++ API_KEY="sk_new..."
+
+? Import 2 variable(s) into development:my-app? Yes
+
+⠋ Encrypting and importing variables...
+✔ Imported 2 variable(s).
+```
+
+<Callout type="info">
+  You can create a new project or environment directly from the import flow by
+  selecting "New Project" or "New environment".
+</Callout>
+
+## Conflict Handling
+
+When a key already exists:
+
+- Current and new values are displayed side-by-side
+- Only keys with **different values** are shown as conflicts
+- Identical keys are skipped automatically
+- You choose whether to override conflicting keys
+- New keys are always imported
+
+## Reserved Keys
+
+Keys starting with `__` are reserved for internal metadata and will be skipped:
+
+```bash
+⚠ The following keys were skipped because they start with '__': __VERSION, __META
+```
+
+## Related Commands
+
+- [export](/docs/cli/commands/export) - Export to .env file
+- [add](/docs/cli/commands/add) - Add secrets manually
+- [register](/docs/cli/commands/register) - Register a project first

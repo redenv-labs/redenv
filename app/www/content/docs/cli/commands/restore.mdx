@@ -1,0 +1,75 @@
+---
+title: restore
+description: Restore projects and secrets from an encrypted backup file.
+---
+
+The `restore` command imports projects and secrets from a backup file created by [backup](/docs/cli/commands/backup).
+
+## Usage
+
+```bash
+redenv restore <file>
+```
+
+## Arguments
+
+| Name   | Required | Description             |
+| ------ | -------- | ----------------------- |
+| `file` | Yes      | Path to the backup file |
+
+## Examples
+
+```bash
+# Restore from backup in current directory
+redenv restore redenv-backup.enc
+
+# Restore from specific path
+redenv restore ~/backups/redenv-2026-02-01.enc
+```
+
+## Interactive Flow
+
+```bash
+$ redenv restore redenv-backup.enc
+
+? Enter the password for this backup file: ********
+⠋ Reading and decrypting backup file...
+✔ Backup file decrypted successfully.
+
+Backup file contains the following data:
+
+  my-app
+    - development
+    - production
+    - staging
+    - (Project Metadata)
+
+  another-project
+    - development
+    - (Project Metadata)
+
+? This will overwrite any conflicting data in Redis. This action cannot be undone. Are you sure? Yes
+⠋ Restoring data to Redis...
+✔ Successfully restored data for 8 keys.
+```
+
+## What Gets Restored
+
+| Data                | Restored |
+| ------------------- | -------- |
+| Project metadata    | Yes      |
+| All environments    | Yes      |
+| All secrets         | Yes      |
+| Version history     | Yes      |
+| Service tokens      | Yes      |
+
+<Callout type="warning">
+  **Existing data will be overwritten.** If a project in the backup already
+  exists in Redis, its data will be replaced with the backup version. This
+  action cannot be undone.
+</Callout>
+
+## Related Commands
+
+- [backup](/docs/cli/commands/backup) - Create a backup
+- [import](/docs/cli/commands/import) - Import from .env file

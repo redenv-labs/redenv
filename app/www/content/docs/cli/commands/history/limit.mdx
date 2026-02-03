@@ -1,0 +1,66 @@
+---
+title: limit
+description: Set the maximum number of versions to retain per secret.
+---
+
+The `history limit` command sets how many versions of each secret are retained for a project.
+
+## Usage
+
+```bash
+redenv history limit [value]
+```
+
+## Arguments
+
+| Name    | Required | Description                                  |
+| ------- | -------- | -------------------------------------------- |
+| `value` | No       | New limit (prompts interactively if omitted) |
+
+## Options
+
+| Flag                   | Description  |
+| ---------------------- | ------------ |
+| `-p, --project <name>` | Project name |
+
+## Examples
+
+```bash
+# Set limit interactively
+redenv history limit
+
+# Set limit to 25 versions
+redenv history limit 25
+
+# Set unlimited history (0 = no limit)
+redenv history limit 0
+```
+
+## Interactive Flow
+
+```bash
+$ redenv history limit
+
+? Select a project: my-app
+? Enter the new history limit. Use 0 for unlimited: 10
+? Enter your Master Password: ********
+⠋ Setting history limit for "my-app" to 10...
+✔ History limit for "my-app" is now set to 10.
+```
+
+<Callout type="info">
+  Use `0` for unlimited history retention. Note that this can increase storage
+  usage over time.
+</Callout>
+
+<Callout type="warning">
+  When you reduce the limit, older versions are pruned during the next write
+  operation, not immediately. This ensures no data loss occurs during normal
+  operation.
+</Callout>
+
+## Related Commands
+
+- [history view](/docs/cli/commands/history/view) - View version history
+- [rollback](/docs/cli/commands/rollback) - Revert to a previous version
+- [register](/docs/cli/commands/register) - Set initial limit with `--history-limit`

@@ -1,0 +1,67 @@
+---
+title: logout
+description: Clear cached Master Password from your system keychain.
+---
+
+The `logout` command removes remembered Master Password(s) from your OS keychain.
+
+## Usage
+
+```bash
+redenv logout [projects...]
+```
+
+## Arguments
+
+| Name       | Required | Description                                      |
+| ---------- | -------- | ------------------------------------------------ |
+| `projects` | No       | Project name(s) to log out from (interactive if omitted) |
+
+## Examples
+
+```bash
+# Log out interactively (select from list)
+redenv logout
+
+# Log out from specific project
+redenv logout my-app
+
+# Log out from multiple projects
+redenv logout my-app another-project
+```
+
+## Interactive Flow
+
+```bash
+$ redenv logout
+
+? Select projects to log out from:
+◉ my-app
+◯ another-project
+◯ test-project
+
+✔ Logged out from project "my-app".
+
+Logout summary: 1 successful, 0 had no saved password.
+  You will be prompted for the Master Password on next use.
+```
+
+## What It Does
+
+Clears the cached Master Password from your system keychain for selected projects. After logging out, you'll need to enter the Master Password again next time you access the project.
+
+<Callout type="info">
+  This does **not** delete your global config (`~/.config/redenv/config.json`).
+  Your Upstash credentials remain saved.
+</Callout>
+
+## When to Use
+
+- Before leaving a shared workstation
+- After finishing a session on a colleague's machine
+- When you want to force password re-entry for security
+
+## Related Commands
+
+- [setup](/docs/cli/commands/setup) - Configure Upstash credentials
+- [change-password](/docs/cli/commands/change-password) - Change Master Password

@@ -1,0 +1,70 @@
+---
+title: setup
+description: Configure your Upstash Redis credentials to connect Redenv to your database.
+---
+
+The `setup` command configures your global Upstash Redis credentials. This is the first command you should run after installing Redenv.
+
+## Usage
+
+```bash
+redenv setup
+```
+
+## What It Does
+
+1. Prompts for your **Upstash Redis URL** (e.g., `https://your-db.upstash.io`)
+2. Prompts for your **Upstash Redis Token** (masked input)
+3. Prompts for your **email** (used for audit trails)
+4. Saves credentials to the global config file
+
+## Interactive Flow
+
+```bash
+$ redenv setup
+
+? Enter your Upstash Redis URL: https://my-redis.upstash.io
+? Enter your Upstash Redis Token: ********
+? Please enter your email for auditing purposes: dev@example.com
+
+✔ Global config saved successfully!
+```
+
+## Credential Storage
+
+Credentials are stored in your system's config directory:
+
+| OS      | Location                                           |
+| ------- | -------------------------------------------------- |
+| Linux   | `~/.config/redenv/config.json`                     |
+| macOS   | `~/Library/Application Support/redenv/config.json` |
+| Windows | `%APPDATA%\redenv\config.json`                     |
+
+<Callout type="info">
+  These credentials are used to connect to Upstash Redis. They are **not** your
+  Master Password.
+</Callout>
+
+## Multiple Databases
+
+If you've previously configured credentials, `setup` will show your saved connections and let you choose:
+
+```bash
+$ redenv setup
+
+? Select Upstash credentials:
+❯ https://prod-db.upstash.io | ****xyz1 | 1/15/2026, 10:00:00 AM
+  https://dev-db.upstash.io | ****abc2 | 1/10/2026, 3:30:00 PM
+  ✨ Use new credentials
+```
+
+## Getting Your Credentials
+
+1. Go to [Upstash Console](https://console.upstash.com?utm_source=redenv_dev&utm_medium=docs)
+2. Create or select a Redis database
+3. Copy the **REST URL** and **REST Token** from the database details
+
+## Related Commands
+
+- [register](/docs/cli/commands/register) - Register a new project after setup
+- [doctor](/docs/cli/commands/doctor) - Diagnose connection issues

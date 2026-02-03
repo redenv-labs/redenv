@@ -1,0 +1,113 @@
+---
+title: export
+description: Export environment variables to a .env file.
+---
+
+The `export` command exports your secrets to a local `.env` file for development use.
+
+## Usage
+
+```bash
+redenv export
+```
+
+## Options
+
+| Flag                   | Description                         | Default     |
+| ---------------------- | ----------------------------------- | ----------- |
+| `-p, --project <name>` | Project name                        | From config |
+| `-e, --env <env>`      | Environment                         | From config |
+| `-f, --file <path>`    | Output file                         | `.env`      |
+| `--raw`                | Export without resolving references | `false`     |
+| `--skip-config`        | Ignore local project config         | `false`     |
+
+## Examples
+
+```bash
+# Export to .env
+redenv export
+
+# Export to specific file
+redenv export --file .env.local
+
+# Export production environment
+redenv export --env production --file .env.production
+
+# Export raw values (without reference expansion)
+redenv export --raw
+```
+
+## Interactive Flow
+
+```bash
+$ redenv export
+
+? Select project: my-app
+? Select environment: development
+? Enter your Master Password: ********
+
+✔ Variables fetched
+
+? Export ALL keys? No
+
+? Select keys to export:
+◉ API_KEY
+◉ DATABASE_URL
+◯ DEBUG
+
+✔ Exported 2 keys to .env
+```
+
+<Callout type="info">
+  You can export all keys at once or select specific keys via checkbox.
+</Callout>
+
+## Conflict Detection
+
+If the target file already exists, the CLI detects conflicts:
+
+```bash
+$ redenv export
+
+⚠ The following keys already exist with different values: API_KEY, DEBUG
+? Override them? Yes
+
+✔ Exported 5 keys to .env
+```
+
+- **Identical keys** are skipped automatically
+- **Conflicting keys** (different values) prompt for override
+- **Overridden lines** are commented with `# overridden by redenv`
+- **New keys** are appended with a timestamp comment
+
+## Output Format
+
+Exported files include a timestamp for tracking:
+
+```bash
+# Variables exported by redenv from my-app (development) at 2026-02-03T10:30:00.000Z
+API_KEY=sk_test_abc123
+DATABASE_URL=postgresql://localhost:5432/mydb
+```
+
+## Variable References
+
+By default, references like `${BASE_URL}` are expanded:
+
+```bash
+# Without --raw (default)
+AUTH_URL=https://api.example.com/auth
+
+# With --raw
+AUTH_URL=${BASE_URL}/auth
+```
+
+<Callout type="info">
+  Use `--raw` if you want to preserve references for tools that support
+  variable expansion (like Docker Compose).
+</Callout>
+
+## Related Commands
+
+- [import](/docs/cli/commands/import) - Import from .env file
+- [list](/docs/cli/commands/list) - View secrets without exporting

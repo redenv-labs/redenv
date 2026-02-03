@@ -1,0 +1,38 @@
+---
+title: list
+description: List all service tokens for a project.
+---
+
+The `token list` command shows all service tokens created for a project.
+
+## Usage
+
+```bash
+redenv token list
+```
+
+## Options
+
+| Flag                   | Description  |
+| ---------------------- | ------------ |
+| `-p, --project <name>` | Project name |
+
+## Example
+
+```bash
+redenv token list
+```
+| Name   | Description | Token ID             | Created At                |
+|--------|-------------|----------------------|---------------------------|
+| ci-dev | CI pipeline | stk_yYt2HXRprwYgpvwv | 1/16/2026, 10:21:37 AM    |
+| api    | Production  | stk_g38OHzGnUOoiARfh | 1/16/2026, 5:02:41 PM     |
+
+<Callout type="info">
+  The **Secret Key** is never shown in the list. It's displayed only once at
+  creation time.
+</Callout>
+
+## Related Commands
+
+- [token create](/docs/cli/commands/token/create) - Create a new token
+- [token revoke](/docs/cli/commands/token/revoke) - Revoke a token

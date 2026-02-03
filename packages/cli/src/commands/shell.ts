@@ -99,11 +99,10 @@ async function wireCommand(
   if (commandAction && typeof commandAction === "function") {
     newCmd.action(async (...args: any[]) => {
       // Pop the command and options objects from the end of the args array.
-      args.pop() as Command; // remove command
+      args.pop() as Command;
       const originalOpts = args.pop() as Record<string, any>;
 
       // `args` now contains only the command's arguments.
-
       // Create a new, mutable options object that includes the shell's context.
       const newOpts = {
         ...originalOpts,
@@ -112,10 +111,8 @@ async function wireCommand(
         pek: context.pek,
       };
 
-      // Reconstruct the arguments for the action function: [arg1, arg2, ..., newOptions]
       const finalArgs = [...args, newOpts];
 
-      // Call the original action with the corrected arguments.
       await commandAction(...finalArgs);
     });
   }
@@ -133,7 +130,6 @@ export function shellCommand(program: Command) {
     .option("-p, --project <name>", "Specify the project name")
     .option("-e, --env <env>", "Specify the environment")
     .action(async (options) => {
-      // Set an environment variable to signal that the shell is active
       process.env.REDENV_SHELL_ACTIVE = "true";
 
       const projectConfig = await loadProjectConfig();

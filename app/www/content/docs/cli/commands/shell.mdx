@@ -1,0 +1,107 @@
+---
+title: shell
+description: Enter an interactive shell for rapid secret management.
+---
+
+The `shell` command launches an interactive REPL-style shell for managing secrets without re-entering your password for each command.
+
+## Usage
+
+```bash
+redenv shell
+```
+
+## Options
+
+| Flag                   | Description      |
+| ---------------------- | ---------------- |
+| `-p, --project <name>` | Project name     |
+| `-e, --env <env>`      | Environment name |
+
+## Interactive Flow
+
+```bash
+$ redenv shell
+
+Connecting to my-app (development)...
+? Enter your Master Password: ********
+
+
+┌─────────────────────────────┐
+│     🚀  Welcome to the Redenv Interactive Shell │
+├─────────────┬───────────────┤
+│ Project                            │ my-app                                 │
+│ Environment                │ development                      │
+│ User                                 │ dev@example.com          │
+└─────────────┴───────────────┘
+Type "help" for commands, or "exit" to quit.
+
+redenv › my-app:development $ list
+📦 Variables for my-app (development):
+
+API_KEY
+│
+└─ sk_test_abc123
+
+redenv › my-app:development $ add NEW_KEY
+? Enter the value for NEW_KEY: my-secret-value
+✔ Added 'NEW_KEY' to my-app (development).
+
+redenv › my-app:development $ exit
+
+Exiting Redenv Shell. Goodbye!
+```
+
+## Available Commands
+
+All Redenv commands work inside the shell without the `redenv` prefix.
+
+| Command          | Description               |
+| ---------------- | ------------------------- |
+| `<any command>`  | Run any Redenv command    |
+| `help [command]` | Show help for command(s)  |
+| `exit` or `quit` | Exit the shell            |
+
+### System Commands
+
+| Command | Description               |
+| ------- | ------------------------- |
+| `clear` | Clear the terminal screen |
+| `ls`    | List files                |
+| `pwd`   | Print working directory   |
+| `echo`  | Print a string            |
+
+## Benefits
+
+- **No password re-entry** — Authenticate once, run many commands
+- **Context preservation** — Stay in the same project/environment
+- **Faster workflow** — Skip repetitive prompts
+- **Command history** — Use arrow keys to recall previous commands
+
+<Callout type="info">
+  Shell mode is ideal for bulk operations like adding multiple secrets or
+  reviewing configurations across environments.
+</Callout>
+
+## Switching Environments
+
+You can switch environments without exiting:
+
+```bash
+redenv › my-app:development $ switch env
+? Select environment:
+❯ production
+  staging
+
+✔ Switched to "production" environment.
+
+redenv › my-app:production $ list
+📦 Variables for my-app (production):
+...
+```
+
+## Related Commands
+
+- [list](/docs/cli/commands/list) - View secrets
+- [add](/docs/cli/commands/add) - Add secrets
+- [switch env](/docs/cli/commands/switch/env) - Switch environments

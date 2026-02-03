@@ -1,0 +1,91 @@
+---
+title: clone
+description: Clone environment variables from one environment to another.
+---
+
+The `clone` command copies secrets from a source environment to a destination environment.
+
+## Usage
+
+```bash
+redenv clone [key]
+```
+
+## Arguments
+
+| Name  | Required | Description                                |
+| ----- | -------- | ------------------------------------------ |
+| `key` | No       | Clone only a specific key (all if omitted) |
+
+## Options
+
+| Flag                   | Description                 |
+| ---------------------- | --------------------------- |
+| `-f, --from <env>`     | Source environment          |
+| `-t, --to <env>`       | Destination environment     |
+| `-p, --project <name>` | Project name                |
+| `--skip-config`        | Ignore local project config |
+
+## Examples
+
+```bash
+# Clone interactively
+redenv clone
+
+# Clone from production to staging
+redenv clone --from production --to staging
+
+# Clone a specific key
+redenv clone API_KEY --from production --to development
+```
+
+## Interactive Flow
+
+```bash
+$ redenv clone
+
+? Select project: my-app
+? Enter your Master Password: ********
+? Select source environment: production
+? Select destination environment:
+❯ staging
+  development
+  New environment
+
+Variables loaded.
+
+? Select keys to clone into staging:
+◉ API_KEY
+◉ DATABASE_URL
+◯ DEBUG
+
+Keys to clone:
+  • API_KEY=sk_live_...
+  • DATABASE_URL=postgresql://...
+
+? Proceed? Yes
+
+✔ Successfully cloned 2 key(s) from production → staging!
+```
+
+<Callout type="info">
+  You can create a new environment directly by selecting "New environment" as
+  the destination.
+</Callout>
+
+## Behavior
+
+- **Only missing keys** are shown — keys that already exist in the destination are skipped
+- If a key already exists in the destination, it won't be overwritten
+- Use [sync](/docs/cli/commands/sync) for bidirectional synchronization with conflict resolution
+
+<Callout type="info">
+  Clone copies the encrypted data directly, so **version history is
+  preserved**. The cloned secret retains its full audit trail.
+</Callout>
+
+## Related Commands
+
+- [sync](/docs/cli/commands/sync) - Two-way synchronization with merging
+- [diff](/docs/cli/commands/diff) - Compare environments without modifying
+- [switch env](/docs/cli/commands/switch/env) - Change active environment

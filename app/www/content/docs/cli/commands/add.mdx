@@ -1,0 +1,117 @@
+---
+title: add
+description: Add a new environment variable to your Redenv project.
+---
+
+The `add` command creates a new encrypted secret in your project.
+
+## Usage
+
+```bash
+redenv add <key> [value]
+```
+
+## Arguments
+
+| Name    | Required | Description                                      |
+| ------- | -------- | ------------------------------------------------ |
+| `key`   | Yes      | The environment variable name (e.g., `API_KEY`)  |
+| `value` | No       | The secret value (interactive prompt if omitted) |
+
+## Options
+
+| Flag                   | Description          |
+| ---------------------- | -------------------- |
+| `-p, --project <name>` | Specify project name |
+| `-e, --env <env>`      | Specify environment  |
+
+## Examples
+
+### Add with inline value
+
+```bash
+redenv add API_KEY "sk_test_abc123"
+```
+
+### Add interactively
+
+```bash
+redenv add DATABASE_URL
+# Opens multiline editor for input
+```
+
+### Add to specific environment
+
+```bash
+redenv add API_KEY "sk_live_xyz" --env production
+```
+
+## Interactive Mode
+
+When the value is omitted, you get a multiline editor:
+
+```bash
+$ redenv add DATABASE_URL
+
+? Enter value for DATABASE_URL:
+> postgresql://user:pass@localhost:5432/mydb
+> (↵ submit • ⇧↵ new line)
+
+✔ Added 'DATABASE_URL' → postgresql://user:pass@localhost:5432/mydb in my-app (development)
+```
+
+<Callout type="info">
+  **Use interactive mode for:**
+  - Sensitive values (avoids shell history)
+  - Multiline values (JSON, certificates, etc.)
+  - Values with special characters
+  - Variable references (`${KEY}` syntax)
+</Callout>
+
+## Variable References
+
+You can reference other secrets using `${KEY}` syntax:
+
+```bash
+redenv add BASE_URL "https://api.example.com"
+redenv add AUTH_URL "\${BASE_URL}/auth"
+```
+
+<Callout type="error">
+  **Use interactive mode for references!** Shells like Bash/Zsh interpret `${}`
+  syntax before Redenv sees it. This can corrupt your values or cause errors.
+
+  ```bash
+  # Dangerous - shell expands ${BASE_URL} first
+  redenv add AUTH_URL "${BASE_URL}/auth"
+
+  # Safe - interactive mode bypasses shell
+  redenv add AUTH_URL
+  > ${BASE_URL}/auth
+  ```
+</Callout>
+
+The CLI validates that referenced keys exist before saving. See [Secret Expansion](/docs/concepts/expansion) for details on how references work at runtime.
+
+## Key Naming Rules
+
+- Must start with a letter or underscore
+- Can contain letters, numbers, and underscores
+- Cannot start with `__` (reserved for internal metadata)
+
+```bash
+# Valid
+redenv add MY_API_KEY "value"
+redenv add _PRIVATE_KEY "value"
+
+# Invalid
+redenv add 123_KEY "value"     # Starts with number
+redenv add __INTERNAL "value"  # Reserved prefix
+```
+
+## Related Commands
+
+- [edit](/docs/cli/commands/edit) - Update an existing secret
+- [view](/docs/cli/commands/view) - View a secret's value
+- [remove](/docs/cli/commands/remove) - Delete a secret
+- [list](/docs/cli/commands/list) - List all secrets

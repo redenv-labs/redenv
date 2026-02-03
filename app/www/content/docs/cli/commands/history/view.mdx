@@ -1,0 +1,82 @@
+---
+title: view
+description: View the version history of a secret.
+---
+
+The `history view` command shows all versions of a secret with timestamps and who made each change. This provides a complete audit trail for any secret.
+
+## Usage
+
+```bash
+redenv history view [key]
+```
+
+## Arguments
+
+| Name  | Required | Description                                         |
+| ----- | -------- | --------------------------------------------------- |
+| `key` | No       | Secret to view history for (interactive if omitted) |
+
+## Options
+
+| Flag                   | Description      |
+| ---------------------- | ---------------- |
+| `-p, --project <name>` | Project name     |
+| `-e, --env <env>`      | Environment name |
+
+## Examples
+
+```bash
+# View history for a specific key
+redenv history view API_KEY
+
+# View history interactively (select key from list)
+redenv history view
+
+# View history from specific project/environment
+redenv history view DATABASE_URL --project my-app --env production
+```
+
+## Interactive Flow
+
+```bash
+$ redenv history view
+
+? Select a project: my-app
+? Select an environment: development
+? Enter your Master Password: ********
+⠋ Fetching keys for selection...
+? Select a secret to view its history:
+❯ API_KEY
+  DATABASE_URL
+  SECRET_KEY
+
+⠋ Fetching history...
+✔ Found 3 version(s) for "API_KEY".
+```
+| Version | Timestamp            | User           | Value           |
+|---------|----------------------|----------------|-----------------|
+| 3       | 2/1/2026, 3:00 PM    | dev@example    | sk_latest       |
+| 2       | 1/15/2026, 4:00 PM   | dev@example    | sk_old_value    |
+| 1       | 1/10/2026, 2:30 PM   | dev@example    | sk_original     |
+
+## Output Columns
+
+| Column    | Description                           |
+| --------- | ------------------------------------- |
+| Version   | Version number (newest first)         |
+| Timestamp | When this version was created         |
+| User      | Email or username who made the change |
+| Value     | The decrypted secret value            |
+
+<Callout type="info">
+  The number of versions retained is controlled by [history
+  limit](/docs/cli/commands/history/limit). Older versions are automatically
+  pruned when the limit is exceeded.
+</Callout>
+
+## Related Commands
+
+- [rollback](/docs/cli/commands/rollback) - Revert to a previous version
+- [history limit](/docs/cli/commands/history/limit) - Set retention limit
+- [edit](/docs/cli/commands/edit) - Create a new version

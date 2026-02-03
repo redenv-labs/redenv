@@ -1,0 +1,93 @@
+---
+title: sync
+description: Synchronize variables between environments with interactive conflict resolution.
+---
+
+The `sync` command provides a powerful way to synchronize secrets between environments, with full control over what gets added, updated, or removed.
+
+## Usage
+
+```bash
+redenv sync
+```
+
+## Options
+
+| Flag                   | Description  |
+| ---------------------- | ------------ |
+| `-p, --project <name>` | Project name |
+
+## Examples
+
+```bash
+# Sync interactively
+redenv sync
+
+# Sync specific project
+redenv sync --project my-app
+```
+
+## Interactive Flow
+
+```bash
+$ redenv sync
+
+? Select project: my-app
+? Enter your Master Password: ********
+? Select the SOURCE environment: production
+? Select the DESTINATION environment: staging
+
+⠋ Fetching and comparing environments...
+✔ Environments compared.
+
+Changes to sync from production to staging:
+
+? The following keys will be ADDED to staging. Select which to apply:
+◉ NEW_API_KEY="sk_live_..."
+◉ FEATURE_FLAG="enabled"
+
+? The following keys will be UPDATED in staging. Select which to apply:
+◉ DATABASE_URL: postgres://old... ➤ postgres://new...
+◯ DEBUG: "false" ➤ "true"
+
+? The following keys will be REMOVED from staging. Select which to apply:
+◯ OLD_SECRET="..."
+
+? You are about to apply 3 change(s) to the staging environment. This can be destructive. Are you sure? Yes
+
+⠋ Applying changes to staging...
+✔ Successfully synced 3 change(s) to staging.
+```
+
+<Callout type="info">
+  Sync requires at least two environments. If environments are already
+  identical, you'll see "Environments are already in sync. Nothing to do."
+</Callout>
+
+## Change Types
+
+You can selectively apply each type of change:
+
+- **Additions** — Keys in source but not in destination
+- **Updates** — Keys with different values (shows before → after)
+- **Removals** — Keys in destination but not in source
+
+<Callout type="error">
+  **Sync can delete keys.** Review removals carefully before confirming. This
+  action is destructive and cannot be undone.
+</Callout>
+
+## Sync vs Clone
+
+| Feature   | `sync`                     | `clone`                    |
+| --------- | -------------------------- | -------------------------- |
+| Direction | Source → Destination       | Source → Destination       |
+| Additions | <span className="text-green-500">✔</span> Select which to add     | <span className="text-green-500">✔</span> Select which to add     |
+| Updates   | <span className="text-green-500">✔</span> Select which to update  | <span className="text-red-500">✘</span> Skips existing keys     |
+| Removals  | <span className="text-green-500">✔</span> Select which to remove  | <span className="text-red-500">✘</span> Never removes           |
+| Use case  | Full environment alignment | Copy missing keys only     |
+
+## Related Commands
+
+- [diff](/docs/cli/commands/diff) - Compare without modifying
+- [clone](/docs/cli/commands/clone) - Copy missing keys only

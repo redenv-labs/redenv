@@ -1,0 +1,109 @@
+---
+title: register
+description: Register a new project or connect your local directory to an existing Redenv project.
+---
+
+The `register` command creates a new project in your Upstash Redis database or connects a local directory to an existing project.
+
+## Usage
+
+```bash
+redenv register <project> [environment]
+```
+
+## Arguments
+
+| Name          | Required | Description                                  |
+| ------------- | -------- | -------------------------------------------- |
+| `project`     | Yes      | The project name                             |
+| `environment` | No       | Initial environment (default: `development`) |
+
+## Options
+
+| Flag                      | Description                               | Default |
+| ------------------------- | ----------------------------------------- | ------- |
+| `-l, --history-limit <n>` | Number of version history entries to keep | `10`    |
+
+## Examples
+
+### Register a new project
+
+```bash
+redenv register my-awesome-app
+```
+
+### Register with a specific environment
+
+```bash
+redenv register my-app production
+```
+
+### Register with custom history limit
+
+```bash
+redenv register my-app --history-limit 25
+```
+
+## Interactive Flow
+
+### New Project
+
+```bash
+$ redenv register my-app
+
+Creating new project "my-app"...
+? Create a Master Password for project "my-app": ********
+? Confirm Master Password: ********
+
+✔ Project "my-app" registered and encrypted successfully!
+  Remember your Master Password. It cannot be recovered.
+```
+
+### Existing Project
+
+```bash
+$ redenv register my-app
+
+Project "my-app" already exists remotely.
+? Enter your Master Password: ********
+
+✔ Successfully connected local directory to project "my-app".
+```
+
+## What Gets Created
+
+After registering, a `redenv.config.ts` file is created in your project directory:
+
+```typescript title="redenv.config.ts"
+import { defineConfig } from "@redenv/core";
+
+export default defineConfig({
+  name: "my-app",
+  environment: "development",
+});
+```
+
+<Callout type="info">
+  This config file is safe to commit to git, it contains no secrets.
+</Callout>
+
+## Master Password
+
+<Callout type="error">
+  **CRITICAL**: Your Master Password is the **only key** to decrypt your
+  secrets. If lost, your secrets **cannot be recovered**. Store it in a password
+  manager.
+</Callout>
+
+The Master Password:
+
+- Is **never stored** anywhere (not in Redis, not on disk)
+- Is used to derive the encryption key for your secrets
+- Can be temporarily cached in your system keychain during CLI sessions
+
+## Related Commands
+
+- [setup](/docs/cli/commands/setup) - Configure Upstash credentials first
+- [add](/docs/cli/commands/add) - Add secrets after registration
+- [switch](/docs/cli/commands/switch) - Switch environments
+- [drop](/docs/cli/commands/drop) - Delete a project

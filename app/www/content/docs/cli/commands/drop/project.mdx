@@ -1,0 +1,70 @@
+---
+title: project
+description: Delete one or more projects and all their environments.
+---
+
+The `drop project` command permanently deletes projects and all their environments.
+
+<Callout type="error">
+  **This action is irreversible!** All secrets, environments, and version
+  history will be permanently deleted. Create a backup with `redenv backup`
+  before proceeding.
+</Callout>
+
+## Usage
+
+```bash
+redenv drop project [projects...]
+```
+
+## Arguments
+
+| Name       | Required | Description                                        |
+| ---------- | -------- | -------------------------------------------------- |
+| `projects` | No       | Project name(s) to delete (interactive if omitted) |
+
+## Examples
+
+```bash
+# Delete interactively (checkbox selection)
+redenv drop project
+
+# Delete specific project
+redenv drop project old-app
+
+# Delete multiple projects
+redenv drop project old-app test-project
+```
+
+## Interactive Flow
+
+```bash
+$ redenv drop project
+
+? Select one or more projects to drop:
+◯ my-app
+◉ old-app
+◉ test-project
+
+Projects selected for complete deletion:
+  - old-app
+  - test-project
+
+? This will permanently delete all selected projects... Are you sure? Yes
+
+Processing project "old-app"...
+? Enter your Master Password: ********
+✔ Found 5 Redis keys to delete.
+✔ Successfully dropped project "old-app".
+
+Processing project "test-project"...
+? Enter your Master Password: ********
+✔ Found 3 Redis keys to delete.
+✔ Successfully dropped project "test-project".
+```
+
+## Related Commands
+
+- [backup](/docs/cli/commands/backup) - Backup before deleting
+- [register](/docs/cli/commands/register) - Create a new project
+- [drop env](/docs/cli/commands/drop/env) - Delete specific environments only

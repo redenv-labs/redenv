@@ -1,0 +1,93 @@
+---
+title: create
+description: Create a new service token for application access.
+---
+
+The `token create` command generates a service token that allows applications to access secrets without the Master Password.
+
+## Usage
+
+```bash
+redenv token create
+```
+
+## Options
+
+| Flag                       | Description                     |
+| -------------------------- | ------------------------------- |
+| `-p, --project <name>`     | Project name                    |
+| `-n, --name <name>`        | Token name (for identification) |
+| `-d, --description <text>` | Token description               |
+
+## Examples
+
+```bash
+# Create token interactively
+redenv token create
+
+# Create token for specific project
+redenv token create --project my-app --name "Vercel Production"
+```
+
+## Interactive Flow
+
+```bash
+$ redenv token create
+
+? Select project to create a token for: my-app
+? Enter a name for this token (e.g., Vercel Production): production-api
+? Enter a description for this token (optional): API access for production
+? Enter your Master Password: ********
+⠋ Generating and saving token...
+✔ Service Token created successfully.
+
+┌───────────────────────────────────────────┐
+│ IMPORTANT: The Secret Token Key is shown ONCE. Store it securely. │
+└───────────────────────────────────────────┘
+
+  Your application will need these three values:
+
+    Project Name:      my-app
+    Public Token ID:   stk_yYt2HXRprwYgpvwv
+    Secret Token Key:  redenv_sk_8f3a9b2c1d4e5f6g7h8i9j0k...
+```
+
+<Callout type="error">
+  **The Secret Token Key is shown only once.** Store it immediately in a secure
+  location (password manager, CI/CD secrets, etc.). If lost, you must revoke the
+  token and create a new one.
+</Callout>
+
+## Token Scope
+
+Service tokens grant access to the **entire project** across all environments. The environment is specified when your application loads secrets, not when creating the token.
+
+## Using Tokens in Applications
+
+```typescript title="lib/redenv.ts"
+import { Redenv } from "@redenv/client";
+
+export const redenv = new Redenv({
+  project: "my-app",
+  environment: "production",
+  tokenId: process.env.REDENV_TOKEN_ID,
+  token: process.env.REDENV_TOKEN_KEY,
+  upstash: {
+    url: process.env.UPSTASH_REDIS_URL,
+    token: process.env.UPSTASH_REDIS_TOKEN,
+  },
+});
+```
+
+```typescript title="app.ts"
+import { redenv } from "./lib/redenv";
+
+await redenv.load();
+console.log(process.env.API_KEY);
+```
+
+## Related Commands
+
+- [token list](/docs/cli/commands/token/list) - List all tokens
+- [token revoke](/docs/cli/commands/token/revoke) - Revoke a token
+- [register](/docs/cli/commands/register) - Register a project first

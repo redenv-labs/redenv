@@ -20,6 +20,27 @@ import {
   Tabs,
 } from "fumadocs-ui/components/tabs";
 
+export const Code = ({ children, className, ...props }: React.HTMLAttributes<HTMLElement>) => {
+  // Code blocks from markdown have a className like "language-typescript"
+  // Inline code doesn't have this class
+  const isCodeBlock = className?.includes("language-");
+
+  if (isCodeBlock) {
+    // Let the parent <pre> (CodeBlock) handle styling
+    return <code className={className} {...props}>{children}</code>;
+  }
+  
+  // Inline code styling
+  return (
+    <code 
+      className="bg-secondary px-1.5 py-0.5 rounded text-sm font-mono text-foreground" 
+      {...props}
+    >
+      {children}
+    </code>
+  );
+};
+
 export function CodeBlock({
   children,
   icon,

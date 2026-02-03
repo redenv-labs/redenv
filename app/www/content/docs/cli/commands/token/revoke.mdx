@@ -1,0 +1,63 @@
+---
+title: revoke
+description: Revoke (delete) a service token.
+---
+
+The `token revoke` command permanently invalidates one or more service tokens.
+
+## Usage
+
+```bash
+redenv token revoke [token-ids...]
+```
+
+## Arguments
+
+| Name         | Required | Description                                       |
+| ------------ | -------- | ------------------------------------------------- |
+| `token-ids`  | No       | Token ID(s) to revoke (interactive if omitted)    |
+
+## Options
+
+| Flag                   | Description  |
+| ---------------------- | ------------ |
+| `-p, --project <name>` | Project name |
+
+## Examples
+
+```bash
+# Revoke interactively (select from list)
+redenv token revoke
+
+# Revoke specific token
+redenv token revoke stk_yYt2HXRprwYgpvwv
+
+# Revoke multiple tokens
+redenv token revoke stk_token1 stk_token2
+```
+
+## Interactive Flow
+
+```bash
+$ redenv token revoke
+
+? Select project: my-app
+⠋ Fetching tokens...
+? Select token(s) to revoke:
+◉ ci-dev (stk_yYt2HXRprwYgpvwv)
+◯ api (stk_g38OHzGnUOoiARfh)
+
+? Are you sure you want to revoke 1 token(s)? Any application using them will immediately lose access. Yes
+⠋ Revoking token(s)...
+✔ Successfully revoked 1 token(s).
+```
+
+<Callout type="warning">
+  Revoking a token immediately invalidates it. Applications using this token
+  will lose access to secrets instantly. This action cannot be undone.
+</Callout>
+
+## Related Commands
+
+- [token list](/docs/cli/commands/token/list) - List tokens to find the ID
+- [token create](/docs/cli/commands/token/create) - Create a replacement token

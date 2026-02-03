@@ -1,0 +1,75 @@
+---
+title: doctor
+description: Diagnose configuration issues and verify your Redenv setup.
+---
+
+The `doctor` command runs a health check on your Redenv configuration to identify common issues.
+
+## Usage
+
+```bash
+redenv doctor
+```
+
+## What It Checks
+
+| Check               | Description                                         |
+| ------------------- | --------------------------------------------------- |
+| Global config       | Verifies Upstash credentials exist and are valid    |
+| Redis connection    | Tests connectivity to your Upstash Redis database   |
+| Local project config| Checks for `redenv.config.ts` in current directory  |
+| Project sync status | Verifies local environment exists in remote project |
+
+## Example Output
+
+### Healthy Setup
+
+```bash
+$ redenv doctor
+
+🩺 Running redenv doctor...
+⠋ Checking global configuration...
+✔ Global config found at ~/.config/redenv/config.json
+⠋ Connecting to Redis...
+✔ Redis connection successful
+⠋ Checking for local project configuration...
+✔ Local project config found
+  - Project: my-app
+  - Environment: development
+⠋ Checking project sync status...
+✔ Local environment is in sync with remote.
+
+🩺 All checks passed! Your setup is looking healthy.
+```
+
+### With Issues
+
+```bash
+$ redenv doctor
+
+🩺 Running redenv doctor...
+⠋ Checking global configuration...
+✘ Global config not found at ~/.config/redenv/config.json
+  Run `redenv setup` to create it.
+
+🩺 Doctor finished with errors.
+```
+
+## Common Issues
+
+| Issue                      | Solution                                              |
+| -------------------------- | ----------------------------------------------------- |
+| Global config not found    | Run `redenv setup` to configure Upstash credentials   |
+| Redis connection failed    | Check your Upstash URL and token in global config     |
+| Local config not found     | Run `redenv register <project>` in your project directory |
+| Environment not in sync    | The local environment doesn't exist remotely yet      |
+
+<Callout type="info">
+  Run `redenv doctor` after setup or when commands fail unexpectedly to quickly
+  identify configuration issues.
+</Callout>
+
+## Related Commands
+
+- [setup](/docs/cli/commands/setup) - Configure credentials
+- [register](/docs/cli/commands/register) - Register a project

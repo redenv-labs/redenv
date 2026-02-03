@@ -13,6 +13,7 @@ import {
   CodeBlockTabsList,
   CodeBlockTabsTrigger,
   CodeBlockTab,
+  Code
 } from "@/components/mdx/CodeBlock";
 import { ComponentProps } from "react";
 import { cn } from "./lib/utils";
@@ -202,27 +203,6 @@ const Blockquote = ({
   </blockquote>
 );
 
-const Code = ({ children, className, ...props }: React.HTMLAttributes<HTMLElement>) => {
-  // Code blocks from markdown have a className like "language-typescript"
-  // Inline code doesn't have this class
-  const isCodeBlock = className?.includes("language-");
-  
-  if (isCodeBlock) {
-    // Let the parent <pre> (CodeBlock) handle styling
-    return <code className={className} {...props}>{children}</code>;
-  }
-  
-  // Inline code styling
-  return (
-    <code 
-      className="bg-secondary px-1.5 py-0.5 rounded text-sm font-mono text-foreground" 
-      {...props}
-    >
-      {children}
-    </code>
-  );
-};
-
 // =============================================================================
 // TABLE
 // =============================================================================
@@ -318,6 +298,7 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     // Code
     pre: CodeBlock,
     code: Code,
+
     // Blockquote
     blockquote: Blockquote,
 
@@ -354,7 +335,7 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
       <Tabs className={cn(className, "bg-secondary")} {...props} />
     ),
     Tab: ({ className, ...props }: ComponentProps<typeof Tab>) => (
-      <Tab className={cn(className, "bg-background/40")} {...props} />
+      <Tab className={cn(className, "bg-background/40 [&_code:only-child]:bg-transparent [&_code:only-child]:p-0 [&_code:only-child]:rounded-none [&_code:only-child]:text-inherit")} {...props} />
     ),
 
     ...components,

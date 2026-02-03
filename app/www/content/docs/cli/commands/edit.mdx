@@ -1,0 +1,99 @@
+---
+title: edit
+description: Update the value of an existing environment variable.
+---
+
+The `edit` command modifies an existing secret's value, creating a new version in the history.
+
+## Usage
+
+```bash
+redenv edit <key>
+```
+
+## Arguments
+
+| Name  | Required | Description                           |
+| ----- | -------- | ------------------------------------- |
+| `key` | Yes      | The environment variable name to edit |
+
+## Options
+
+| Flag                   | Description          |
+| ---------------------- | -------------------- |
+| `-p, --project <name>` | Specify project name |
+| `-e, --env <env>`      | Specify environment  |
+
+## Examples
+
+```bash
+# Edit a secret
+redenv edit API_KEY
+
+# Edit in specific environment
+redenv edit DATABASE_URL --env production
+```
+
+## Interactive Flow
+
+The editor opens with the current value pre-filled:
+
+```bash
+$ redenv edit API_KEY
+
+? Enter your Master Password: ********
+
+? Enter new value for API_KEY:
+> sk_test_new_value
+> (↵ submit • ⇧↵ new line)
+
+✔ Updated 'API_KEY' → sk_test_new_value in my-app (development)
+```
+
+<Callout type="info">
+  Edit is always interactive. The current value is shown as the default, so you
+  can make small changes without retyping everything.
+</Callout>
+
+## Variable References
+
+When editing, the CLI validates any `${KEY}` references in real-time:
+
+```bash
+$ redenv edit AUTH_URL
+
+? Enter new value for AUTH_URL:
+> ${INVALID_KEY}/auth
+
+✘ Unknown key(s) referenced: INVALID_KEY
+  Available keys: API_KEY, BASE_URL, DATABASE_URL
+
+  Please try again.
+```
+
+The prompt loops until you enter a valid value with no broken references.
+
+## Version History
+
+Each edit creates a new version. Previous values are never deleted:
+
+```bash
+# View all versions
+redenv history view API_KEY
+
+# Rollback to a previous version
+redenv rollback API_KEY --version 2
+```
+
+<Callout type="info">
+  Edits don't delete previous versions — everything is tracked for audit
+  purposes. Use [history limit](/docs/cli/commands/history/limit) to control
+  retention.
+</Callout>
+
+## Related Commands
+
+- [add](/docs/cli/commands/add) - Create a new secret
+- [view](/docs/cli/commands/view) - View current value
+- [history view](/docs/cli/commands/history/view) - View version history
+- [rollback](/docs/cli/commands/rollback) - Revert to previous version

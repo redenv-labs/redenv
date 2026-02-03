@@ -1,0 +1,69 @@
+---
+title: remove
+description: Remove one or more secrets from your project.
+---
+
+The `remove` command permanently deletes secrets from an environment.
+
+## Usage
+
+```bash
+redenv remove [key]
+```
+
+## Arguments
+
+| Name  | Required | Description                                               |
+| ----- | -------- | --------------------------------------------------------- |
+| `key` | No       | Specific key to remove (interactive selection if omitted) |
+
+## Options
+
+| Flag                   | Description          |
+| ---------------------- | -------------------- |
+| `-p, --project <name>` | Specify project name |
+| `-e, --env <env>`      | Specify environment  |
+
+## Examples
+
+```bash
+# Remove a specific key
+redenv remove API_KEY
+
+# Remove multiple keys interactively
+redenv remove
+```
+
+## Interactive Flow
+
+When no key is specified, you can select multiple keys to remove:
+
+```bash
+$ redenv remove
+
+? Select keys to remove:
+◯ API_KEY
+◉ OLD_SECRET
+◉ DEPRECATED_KEY
+
+? This will permanently remove 2 key(s) from the "development" environment. Are you sure? Yes
+? Enter your Master Password: ********
+
+✔ Successfully removed 2 key(s) from my-app (development).
+```
+
+<Callout type="error">
+  **This action is permanent.** The secret and all its version history will be
+  deleted. Consider using [backup](/docs/cli/commands/backup) first.
+</Callout>
+
+<Callout type="info">
+  Keys starting with `__` are reserved for internal metadata and cannot be
+  removed.
+</Callout>
+
+## Related Commands
+
+- [add](/docs/cli/commands/add) - Add a secret
+- [backup](/docs/cli/commands/backup) - Backup before removing
+- [rollback](/docs/cli/commands/rollback) - Undo edits (not deletions)

@@ -96,15 +96,16 @@ function SidebarPage({ item, level = 0 }: { item: Item; level?: number }) {
       className={cn(
         "relative group flex items-center py-1.5 text-sm transition-[colors,padding-left] duration-150 rounded-md",
         isActive
-          ? "bg-primary/10 text-primary font-medium border border-primary/20 pl-2.5!"
+          ? "bg-primary/10 text-primary font-medium border border-primary/20"
           : "text-muted-foreground hover:text-foreground hover:bg-secondary/50",
       )}
-      style={{ paddingLeft: `${level * 12 + 6}px` }}
+      style={{ paddingLeft: `${level * 12 + (isActive ? 10 : 6)}px` }}
     >
       {isActive && (
         <motion.div
           layoutId="sidebar-active-indicator"
-          className="absolute left-0 w-0.5 h-5 bg-primary rounded-full"
+          className="absolute left-0 h-5 bg-primary rounded-full"
+          style={{ width: `${Math.max(2, 4 - level)}px` }}
           transition={{ type: "spring", stiffness: 500, damping: 30 }}
         />
       )}

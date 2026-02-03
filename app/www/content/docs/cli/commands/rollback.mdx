@@ -1,0 +1,102 @@
+---
+title: rollback
+description: Roll back a secret to a previous version.
+---
+
+The `rollback` command reverts a secret to a previous version from its history.
+
+## Usage
+
+```bash
+redenv rollback [key]
+```
+
+## Arguments
+
+| Name  | Required | Description                                               |
+| ----- | -------- | --------------------------------------------------------- |
+| `key` | No       | The secret to rollback (interactive selection if omitted) |
+
+## Options
+
+| Flag                   | Description                            |
+| ---------------------- | -------------------------------------- |
+| `-p, --project <name>` | Project name                           |
+| `-e, --env <env>`      | Environment                            |
+| `-t, --to <version>`   | Specific version number to rollback to |
+
+## Examples
+
+### Rollback interactively
+
+```bash
+redenv rollback
+```
+
+### Rollback specific key
+
+```bash
+redenv rollback API_KEY
+```
+
+### Rollback to specific version
+
+```bash
+redenv rollback API_KEY --to 2
+```
+
+## Interactive Flow
+
+```bash
+$ redenv rollback
+
+? Select a project: my-app
+? Enter your Master Password: ********
+? Select an environment: development
+
+⠋ Fetching keys...
+
+? Select a secret to roll back: API_KEY (3 versions)
+
+⠋ Fetching history...
+✔ History fetched.
+
+Available rollback versions:
+┌──────┬───────────────┬────────────────┬─────────────────┐
+│   Version  │              Timestamp             │                      User                      │                       Value                       │
+├──────┼───────────────┼────────────────┼─────────────────┤
+│ 2                 │    1/15/2026, 4:00 PM      │           dev@example              │              sk_old_value                │
+│ 1                  │    1/10/2026, 2:30 PM      │           dev@example              │              sk_original                     │
+└──────┴───────────────┴────────────────┴─────────────────┘
+
+? Select a version to roll back to: Version 2 (by dev@example)
+
+? Are you sure you want to roll back "API_KEY" to version 2?
+  This will create a new version with the value: "sk_old_value" Yes
+
+⠋ Rolling back secret...
+✔ Successfully rolled back "API_KEY" by creating a new version with the content of version 2.
+```
+
+## How Rollback Works
+
+Rollback doesn't delete history. Instead, it:
+
+1. Reads the old version's value
+2. Creates a **new version** with that value
+3. The new version becomes the latest
+
+<Callout type="info">
+  This design preserves the complete audit trail. You can always see when and
+  why a rollback occurred.
+</Callout>
+
+## Requirements
+
+- The secret must have at least 2 versions
+- You cannot rollback to the current (latest) version
+
+## Related Commands
+
+- [history view](/docs/cli/commands/history/view) - View version history
+- [edit](/docs/cli/commands/edit) - Modify to a new value instead

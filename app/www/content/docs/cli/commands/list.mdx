@@ -1,0 +1,86 @@
+---
+title: list
+description: List all environment variables in a project.
+---
+
+The `list` command displays all secrets in the current environment with their decrypted values.
+
+## Usage
+
+```bash
+redenv list
+```
+
+## Options
+
+| Flag                   | Description          |
+| ---------------------- | -------------------- |
+| `-p, --project <name>` | Specify project name |
+| `-e, --env <env>`      | Specify environment  |
+
+## Examples
+
+```bash
+# List all secrets
+redenv list
+
+# List from specific project/environment
+redenv list --project my-app --env production
+```
+
+## Output Format
+
+Secrets are displayed alphabetically in a tree-style format:
+
+```bash
+$ redenv list
+
+? Enter your Master Password: ********
+
+📦 Variables for my-app (development):
+
+API_KEY
+│
+└─ sk_test_abc123xyz
+
+DATABASE_URL
+│
+└─ postgresql://localhost:5432/mydb
+
+DEBUG
+│
+└─ true
+```
+
+## Variable Expansion
+
+When a secret contains references, both the raw and expanded values are shown:
+
+```bash
+AUTH_URL
+│
+└─ ${BASE_URL}/auth (https://api.example.com/auth)
+```
+
+<Callout type="info">
+  If a circular reference is detected, a warning is shown and the unexpanded
+  values are displayed instead.
+</Callout>
+
+## Multiline Values
+
+Multiline secrets are displayed with proper formatting:
+
+```bash
+PRIVATE_KEY
+│
+└─ -----BEGIN RSA PRIVATE KEY-----
+   MIIEowIBAAKCAQEA...
+   -----END RSA PRIVATE KEY-----
+```
+
+## Related Commands
+
+- [view](/docs/cli/commands/view) - View a single secret
+- [add](/docs/cli/commands/add) - Add a new secret
+- [export](/docs/cli/commands/export) - Export to .env file

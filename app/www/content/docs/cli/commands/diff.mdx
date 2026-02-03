@@ -1,0 +1,83 @@
+---
+title: diff
+description: Compare environment variables between two environments.
+---
+
+The `diff` command shows differences between any two environments in a project.
+
+## Usage
+
+```bash
+redenv diff
+```
+
+## Options
+
+| Flag                   | Description                 |
+| ---------------------- | --------------------------- |
+| `-p, --project <name>` | Project name                |
+| `--skip-config`        | Ignore local project config |
+
+## Examples
+
+```bash
+# Compare interactively
+redenv diff
+
+# Compare specific project
+redenv diff --project my-app
+```
+
+## Interactive Flow
+
+```bash
+$ redenv diff
+
+? Select project: my-app
+? Enter your Master Password: ********
+? Pick two environments to compare:
+◉ development
+◉ production
+◯ staging
+
+⠋ Fetching and decrypting variables...
+✔ Loaded and decrypted both environments
+
+🔍 Comparing "development" ↔ "production" for project "my-app"
+
+🔸 Only in development
+  • DEBUG="true"
+
+🔹 Only in production
+  • SENTRY_DSN="https://xyz@sentry.io"
+
+🟡 Changed
+  • API_KEY
+      development: "sk_test_abc123"
+      production: "sk_live_xyz789"
+
+🟢 Same
+  • BASE_URL
+  • DATABASE_URL
+
+✨ Diff complete.
+```
+
+<Callout type="info">
+  If your project has only two environments, they are automatically selected for
+  comparison.
+</Callout>
+
+## Output Categories
+
+| Symbol       | Meaning                                        |
+| ------------ | ---------------------------------------------- |
+| 🔸 Only in A | Keys that exist only in the first environment  |
+| 🔹 Only in B | Keys that exist only in the second environment |
+| 🟡 Changed   | Keys with different values                     |
+| 🟢 Same      | Keys with identical values                     |
+
+## Related Commands
+
+- [sync](/docs/cli/commands/sync) - Apply changes between environments
+- [clone](/docs/cli/commands/clone) - Copy missing keys

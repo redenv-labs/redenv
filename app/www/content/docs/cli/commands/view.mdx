@@ -1,0 +1,103 @@
+---
+title: view
+description: View the decrypted value of a specific environment variable.
+---
+
+The `view` command displays the current decrypted value of a single secret, with automatic reference expansion.
+
+## Usage
+
+```bash
+redenv view <key>
+```
+
+## Arguments
+
+| Name  | Required | Description                           |
+| ----- | -------- | ------------------------------------- |
+| `key` | Yes      | The environment variable name to view |
+
+## Options
+
+| Flag                   | Description                 |
+| ---------------------- | --------------------------- |
+| `-p, --project <name>` | Project name                |
+| `-e, --env <env>`      | Environment name            |
+
+## Examples
+
+```bash
+# View a secret interactively
+redenv view API_KEY
+
+# View in specific environment
+redenv view DATABASE_URL --env production
+
+# View from specific project
+redenv view SECRET_KEY --project my-app --env staging
+```
+
+## Interactive Flow
+
+```bash
+$ redenv view API_KEY
+
+? Enter your Master Password: ********
+⠋ Fetching value for API_KEY in my-app...
+✔ Found key in my-app (development)
+
+API_KEY
+│
+└─ sk_test_abc123xyz
+```
+
+If no environment is specified and no local config exists, you'll be prompted to select one:
+
+```bash
+$ redenv view API_KEY --project my-app
+
+? Enter your Master Password: ********
+? Select environment:
+❯ development
+  staging
+  production
+```
+
+## Variable Expansion
+
+If the secret contains references, both the raw and expanded values are shown:
+
+```bash
+$ redenv view AUTH_URL
+
+AUTH_URL
+│
+└─ ${BASE_URL}/auth (https://api.example.com/auth)
+```
+
+The value in parentheses is the fully expanded result after resolving all references.
+
+## Multiline Values
+
+Multiline secrets display with proper formatting:
+
+```bash
+$ redenv view PRIVATE_KEY
+
+PRIVATE_KEY
+│
+└─ -----BEGIN RSA PRIVATE KEY-----
+   MIIEowIBAAKCAQEA...
+   -----END RSA PRIVATE KEY-----
+```
+
+<Callout type="info">
+  Keys starting with `__` are reserved for internal metadata and cannot be
+  viewed. Use [list](/docs/cli/commands/list) to see all available keys.
+</Callout>
+
+## Related Commands
+
+- [list](/docs/cli/commands/list) - View all secrets
+- [edit](/docs/cli/commands/edit) - Modify a secret
+- [history view](/docs/cli/commands/history/view) - View version history
