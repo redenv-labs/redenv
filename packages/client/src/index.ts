@@ -23,7 +23,9 @@ const lru = new LRUCache<string, CacheEntry>({ max: 1000 });
  * The main Redenv class used to configure and create clients.
  */
 export class Redenv {
-  private options: Required<Omit<RedenvOptions, "cache" | "environment" | "env">> & {
+  private options: Required<
+    Omit<RedenvOptions, "cache" | "environment" | "env">
+  > & {
     environment: string;
     cache: { ttl: number; staleWhileRevalidate: number };
     env: { override: boolean };
@@ -63,7 +65,7 @@ export class Redenv {
   private validateOptions(options: RedenvOptions) {
     const required = ["project", "tokenId", "token", "upstash"];
     const missing = required.filter(
-      (key) => !options[key as keyof RedenvOptions]
+      (key) => !options[key as keyof RedenvOptions],
     );
     if (!options.upstash?.url || !options.upstash?.token) {
       missing.push("upstash.url", "upstash.token");
@@ -71,7 +73,7 @@ export class Redenv {
 
     if (missing.length > 0) {
       const errorMessage = `[REDENV] Missing required configuration options: ${missing.join(
-        ", "
+        ", ",
       )}`;
       throw new RedenvError(errorMessage, "MISSING_CONFIG");
     }
@@ -99,8 +101,8 @@ export class Redenv {
   /**
    * Initializes the environment with secrets.
    */
-  public async init(): Promise<void> {
-    await this.load();
+  public async init(): Promise<Secrets> {
+    return this.load();
   }
 
   /**
@@ -130,7 +132,10 @@ export class Redenv {
           ? err.message
           : "An unknown error occurred during set operation.";
       error(`Failed to set secret: ${errorMessage}`);
-      throw new RedenvError(`Failed to set secret: ${errorMessage}`, "UNKNOWN_ERROR");
+      throw new RedenvError(
+        `Failed to set secret: ${errorMessage}`,
+        "UNKNOWN_ERROR",
+      );
     }
   }
 
@@ -145,7 +150,7 @@ export class Redenv {
   public async getVersion(
     key: string,
     version: number,
-    mode: "id" | "index" = "id"
+    mode: "id" | "index" = "id",
   ): Promise<string | undefined> {
     const historyCacheKey = `history:${this.options.project}:${this.options.environment}:${key}`;
 
@@ -180,12 +185,17 @@ export class Redenv {
 
     try {
       const pek = await this.getProjectKey();
-      return await decryptVersion(this.redis, this.options, targetRecord.value, pek);
+      return await decryptVersion(
+        this.redis,
+        this.options,
+        targetRecord.value,
+        pek,
+      );
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       error(
         `Failed to decrypt version ${version} of ${key}: ${msg}`,
-        this.options.log
+        this.options.log,
       );
       return undefined;
     }

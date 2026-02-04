@@ -82,12 +82,12 @@ class Redenv:
             log("Cache miss. Fetching fresh...", self.options.log)
             return await fetch_fresh()
 
-    async def init(self):
+    async def init(self) -> Secrets:
         """
         Initializes the environment with secrets.
         Alias for load().
         """
-        await self.load()
+        return await self.load()
 
     async def load(self) -> Secrets:
         """

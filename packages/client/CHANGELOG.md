@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - 2026-02-04
+
+### Changed
+
+- **`init()` now returns `Secrets`:** Previously returned `void`. Now returns the `Secrets` object.
+
 ## [1.2.0] - 2026-02-02
 
 ### Changed
