@@ -11,6 +11,8 @@
     "...cli",
     "---SDKs---",
     "...sdk",
+    "---Integrations---",
+    "...integrations",
     "---Plugins---",
     "...plugins"
   ]

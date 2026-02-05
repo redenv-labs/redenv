@@ -80,10 +80,10 @@ redenv add API_KEY "sk_test_abc123xyz"
 
 **The secret is now:**
 
-- <span className="text-green-500">✔</span> Encrypted with AES-256-GCM
-- <span className="text-green-500">✔</span> Stored in Upstash Redis
-- <span className="text-green-500">✔</span> Versioned (version 1)
-- <span className="text-green-500">✔</span> Associated with user and timestamp
+- <Check /> Encrypted with AES-256-GCM
+- <Check /> Stored in Upstash Redis
+- <Check /> Versioned (version 1)
+- <Check /> Associated with user and timestamp
 
 Add more secrets:
 
@@ -188,7 +188,7 @@ Now integrate Redenv into your application for dynamic, runtime secret access.
       }
     });
 
-    await redenv.init(); // optional: pre-fetches secrets into process.env at startup
+    await redenv.init();
     ```
 
     **5. Load secrets in your app:**

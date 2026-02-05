@@ -1,0 +1,172 @@
+---
+title: Scoping
+description: Create scoped views of secrets with prefix stripping.
+---
+
+The `scope()` method creates a new `Secrets` object containing only keys that start with a specific prefix, with that prefix removed from the key names.
+
+## Basic Usage
+
+```typescript
+const secrets = await redenv.load();
+
+// Your secrets:
+// AWS_ACCESS_KEY=AKIA...
+// AWS_SECRET_KEY=wJalr...
+// AWS_REGION=us-east-1
+// DATABASE_URL=postgres://...
+
+const aws = secrets.scope("AWS_");
+// { ACCESS_KEY: "AKIA...", SECRET_KEY: "wJalr...", REGION: "us-east-1" }
+
+console.log(aws.ACCESS_KEY); // "AKIA..."
+console.log(aws.REGION); // "us-east-1"
+```
+
+## Why Scope?
+
+Scoping is useful for:
+
+1. **Modular Configuration** - Pass only relevant secrets to modules
+2. **Clean Interfaces** - Avoid prefix repetition in code
+3. **Library Integration** - Match expected configuration shapes
+
+### Without Scoping
+
+```typescript
+const s3Client = new S3Client({
+  region: secrets.AWS_REGION,
+  credentials: {
+    accessKeyId: secrets.AWS_ACCESS_KEY,
+    secretAccessKey: secrets.AWS_SECRET_KEY,
+  },
+});
+```
+
+### With Scoping
+
+```typescript
+const aws = secrets.scope("AWS_");
+
+const s3Client = new S3Client({
+  region: aws.REGION,
+  credentials: {
+    accessKeyId: aws.ACCESS_KEY,
+    secretAccessKey: aws.SECRET_KEY,
+  },
+});
+```
+
+## Practical Examples
+
+### AWS SDK Configuration
+
+```typescript
+import { S3Client } from "@aws-sdk/client-s3";
+
+const secrets = await redenv.load();
+const aws = secrets.scope("AWS_");
+
+const s3 = new S3Client({
+  region: aws.REGION,
+  credentials: {
+    accessKeyId: aws.ACCESS_KEY,
+    secretAccessKey: aws.SECRET_KEY,
+  },
+});
+```
+
+### Database Configuration
+
+```typescript
+const secrets = await redenv.load();
+
+// Secrets: DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME
+const db = secrets.scope("DB_");
+
+const connection = await createConnection({
+  host: db.HOST,
+  port: db.get("PORT", 5432).toInt(),
+  user: db.USER,
+  password: db.PASSWORD,
+  database: db.NAME,
+});
+```
+
+### Multi-Service Configuration
+
+```typescript
+const secrets = await redenv.load();
+
+// Stripe configuration
+const stripe = secrets.scope("STRIPE_");
+const stripeClient = new Stripe(stripe.SECRET_KEY);
+
+// SendGrid configuration
+const sendgrid = secrets.scope("SENDGRID_");
+sgMail.setApiKey(sendgrid.API_KEY);
+
+// Twilio configuration
+const twilio = secrets.scope("TWILIO_");
+const twilioClient = new Twilio(twilio.SID, twilio.AUTH_TOKEN);
+```
+
+## Chaining with Other Methods
+
+Scoped secrets retain all `Secrets` capabilities:
+
+```typescript
+const secrets = await redenv.load();
+
+const aws = secrets.scope("AWS_");
+
+// Type casting works
+const timeout = aws.get("TIMEOUT", 5000).toInt();
+
+// Validation works
+aws.require("ACCESS_KEY", "SECRET_KEY");
+
+// toObject works
+console.log(aws.toObject());
+// { ACCESS_KEY: "...", SECRET_KEY: "...", REGION: "..." }
+```
+
+## Nested Scoping
+
+You can scope multiple times:
+
+```typescript
+const secrets = await redenv.load();
+
+// Secrets:
+// AWS_S3_BUCKET=my-bucket
+// AWS_S3_REGION=us-east-1
+// AWS_SQS_QUEUE=my-queue
+
+const aws = secrets.scope("AWS_");
+const s3 = aws.scope("S3_");
+
+console.log(s3.BUCKET); // "my-bucket"
+console.log(s3.REGION); // "us-east-1"
+```
+
+## With Validation
+
+Validate before scoping to ensure all required secrets exist:
+
+```typescript
+const secrets = await redenv.load();
+
+// Validate full paths first
+secrets.require("AWS_ACCESS_KEY", "AWS_SECRET_KEY", "AWS_REGION");
+
+// Then scope for cleaner access
+const aws = secrets.scope("AWS_");
+```
+
+Or validate within the scoped context:
+
+```typescript
+const aws = secrets.scope("AWS_");
+aws.require("ACCESS_KEY", "SECRET_KEY", "REGION");
+```

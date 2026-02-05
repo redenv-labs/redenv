@@ -1,0 +1,152 @@
+---
+title: Overview
+description: The powerful Secrets class for accessing and managing your secrets.
+---
+
+When you call `redenv.load()`, you get back a `Secrets` object—not just a plain object. This class provides powerful features for accessing, validating, and transforming your secrets.
+
+## Direct Property Access
+
+The simplest way to access secrets is via direct property access:
+
+```typescript
+const secrets = await redenv.load();
+
+// Direct access
+const apiKey = secrets.API_KEY;
+const dbUrl = secrets.DATABASE_URL;
+```
+
+This works because `Secrets` uses a JavaScript Proxy to delegate property access to the underlying data.
+
+## Automatic Masking
+
+For security, the `Secrets` object automatically masks values in logs:
+
+```typescript
+const secrets = await redenv.load();
+
+console.log(secrets);
+// Output: Secrets { "API_KEY": "********", "DATABASE_URL": "********" }
+
+console.log(JSON.stringify(secrets));
+// Output: {"API_KEY":"********","DATABASE_URL":"********"}
+
+console.log(secrets.toString());
+// Output: Secrets { "API_KEY": "********", "DATABASE_URL": "********" }
+```
+
+This prevents accidental exposure of secrets in logs, error reports, or debugging output.
+
+## Unmasked Access
+
+When you need the actual values (e.g., for legacy libraries):
+
+```typescript
+const secrets = await redenv.load();
+
+// Get a plain object with real values
+const unmasked = secrets.toObject();
+console.log(unmasked);
+// Output: { API_KEY: "sk_live_abc123", DATABASE_URL: "postgres://..." }
+
+// Access individual values directly (not masked)
+console.log(secrets.API_KEY);
+// Output: sk_live_abc123
+```
+
+<Callout type="info">
+  Direct property access (`secrets.API_KEY`) returns the actual value. Masking
+  only applies to `console.log(secrets)`, `toString()`, and `JSON.stringify()`.
+</Callout>
+
+## The get() Method
+
+For type-safe access with casting capabilities:
+
+```typescript
+const secrets = await redenv.load();
+
+// Returns a SecretValue wrapper
+const port = secrets.get("PORT");
+
+// With a default value
+const debug = secrets.get("DEBUG", false);
+```
+
+The `get()` method returns a `SecretValue` wrapper with powerful transformation methods:
+
+```typescript
+// Type casting
+secrets.get("PORT", 3000).toInt(); // number
+secrets.get("DEBUG").toBool(); // boolean
+secrets.get("CONFIG").toJSON(); // parsed object
+secrets.get("API_KEY").toString(); // string
+```
+
+See [Type Casting](/docs/sdk/javascript/type-casting) for details.
+
+## Iteration
+
+You can iterate over secrets like a regular object:
+
+```typescript
+const secrets = await redenv.load();
+
+// Object.keys
+const keys = Object.keys(secrets);
+// ["API_KEY", "DATABASE_URL", "PORT", ...]
+
+// for...in
+for (const key in secrets) {
+  console.log(`${key}: ${secrets[key]}`);
+}
+
+// Object.entries
+for (const [key, value] of Object.entries(secrets)) {
+  console.log(`${key}: ${value}`);
+}
+```
+
+## Methods Reference
+
+| Method               | Returns                  | Description                                 |
+| -------------------- | ------------------------ | ------------------------------------------- |
+| `get(key, default?)` | `SecretValue`            | Get a secret with type-casting capabilities |
+| `require(...keys)`   | `this`                   | Throw if any keys are missing               |
+| `scope(prefix)`      | `Secrets`                | Create a scoped view of secrets             |
+| `toObject()`         | `Record<string, string>` | Get unmasked plain object                   |
+| `toString()`         | `string`                 | Get masked string representation            |
+| `toJSON()`           | `Record<string, string>` | Get masked object (for JSON.stringify)      |
+| `raw`                | `Secrets`                | Access unexpanded raw values                |
+
+## Example: Complete Usage
+
+```typescript
+import { redenv } from "./lib/redenv";
+
+async function initializeApp() {
+  const secrets = await redenv.load();
+
+  // 1. Validate required secrets exist
+  secrets.require("DATABASE_URL", "JWT_SECRET", "STRIPE_KEY");
+
+  // 2. Get typed configuration
+  const config = {
+    port: secrets.get("PORT", 3000).toInt(),
+    debug: secrets.get("DEBUG", false).toBool(),
+    logLevel: secrets.get("LOG_LEVEL", "info").toString(),
+    database: secrets.DATABASE_URL,
+  };
+
+  // 3. Get scoped AWS configuration
+  const awsConfig = secrets.scope("AWS_");
+  // { ACCESS_KEY: "...", SECRET_KEY: "...", REGION: "..." }
+
+  // 4. Safe logging (masked)
+  console.log("Loaded secrets:", secrets);
+  // Output: Secrets { "DATABASE_URL": "********", "JWT_SECRET": "********", ... }
+
+  return config;
+}
+```

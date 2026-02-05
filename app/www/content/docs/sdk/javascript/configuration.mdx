@@ -1,0 +1,153 @@
+---
+title: Configuration
+description: All configuration options for @redenv/client.
+---
+
+The `Redenv` constructor accepts a configuration object. Here's a complete example:
+
+```typescript title="lib/redenv.ts" twoslash
+import { Redenv } from "@redenv/client";
+
+export const redenv = new Redenv({
+  // Required
+  project: "my-app",
+  tokenId: "stk_yYt2HXRprwYgpvwv",
+  token: "redenv_sk_8f3a9b2c...",
+  upstash: {
+    url: "https://your-redis.upstash.io",
+    token: "AXxxxxxxxxxxxxxxx",
+  },
+
+  // Optional
+  environment: "production",
+  cache: { ttl: 300, swr: 86400 },
+  env: { override: true },
+  log: "low",
+});
+```
+
+## All Options
+
+| Option          | Type                        | Required | Default         | Description                                       |
+| --------------- | --------------------------- | -------- | --------------- | ------------------------------------------------- |
+| `project`       | `string`                    | Yes      | —               | Your Redenv project name                          |
+| `tokenId`       | `string`                    | Yes      | —               | Service Token public ID (`stk_...`)               |
+| `token`         | `string`                    | Yes      | —               | Service Token secret key (`redenv_sk_...`)        |
+| `upstash.url`   | `string`                    | Yes      | —               | Upstash Redis REST URL                            |
+| `upstash.token` | `string`                    | Yes      | —               | Upstash Redis REST Token                          |
+| `environment`   | `string`                    | No       | `"development"` | Environment to fetch secrets from                 |
+| `cache.ttl`     | `number`                    | No       | `300`           | Seconds before data is stale                      |
+| `cache.swr`     | `number`                    | No       | `86400`         | Seconds stale data can be served while refreshing |
+| `env.override`  | `boolean`                   | No       | `true`          | Overwrite existing `process.env` variables        |
+| `log`           | `"none" \| "low" \| "high"` | No       | `"low"`         | Logging verbosity                                 |
+
+<Callout type="warning">
+  **Never hardcode credentials.** Load them from environment variables. These
+  "bootstrap" secrets are the only ones you manage outside Redenv.
+</Callout>
+
+## Option Details
+
+### environment
+
+| Value             | Description                |
+| ----------------- | -------------------------- |
+| `"development"`   | Default. Local development |
+| `"staging"`       | Pre-production testing     |
+| `"production"`    | Live production secrets    |
+| Any custom string | Your own environment names |
+
+```typescript
+environment: process.env.NODE_ENV || "development"
+```
+
+### cache
+
+Uses **stale-while-revalidate** strategy. Preset configurations:
+
+| Use Case                   | TTL    | SWR     | Example                              |
+| -------------------------- | ------ | ------- | ------------------------------------ |
+| **Default**                | `300`  | `86400` | General purpose                      |
+| **High-frequency updates** | `10`   | `60`    | Feature flags, A/B tests             |
+| **Stable secrets**         | `3600` | `86400` | API keys, database URLs              |
+| **Serverless**             | `30`   | `300`   | Vercel, Lambda (ephemeral instances) |
+| **Development**            | `5`    | `30`    | See changes quickly                  |
+
+<Callout type="info">
+  For a deep dive into how caching works, scale impact, and architecture, see
+  [Caching Strategy](/docs/concepts/caching).
+</Callout>
+
+### env.override
+
+When `false`, existing `process.env` variables are preserved. Useful for local `.env` overrides during development.
+
+### log
+
+| Value    | Description                                    |
+| -------- | ---------------------------------------------- |
+| `"none"` | No logs                                        |
+| `"low"`  | Errors and important info only                 |
+| `"high"` | Verbose logging (cache hits/misses, refreshes) |
+
+Example output with `"high"`:
+
+```bash
+[REDENV] Cache HIT (fresh): redenv:my-app:production
+[REDENV] Cache HIT (stale): redenv:my-app:production - triggering background refresh
+[REDENV] Cache MISS: redenv:my-app:staging - fetching from Redis
+```
+
+## TypeScript Interface
+
+```typescript
+interface RedenvOptions {
+  // Required
+  project: string;
+  tokenId: string;
+  token: string;
+  upstash: {
+    url: string;
+    token: string;
+  };
+
+  // Optional
+  environment?: string;
+  cache?: {
+    ttl?: number;
+    swr?: number;
+  };
+  env?: {
+    override?: boolean;
+  };
+  log?: "none" | "low" | "high";
+}
+```
+
+## Best Practice: Singleton Pattern
+
+Create a single Redenv instance and export it. This ensures cache is shared across your app:
+
+```typescript title="lib/redenv.ts"
+import { Redenv } from "@redenv/client";
+
+export const redenv = new Redenv({
+  project: process.env.REDENV_PROJECT!,
+  tokenId: process.env.REDENV_TOKEN_ID!,
+  token: process.env.REDENV_TOKEN_KEY!,
+  upstash: {
+    url: process.env.UPSTASH_REDIS_URL!,
+    token: process.env.UPSTASH_REDIS_TOKEN!,
+  },
+  environment: process.env.NODE_ENV || "development",
+});
+
+// pre-fetches secrets into process.env at startup
+await redenv.init(); // [!code ++]
+```
+
+```typescript title="anywhere else"
+import { redenv } from "@/lib/redenv";
+
+const secrets = await redenv.load();
+```

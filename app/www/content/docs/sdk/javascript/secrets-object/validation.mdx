@@ -1,0 +1,157 @@
+---
+title: Validation
+description: Fail-fast validation of required secrets.
+---
+
+The `require()` method ensures critical secrets exist before your application runs, failing fast with a clear error instead of crashing later with cryptic undefined errors.
+
+## Recommended: Validate at Initialization
+
+The best place to validate secrets is in your `lib/redenv.ts` file, right when initializing the client. Since `init()` now returns the `Secrets` object, you can validate immediately at app startup:
+
+```typescript title="lib/redenv.ts"
+import { Redenv } from "@redenv/client";
+
+export const redenv = new Redenv({
+  project: process.env.REDENV_PROJECT!,
+  tokenId: process.env.REDENV_TOKEN_ID!,
+  token: process.env.REDENV_TOKEN_KEY!,
+  upstash: {
+    url: process.env.UPSTASH_REDIS_URL!,
+    token: process.env.UPSTASH_REDIS_TOKEN!,
+  },
+  environment: process.env.NODE_ENV || "development",
+});
+
+// Initialize AND validate in one place
+await redenv.init().require( // [!code highlight]
+  "DATABASE_URL", // [!code highlight]
+  "JWT_SECRET", // [!code highlight]
+  "STRIPE_SECRET_KEY", // [!code highlight]
+); // [!code highlight]
+```
+
+<Callout type="tip">
+  **Why here?** This runs the moment your app imports `lib/redenv.ts`. If any
+  secrets are missing, your app fails immediately — before any routes, services,
+  or database connections are attempted.
+</Callout>
+
+If any of the specified keys are missing, a `RedenvError` is thrown:
+
+```
+RedenvError: Missing required secrets: JWT_SECRET, STRIPE_SECRET_KEY
+```
+
+## Basic Usage
+
+```typescript
+const secrets = await redenv.load();
+
+// Throws immediately if any secrets are missing
+secrets.require("DATABASE_URL", "JWT_SECRET", "STRIPE_KEY");
+```
+
+## Chaining
+
+The `require()` method returns `this`, enabling method chaining:
+
+```typescript
+const secrets = await redenv.load();
+
+const dbUrl = secrets.require("DATABASE_URL", "JWT_SECRET").DATABASE_URL;
+```
+
+## With Scoping
+
+Combine with `scope()` to validate scoped configurations:
+
+```typescript
+const secrets = await redenv.load();
+
+// Validate and scope in one flow
+const aws = secrets
+  .require("AWS_ACCESS_KEY", "AWS_SECRET_KEY", "AWS_REGION")
+  .scope("AWS_");
+
+console.log(aws.ACCESS_KEY); // Already validated
+```
+
+## Additional Patterns
+
+### Module-Level Validation
+
+```typescript title="services/stripe.ts"
+import { redenv } from "../lib/redenv";
+import Stripe from "stripe";
+
+export async function getStripeClient() {
+  const secrets = await redenv.load();
+
+  // Validate Stripe-specific secrets
+  secrets.require("STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET");
+
+  return new Stripe(secrets.STRIPE_SECRET_KEY, {
+    apiVersion: "2024-01-01",
+  });
+}
+```
+
+### Conditional Requirements
+
+```typescript
+const secrets = await redenv.load();
+
+// Always required
+secrets.require("DATABASE_URL", "JWT_SECRET");
+
+// Conditionally required
+if (process.env.NODE_ENV === "production") {
+  secrets.require("SENTRY_DSN", "DATADOG_API_KEY");
+}
+```
+
+## Error Handling
+
+```typescript
+import { RedenvError } from "@redenv/client";
+
+try {
+  const secrets = await redenv.load();
+  secrets.require("CRITICAL_SECRET");
+} catch (error) {
+  if (error instanceof RedenvError && error.code === "SECRET_NOT_FOUND") {
+    console.error("Missing secrets:", error.message);
+    process.exit(1);
+  }
+  throw error;
+}
+```
+
+## Why Use require()?
+
+<Callout type="warning">
+  **Without validation:**
+  ```typescript
+  const apiKey = secrets.API_KEY;
+  // Later...
+  fetch(url, { headers: { Authorization: apiKey } });
+  // Error: Cannot read property 'Authorization' of undefined
+  // Or worse: silent 401 errors with no clear cause
+  ```
+</Callout>
+
+<Callout type="info">
+  **With validation:** 
+  ```typescript 
+  .require("API_KEY"); 
+  // Fails immediately with: "Missing required secrets: API_KEY" 
+  // Clear, actionable error message 
+  ```
+</Callout>
+
+Fail-fast validation:
+
+- Catches configuration errors at startup, not at runtime
+- Provides clear, actionable error messages
+- Prevents cascading failures and debugging headaches

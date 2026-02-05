@@ -1,0 +1,95 @@
+---
+title: Overview
+description: A lightweight, zero-knowledge JavaScript client for Redenv.
+---
+
+The `@redenv/client` is a powerful JavaScript/TypeScript SDK for securely fetching and managing secrets from Redenv in any server-side application.
+
+## Key Features
+
+<Cards>
+  <Card title="Zero-Knowledge">
+    All cryptographic operations happen locally. Your secrets are never
+    exposed—not even to Redenv's backend.
+  </Card>
+  <Card title="High-Performance Caching">
+    Built-in stale-while-revalidate cache serves secrets instantly with
+    automatic background refresh.
+  </Card>
+  <Card title="Smart Secrets">
+    Type-safe access with casting, validation, scoping, and automatic reference
+    expansion.
+  </Card>
+  <Card title="Universal Runtime">
+    Works in Node.js, Deno, Bun, and edge environments like Vercel and
+    Cloudflare.
+  </Card>
+</Cards>
+
+## What You Can Do
+
+```typescript
+import { Redenv } from "@redenv/client";
+
+const redenv = new Redenv({
+  project: "my-app",
+  tokenId: process.env.REDENV_TOKEN_ID!,
+  token: process.env.REDENV_TOKEN_KEY!,
+  upstash: {
+    url: process.env.UPSTASH_REDIS_URL!,
+    token: process.env.UPSTASH_REDIS_TOKEN!,
+  },
+});
+
+// Load and cache secrets
+const secrets = await redenv.load();
+
+// Direct access (auto-populates process.env)
+console.log(process.env.API_KEY);
+
+// Smart type casting
+const port = secrets.get("PORT", 3000).toInt();
+const debug = secrets.get("DEBUG").toBool();
+
+// Fail-fast validation
+secrets.require("DATABASE_URL", "STRIPE_KEY");
+
+// Scoped configuration
+const awsConfig = secrets.scope("AWS_");
+
+// Time travel
+const previousValue = await redenv.getVersion("API_KEY", 1, "index");
+
+// Dynamic updates
+await redenv.set("FEATURE_FLAG", "enabled");
+```
+
+## How It Works
+
+![Secret Loading Lifecycle](/diagrams/secret-loading-lifecycle.svg)
+
+## Security Model
+
+The SDK implements a **zero-knowledge architecture**:
+
+1. **Service Token** authenticates your application
+2. **Encrypted PEK** is fetched from Redis and decrypted locally
+3. **Secrets** are decrypted client-side using the PEK
+4. **Redis** never sees unencrypted data
+
+<Callout type="info">
+  Your Master Password is never sent to any server. Only the CLI knows it.
+  Applications use Service Tokens, which are derived keys that can decrypt the
+  Project Encryption Key (PEK).
+</Callout>
+
+## Runtime Compatibility
+
+| Runtime            | Status                    |
+| ------------------ | ------------------------- |
+| Node.js 18+        | <Check /> Fully supported |
+| Deno               | <Check /> Fully supported |
+| Bun                | <Check /> Fully supported |
+| Vercel Edge        | <Check /> Fully supported |
+| Cloudflare Workers | <Check /> Fully supported |
+| Browser            | <Cross /> Not supported   |

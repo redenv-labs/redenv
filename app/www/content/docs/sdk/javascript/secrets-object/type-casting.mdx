@@ -1,0 +1,196 @@
+---
+title: Type Casting
+description: Smart type conversion with the SecretValue wrapper.
+---
+
+Environment variables are always strings, but your application often needs other types. The `SecretValue` wrapper provides type-safe conversion methods.
+
+## The SecretValue Wrapper
+
+When you call `secrets.get(key)`, you get a `SecretValue` object:
+
+```typescript
+const secrets = await redenv.load();
+
+const portValue = secrets.get("PORT");
+// portValue is a SecretValue, not a string
+```
+
+This wrapper provides transformation methods while preserving the ability to use the value directly.
+
+## Conversion Methods
+
+### toInt()
+
+Parse the value as an integer:
+
+```typescript
+const port = secrets.get("PORT").toInt();
+// "3000" → 3000
+
+const timeout = secrets.get("TIMEOUT", 5000).toInt();
+// undefined → 5000 (default)
+```
+
+Returns `undefined` if the value can't be parsed and no default was provided.
+
+### toBool()
+
+Parse the value as a boolean:
+
+```typescript
+const debug = secrets.get("DEBUG").toBool();
+// "true" → true
+// "false" → false
+
+const enabled = secrets.get("FEATURE_FLAG", false).toBool();
+// undefined → false (default)
+```
+
+**Truthy values:** `"true"`, `"1"`, `"yes"`, `"on"`, `"t"`  
+**Falsy values:** `"false"`, `"0"`, `"no"`, `"off"`, `"f"`
+
+### toJSON()
+
+Parse the value as JSON:
+
+```typescript
+const config = secrets.get("APP_CONFIG").toJSON();
+// '{"timeout": 5000}' → { timeout: 5000 }
+
+const defaults = secrets.get("MISSING", { fallback: true }).toJSON();
+// undefined → { fallback: true }
+```
+
+Returns the parsed object, or `undefined` if parsing fails and no default was provided.
+
+### toString()
+
+Get the string value (or default):
+
+```typescript
+const env = secrets.get("NODE_ENV", "development").toString();
+// undefined → "development"
+```
+
+## Default Values
+
+All methods accept a default value via the `get()` call:
+
+```typescript
+// With defaults
+const port = secrets.get("PORT", 3000).toInt(); // 3000 if missing
+const debug = secrets.get("DEBUG", false).toBool(); // false if missing
+const log = secrets.get("LOG_LEVEL", "info").toString(); // "info" if missing
+```
+
+**Type-aware defaults:**
+
+```typescript
+// If the secret is missing, default values maintain their type
+const count = secrets.get("COUNT", 10).toInt();
+// Returns 10 (number), not "10" (string)
+
+const enabled = secrets.get("ENABLED", true).toBool();
+// Returns true (boolean), not "true" (string)
+```
+
+## Automatic Coercion
+
+The `SecretValue` implements `Symbol.toPrimitive`, allowing automatic type coercion:
+
+```typescript
+const port = secrets.get("PORT", 3000);
+
+// In string context
+console.log(`Server running on port ${port}`);
+// Output: Server running on port 3000
+
+// In numeric context
+const nextPort = +port + 1;
+// Works correctly: 3001
+```
+
+## Console Logging
+
+`SecretValue` also implements custom inspection, so logging works intuitively:
+
+```typescript
+const apiKey = secrets.get("API_KEY");
+
+console.log(apiKey);
+// Output: sk_live_abc123 (the actual value)
+```
+
+## Practical Examples
+
+### Server Configuration
+
+```typescript
+const secrets = await redenv.load();
+
+const config = {
+  port: secrets.get("PORT", 3000).toInt(),
+  host: secrets.get("HOST", "0.0.0.0").toString(),
+  ssl: secrets.get("SSL_ENABLED", false).toBool(),
+  workers: secrets.get("WORKERS", 4).toInt(),
+};
+
+app.listen(config.port, config.host);
+```
+
+### Feature Flags
+
+```typescript
+const secrets = await redenv.load();
+
+const features = {
+  betaMode: secrets.get("BETA_MODE").toBool(),
+  maxUsers: secrets.get("MAX_USERS", 1000).toInt(),
+  allowedDomains: secrets.get("ALLOWED_DOMAINS", "[]").toJSON() as string[],
+};
+
+if (features.betaMode) {
+  enableBetaFeatures();
+}
+```
+
+### Complex JSON Configurations
+
+```typescript
+const secrets = await redenv.load();
+
+interface DatabaseConfig {
+  host: string;
+  port: number;
+  ssl: boolean;
+}
+
+const dbConfig = secrets
+  .get("DATABASE_CONFIG", {
+    host: "localhost",
+    port: 5432,
+    ssl: false,
+  })
+  .toJSON() as DatabaseConfig;
+```
+
+## Type Safety
+
+For TypeScript, you can add type assertions:
+
+```typescript
+const secrets = await redenv.load();
+
+// Type assertion
+const config = secrets.get("CONFIG").toJSON() as AppConfig;
+
+// Or with generics (if your config is predictable)
+interface AppConfig {
+  apiUrl: string;
+  timeout: number;
+}
+
+// Note: toJSON's generic parameter
+const config = secrets.get("CONFIG").toJSON<AppConfig>();
+```

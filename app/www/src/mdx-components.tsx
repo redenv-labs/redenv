@@ -13,7 +13,7 @@ import {
   CodeBlockTabsList,
   CodeBlockTabsTrigger,
   CodeBlockTab,
-  Code
+  Code,
 } from "@/components/mdx/CodeBlock";
 import { ComponentProps } from "react";
 import { cn } from "./lib/utils";
@@ -116,7 +116,7 @@ const Anchor = ({
     return (
       <a
         href={href}
-        className="font-foreground font-medium hover:underline underline-offset-4 transition-colors"
+        className="font-foreground font-medium border-b border-dashed border-border transition duration-300 ease-in-out hover:border-foreground"
         {...props}
       >
         {children}
@@ -272,8 +272,26 @@ const HorizontalRule = (props: React.HTMLAttributes<HTMLHRElement>) => (
 );
 
 // =============================================================================
-// EXPORT
+// CUSTOM COMPONENTS
 // =============================================================================
+
+const Check = ({
+  className,
+  ...props
+}: Omit<React.HTMLAttributes<HTMLSpanElement>, "children">) => (
+  <span className={cn("text-green-500", className)} {...props}>
+    ✔
+  </span>
+);
+
+const Cross = ({
+  className,
+  ...props
+}: Omit<React.HTMLAttributes<HTMLSpanElement>, "children">) => (
+  <span className={cn("text-red-500", className)} {...props}>
+    ✘
+  </span>
+);
 
 export function getMDXComponents(components?: MDXComponents): MDXComponents {
   return {
@@ -318,7 +336,7 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     }: React.ImgHTMLAttributes<HTMLImageElement>) => (
       <ImageZoom className={cn(className, "rounded-xl")} {...(props as any)} />
     ),
-    
+
     Image,
 
     Callout,
@@ -330,12 +348,20 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     CodeBlockTabsList,
     CodeBlockTabsTrigger,
     CodeBlockTab,
+    Check,
+    Cross,
 
     Tabs: ({ className, ...props }: ComponentProps<typeof Tabs>) => (
       <Tabs className={cn(className, "bg-secondary")} {...props} />
     ),
     Tab: ({ className, ...props }: ComponentProps<typeof Tab>) => (
-      <Tab className={cn(className, "bg-background/40 [&_code:only-child]:bg-transparent [&_code:only-child]:p-0 [&_code:only-child]:rounded-none [&_code:only-child]:text-inherit")} {...props} />
+      <Tab
+        className={cn(
+          className,
+          "bg-background/40 [&_code:only-child]:bg-transparent [&_code:only-child]:p-0 [&_code:only-child]:rounded-none [&_code:only-child]:text-inherit [&_code:only-child]:inline-flex [&_code:only-child]:max-w-full",
+        )}
+        {...props}
+      />
     ),
 
     ...components,

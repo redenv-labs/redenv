@@ -1,0 +1,254 @@
+---
+title: Next.js
+description: Complete guide to integrate Redenv with Next.js from scratch.
+---
+
+A step-by-step guide to set up Redenv with Next.js 13+ App Router — from project creation to production deployment.
+
+## 1. Create Your Next.js Project
+
+```bash
+npx create-next-app@latest my-app
+cd my-app
+```
+
+## 2. Install Dependencies
+
+```bash tab="npm"
+npm install -g @redenv/cli && npm install @redenv/client
+```
+
+```bash tab="pnpm"
+pnpm add -g @redenv/cli && pnpm add @redenv/client
+```
+
+```bash tab="bun"
+bun add -g @redenv/cli && bun add @redenv/client
+```
+
+## 3. Set Up Redenv
+
+### Connect to Upstash Redis
+
+```bash
+redenv setup
+```
+
+```
+? Upstash Redis REST URL: https://your-redis.upstash.io
+? Upstash Redis REST Token: AXxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+✓ Configuration saved
+```
+
+<Callout type="tip">
+  Get your Upstash credentials from
+  [console.upstash.com](https://console.upstash.com?utm_source=redenv_dev&utm_medium=docs).
+</Callout>
+
+### Create a project
+
+```bash
+redenv register my-app
+```
+
+```
+? Master password: ********
+? Confirm password: ********
+✓ Project "my-app" created
+```
+
+<Callout type="warning">
+  **Remember your master password!** Redenv cannot recover it if lost.
+</Callout>
+
+## 4. Add Your Secrets
+
+```bash
+redenv add DATABASE_URL "postgresql://user:pass@localhost:5432/mydb"
+redenv add JWT_SECRET "your-super-secret-jwt-key"
+redenv add STRIPE_SECRET_KEY "sk_test_..."
+```
+
+Or import from an existing `.env` file:
+
+```bash
+redenv import .env
+```
+
+Verify:
+
+```bash
+redenv list
+```
+
+## 5. Create a Service Token
+
+```bash
+redenv token create -p my-app
+```
+
+```
+? Token name: nextjs-token
+
+✓ Service Token created
+  Token ID:  stk_yYt2HXRprwYgpvwv
+  Token Key: redenv_sk_8f3a9b2c...
+
+⚠ Save the Token Key now — it won't be shown again!
+```
+
+## 6. Add Bootstrap Variables
+
+These are the **only** secrets in your `.env.local`:
+
+```bash title=".env.local"
+REDENV_PROJECT=my-app
+REDENV_TOKEN_ID=stk_yYt2HXRprwYgpvwv
+REDENV_TOKEN_KEY=redenv_sk_8f3a9b2c...
+UPSTASH_REDIS_URL=https://your-redis.upstash.io
+UPSTASH_REDIS_TOKEN=AXxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+Everything else (DATABASE_URL, API keys, etc.) is stored encrypted in Redenv.
+
+## 7. Create the Redenv Client
+
+```typescript title="lib/redenv.ts"
+import { Redenv } from "@redenv/client";
+
+export const redenv = new Redenv({
+  project: process.env.REDENV_PROJECT!,
+  tokenId: process.env.REDENV_TOKEN_ID!,
+  token: process.env.REDENV_TOKEN_KEY!,
+  upstash: {
+    url: process.env.UPSTASH_REDIS_URL!,
+    token: process.env.UPSTASH_REDIS_TOKEN!,
+  },
+  environment: process.env.NODE_ENV || "development",
+});
+
+await redenv.init().require( // [!code highlight]
+  "DATABASE_URL", // [!code highlight]
+  "JWT_SECRET", // [!code highlight]
+); // [!code highlight]
+```
+
+<Callout type="tip">
+  Validating here ensures your app crashes on startup if secrets are missing —
+  not later when a route tries to use them.
+</Callout>
+
+## 8. Use Secrets in Your App
+
+### Server Components
+
+```tsx title="app/page.tsx"
+import { redenv } from "@/lib/redenv";
+
+export default async function HomePage() {
+  const secrets = await redenv.load();
+  const apiKey = secrets.API_KEY;
+
+  return <h1>Welcome</h1>;
+}
+```
+
+### Server Actions
+
+```typescript title="app/actions.ts"
+"use server";
+
+import { redenv } from "@/lib/redenv";
+
+export async function sendEmail(formData: FormData) {
+  const secrets = await redenv.load();
+
+  await fetch("https://api.sendgrid.com/v3/mail/send", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${secrets.SENDGRID_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ to: formData.get("email") }),
+  });
+}
+```
+
+### API Routes
+
+```typescript title="app/api/users/route.ts"
+import { redenv } from "@/lib/redenv";
+
+export async function GET() {
+  const secrets = await redenv.load();
+  // Use secrets.DATABASE_URL, secrets.API_KEY, etc.
+  return Response.json({ users: [] });
+}
+```
+
+### Middleware
+
+```typescript title="middleware.ts"
+import { redenv } from "@/lib/redenv";
+import { NextResponse, type NextRequest } from "next/server";
+
+export async function middleware(request: NextRequest) {
+  const secrets = await redenv.load();
+
+  if (secrets.get("MAINTENANCE_MODE").toBool()) {
+    return NextResponse.redirect(new URL("/maintenance", request.url));
+  }
+
+  return NextResponse.next();
+}
+```
+
+## 9. Database Integration
+
+### With Prisma
+
+```typescript title="lib/prisma.ts"
+import { redenv } from "./redenv";
+import { PrismaClient } from "@prisma/client";
+
+let prisma: PrismaClient | undefined;
+
+export async function getPrisma() {
+  if (!prisma) {
+    const secrets = await redenv.load();
+    prisma = new PrismaClient();
+  }
+  return prisma;
+}
+```
+
+## 10. Create Production Environment
+
+Before deploying, clone your development secrets to production:
+
+```bash
+# Clone dev secrets to a new production environment
+redenv clone
+```
+
+```
+✔ Select source environment: development
+✔ Select destination environment: New environment
+? Enter new environment name: production
+✓ Cloned 3 secrets to production
+```
+
+```bash
+# Switch to production and update values
+redenv switch env production
+
+redenv edit DATABASE_URL "postgresql://user:pass@prod-db:5432/mydb"
+redenv edit STRIPE_SECRET_KEY "sk_live_..."
+```
+
+## Related
+
+- [CLI Commands](/docs/cli/commands) — Full CLI reference
+- [Configuration](/docs/sdk/javascript/configuration) — All SDK options
+- [Caching Strategy](/docs/concepts/caching) — How SWR caching works
+- [Service Tokens](/docs/concepts/tokens) — Token permissions and security

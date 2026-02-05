@@ -1,0 +1,414 @@
+---
+title: API Reference
+description: Complete API documentation for @redenv/client.
+---
+
+## Quick Links
+
+| Class | Description |
+| ----- | ----------- |
+| [Redenv](#redenv-class) | Main client for loading and writing secrets |
+| [Secrets](#secrets-class) | Container returned by `load()` with helper methods |
+| [SecretValue](#secretvalue-class) | Wrapper for type casting via `get()` |
+| [RedenvError](#redenverror) | Custom error class with error codes |
+
+---
+
+## Redenv Class
+
+The main client for interacting with Redenv.
+
+### Constructor
+
+```typescript
+import { Redenv } from "@redenv/client";
+
+const redenv = new Redenv(options: RedenvOptions);
+```
+
+#### RedenvOptions
+
+| Property | Type | Required | Default | Description |
+| -------- | ---- | -------- | ------- | ----------- |
+| `project` | `string` | Yes | — | Project name |
+| `tokenId` | `string` | Yes | — | Service Token public ID (`stk_...`) |
+| `token` | `string` | Yes | — | Service Token secret key (`redenv_sk_...`) |
+| `upstash.url` | `string` | Yes | — | Upstash Redis REST URL |
+| `upstash.token` | `string` | Yes | — | Upstash Redis REST token |
+| `environment` | `string` | No | `"development"` | Environment name |
+| `cache.ttl` | `number` | No | `300` | Seconds before cache is stale |
+| `cache.swr` | `number` | No | `86400` | Stale-while-revalidate window (seconds) |
+| `env.override` | `boolean` | No | `true` | Overwrite existing `process.env` vars |
+| `log` | `"none" \| "low" \| "high"` | No | `"low"` | Logging verbosity |
+
+---
+
+### init()
+
+Initialize the client, populate `process.env`, and return secrets for validation.
+
+```typescript
+init(): Promise<Secrets>
+```
+
+```typescript
+const secrets = await redenv.init();
+secrets.require("DATABASE_URL"); // Validate at startup
+```
+
+---
+
+### load()
+
+Fetch, decrypt, cache, and return secrets.
+
+```typescript
+load(): Promise<Secrets>
+```
+
+```typescript
+const secrets = await redenv.load();
+console.log(secrets.API_KEY);
+```
+
+<Callout>
+  `init()` and `load()` are identical. Use `init()` at startup, `load()`
+  everywhere else for semantic clarity.
+</Callout>
+
+---
+
+### set()
+
+Add or update a secret. Requires a read/write Service Token.
+
+```typescript
+set(key: string, value: string): Promise<void>
+```
+
+| Parameter | Type | Description |
+| --------- | ---- | ----------- |
+| `key` | `string` | Secret key name |
+| `value` | `string` | Secret value |
+
+```typescript
+await redenv.set("LOG_LEVEL", "debug");
+```
+
+---
+
+### getVersion()
+
+Fetch a specific version of a secret (time travel).
+
+```typescript
+getVersion(
+  key: string,
+  version: number,
+  mode?: "id" | "index"
+): Promise<string | undefined>
+```
+
+| Parameter | Type | Default | Description |
+| --------- | ---- | ------- | ----------- |
+| `key` | `string` | — | Secret key name |
+| `version` | `number` | — | Version ID or index |
+| `mode` | `"id" \| "index"` | `"id"` | Lookup mode |
+
+```typescript
+// By version ID
+const v5 = await redenv.getVersion("API_KEY", 5);
+
+// By index (0 = latest, 1 = previous, ...)
+const previous = await redenv.getVersion("API_KEY", 1, "index");
+```
+
+---
+
+## Secrets Class
+
+Returned by `load()` and `init()`. Provides enhanced access to secrets.
+
+### Property Access
+
+Access secrets directly as properties:
+
+```typescript
+const secrets = await redenv.load();
+
+secrets.API_KEY;      // string
+secrets.DATABASE_URL; // string
+secrets["MY-KEY"];    // string (for keys with special chars)
+```
+
+---
+
+### get()
+
+Get a secret with optional default value and type-casting.
+
+```typescript
+get(key: string, defaultValue?: any): SecretValue
+```
+
+```typescript
+secrets.get("PORT", 3000).toInt();    // number
+secrets.get("DEBUG", false).toBool(); // boolean
+secrets.get("CONFIG").toJSON();       // parsed JSON
+```
+
+---
+
+### require()
+
+Validate that secrets exist. Throws `RedenvError` if any are missing.
+
+```typescript
+require(...keys: string[]): this
+```
+
+```typescript
+secrets.require("DATABASE_URL", "JWT_SECRET", "STRIPE_KEY");
+// Throws: RedenvError: Missing required secrets: JWT_SECRET
+```
+
+Returns `this` for chaining:
+
+```typescript
+const dbUrl = secrets.require("DATABASE_URL").DATABASE_URL;
+```
+
+---
+
+### scope()
+
+Create a subset with only prefixed keys (prefix is removed).
+
+```typescript
+scope(prefix: string): Secrets
+```
+
+```typescript
+// Secrets: AWS_ACCESS_KEY, AWS_SECRET_KEY, AWS_REGION, OTHER_VAR
+
+const aws = secrets.scope("AWS_");
+aws.ACCESS_KEY; // AWS_ACCESS_KEY value
+aws.SECRET_KEY; // AWS_SECRET_KEY value
+aws.REGION;     // AWS_REGION value
+// OTHER_VAR not included
+```
+
+---
+
+### raw
+
+Access unexpanded values (with `${VAR}` syntax preserved).
+
+```typescript
+get raw(): Secrets
+```
+
+```typescript
+// If AUTH_URL = "${BASE_URL}/auth"
+
+secrets.AUTH_URL;     // "https://api.example.com/auth"
+secrets.raw.AUTH_URL; // "${BASE_URL}/auth"
+```
+
+---
+
+### toObject()
+
+Get all secrets as a plain object (unmasked).
+
+```typescript
+toObject(): Record<string, string>
+```
+
+```typescript
+const obj = secrets.toObject();
+// { API_KEY: "sk_live_...", DATABASE_URL: "postgres://..." }
+```
+
+---
+
+### toString()
+
+Get masked string representation (safe for logging).
+
+```typescript
+toString(): string
+```
+
+```typescript
+console.log(secrets.toString());
+// Secrets { "API_KEY": "********", "DATABASE_URL": "********" }
+```
+
+---
+
+### toJSON()
+
+Get masked object (used by `JSON.stringify`).
+
+```typescript
+toJSON(): Record<string, string>
+```
+
+```typescript
+console.log(JSON.stringify(secrets));
+// {"API_KEY":"********","DATABASE_URL":"********"}
+```
+
+---
+
+## SecretValue Class
+
+Returned by `secrets.get()`. Provides type conversion methods.
+
+### toString()
+
+```typescript
+toString(): string
+```
+
+Returns the raw string value.
+
+---
+
+### toInt()
+
+```typescript
+toInt(): number | undefined
+```
+
+Parse as integer. Returns `undefined` if not a valid number.
+
+```typescript
+secrets.get("PORT", 3000).toInt(); // 3000
+```
+
+---
+
+### toBool()
+
+```typescript
+toBool(): boolean | undefined
+```
+
+Parse as boolean. Returns `undefined` if not a recognized value.
+
+| Truthy values | Falsy values |
+| ------------- | ------------ |
+| `"true"`, `"1"`, `"yes"`, `"on"`, `"t"` | `"false"`, `"0"`, `"no"`, `"off"`, `"f"` |
+
+```typescript
+secrets.get("DEBUG").toBool();     // true/false
+secrets.get("ENABLED", true).toBool(); // with default
+```
+
+---
+
+### toJSON()
+
+```typescript
+toJSON<T = any>(): T | undefined
+```
+
+Parse as JSON. Returns `undefined` if invalid JSON.
+
+```typescript
+secrets.get("APP_CONFIG").toJSON<{ theme: string }>();
+```
+
+---
+
+## RedenvError
+
+Custom error class for Redenv-specific errors.
+
+```typescript
+import { RedenvError } from "@redenv/client";
+
+class RedenvError extends Error {
+  code: string;
+  message: string;
+}
+```
+
+### Error Codes
+
+| Code | Description |
+| ---- | ----------- |
+| `MISSING_CONFIG` | Required configuration options missing |
+| `PROJECT_NOT_FOUND` | Project doesn't exist in Redis |
+| `INVALID_TOKEN_ID` | Service Token ID not found |
+| `INVALID_TOKEN` | Service Token secret key invalid |
+| `SECRET_NOT_FOUND` | Requested secret key doesn't exist |
+| `DECRYPTION_FAILED` | Failed to decrypt (wrong password/token) |
+| `PERMISSION_DENIED` | Token lacks required permissions |
+| `UNKNOWN_ERROR` | Unexpected error |
+
+### Example
+
+```typescript
+import { RedenvError } from "@redenv/client";
+
+try {
+  const secrets = await redenv.load();
+  secrets.require("MISSING_KEY");
+} catch (error) {
+  if (error instanceof RedenvError) {
+    console.error(`[${error.code}] ${error.message}`);
+    // [SECRET_NOT_FOUND] Missing required secrets: MISSING_KEY
+  }
+}
+```
+
+---
+
+## TypeScript Types
+
+All types are exported from `@redenv/client`:
+
+```typescript
+import type {
+  RedenvOptions,
+  Secrets,
+  SecretValue,
+  RedenvError,
+} from "@redenv/client";
+```
+
+---
+
+## Low-Level Utilities
+
+For advanced use cases (building custom clients, etc.):
+
+```typescript
+import {
+  fetchAndDecrypt,
+  setSecret,
+  deleteSecret,
+  getPEK,
+  populateEnv,
+  getSecretHistory,
+  decryptVersion,
+} from "@redenv/client/utils";
+```
+
+| Function | Description |
+| -------- | ----------- |
+| `getPEK(redis, options)` | Fetch and decrypt Project Encryption Key |
+| `fetchAndDecrypt(redis, options, pek?)` | Fetch and decrypt all secrets |
+| `setSecret(redis, options, key, value, pek?)` | Write a secret |
+| `deleteSecret(redis, options, key, pek?)` | Delete a secret |
+| `populateEnv(secrets, options)` | Inject secrets into `process.env` |
+| `getSecretHistory(redis, options, key)` | Get version history for a key |
+| `decryptVersion(redis, options, value, pek?)` | Decrypt a specific version |
+
+<Callout type="warning">
+  These are internal APIs and may change between versions. Use the `Redenv`
+  class for stable APIs.
+</Callout>

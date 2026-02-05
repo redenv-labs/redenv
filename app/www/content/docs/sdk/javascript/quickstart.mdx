@@ -1,0 +1,133 @@
+---
+title: Quickstart
+description: Get up and running with @redenv/client in 5 minutes.
+---
+
+This guide will get you from zero to loading secrets in your application.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+1. A Redenv project set up via the [CLI](/docs/cli/commands/register)
+2. A [Service Token](/docs/cli/commands/token/create) created for your application
+3. Your Upstash Redis credentials
+
+## Installation
+
+Install the client using your preferred package manager:
+
+```package-install
+@redenv/client
+```
+
+## Bootstrap Environment Variables
+
+The client needs a few "bootstrap" variables to connect to your secrets. These are the only variables you'll store in `.env` files:
+
+```bash title=".env.local"
+# Redenv Service Token (from `redenv token create`)
+REDENV_PROJECT=my-app
+REDENV_TOKEN_ID=stk_yYt2HXRprwYgpvwv
+REDENV_TOKEN_KEY=redenv_sk_8f3a9b2c1d4e5f6g...
+
+# Upstash Redis (from Upstash Console)
+UPSTASH_REDIS_URL=https://your-redis.upstash.io
+UPSTASH_REDIS_TOKEN=AXxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+<Callout type="warning">
+  **Never hardcode credentials.** Always load your Service Token and Upstash
+  credentials from environment variables.
+</Callout>
+
+## Create a Redenv Instance
+
+Create a dedicated file for your Redenv configuration:
+
+```typescript title="lib/redenv.ts"
+import { Redenv } from "@redenv/client";
+
+export const redenv = new Redenv({
+  project: process.env.REDENV_PROJECT!,
+  tokenId: process.env.REDENV_TOKEN_ID!,
+  token: process.env.REDENV_TOKEN_KEY!,
+  environment: process.env.NODE_ENV || "development",
+  upstash: {
+    url: process.env.UPSTASH_REDIS_URL!,
+    token: process.env.UPSTASH_REDIS_TOKEN!,
+  },
+});
+```
+
+## Load and Use Secrets
+
+### Option 1: Auto-populate `process.env`
+
+The simplest approach—secrets are automatically injected into `process.env`:
+
+```typescript title="app.ts"
+import { redenv } from "./lib/redenv";
+
+await redenv.load();
+
+// Now use process.env as usual
+console.log(process.env.DATABASE_URL);
+console.log(process.env.API_KEY);
+```
+
+### Option 2: Programmatic Access (Recommended)
+
+For more control, use the `Secrets` object returned by `load()`:
+
+```typescript title="app.ts"
+import { redenv } from "./lib/redenv";
+
+const secrets = await redenv.load();
+
+// Direct property access
+const apiKey = secrets.API_KEY;
+
+// Type-safe access with defaults
+const port = secrets.get("PORT", 3000).toInt();
+const debug = secrets.get("DEBUG", false).toBool();
+const config = secrets.get("CONFIG", {}).toJSON<{ retries: number }>();
+
+// Validate required secrets (throws if missing)
+secrets.require("DATABASE_URL", "STRIPE_KEY");
+```
+
+## Full Example
+
+```typescript title="server.ts"
+import express from "express";
+import { redenv } from "./lib/redenv";
+
+async function main() {
+  // Load secrets before starting the server
+  const secrets = await redenv.load();
+
+  // Validate critical secrets exist
+  secrets.require("DATABASE_URL", "SESSION_SECRET");
+
+  const app = express();
+  const port = secrets.get("PORT", 3000).toInt();
+
+  app.get("/", (req, res) => {
+    res.send("Hello from Redenv!");
+  });
+
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  });
+}
+
+main().catch(console.error);
+```
+
+## Next Steps
+
+- [Configuration](/docs/sdk/javascript/configuration) - All client options
+- [Secrets Object](/docs/sdk/javascript/secrets-object) - Working with the Secrets class
+- [Type Casting](/docs/sdk/javascript/type-casting) - Convert secrets to numbers, booleans, JSON
+- [Caching](/docs/concepts/caching) - How stale-while-revalidate reduces Redis load

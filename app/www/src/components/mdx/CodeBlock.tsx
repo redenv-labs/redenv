@@ -20,20 +20,33 @@ import {
   Tabs,
 } from "fumadocs-ui/components/tabs";
 
-export const Code = ({ children, className, ...props }: React.HTMLAttributes<HTMLElement>) => {
+export const Code = ({
+  children,
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLElement>) => {
   // Code blocks from markdown have a className like "language-typescript"
   // Inline code doesn't have this class
   const isCodeBlock = className?.includes("language-");
 
   if (isCodeBlock) {
-    // Let the parent <pre> (CodeBlock) handle styling
-    return <code className={className} {...props}>{children}</code>;
+    return (
+      <code
+        className={cn(
+          "w-full [&_span]:w-full inline-flex flex-col gap-1",
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </code>
+    );
   }
-  
+
   // Inline code styling
   return (
-    <code 
-      className="bg-secondary px-1.5 py-0.5 rounded text-sm font-mono text-foreground" 
+    <code
+      className="bg-secondary px-1.5 py-0.5 rounded text-sm font-mono text-foreground w-full [&_span]:w-full max-w-max flex-col gap-1"
       {...props}
     >
       {children}
@@ -117,7 +130,7 @@ export function CodeBlock({
         ref={areaRef as any}
         className={cn(
           "overflow-x-auto py-4 text-sm leading-relaxed font-mono scrollbar-1",
-          "[&>code]:bg-transparent [&>code]:p-0 [&>code]:border-0 [&>code]:text-inherit",
+          "[&>code]:bg-transparent [&>code]:p-0 [&>code]:border-0 [&>code]:text-inherit [&_code:only-child]:inline-flex [&_code:only-child]:max-w-full",
           className,
         )}
         {...props}

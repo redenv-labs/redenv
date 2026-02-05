@@ -1,0 +1,184 @@
+---
+title: Time Travel
+description: Access historical versions of secrets for auditing and rollbacks.
+---
+
+The `getVersion()` method allows you to fetch previous versions of any secret, enabling auditing, debugging, and programmatic rollbacks.
+
+## Basic Usage
+
+```typescript
+const redenv = new Redenv({ ... });
+
+// Fetch a specific version by ID
+const v5 = await redenv.getVersion("API_KEY", 5);
+console.log(v5);  // Value at version 5
+```
+
+## Version Modes
+
+The method supports two modes for specifying which version to retrieve:
+
+### Mode: "id" (Default)
+
+Fetch by absolute version number:
+
+```typescript
+// Version 10 of API_KEY
+const v10 = await redenv.getVersion("API_KEY", 10);
+
+// Negative numbers = index from oldest
+const oldest = await redenv.getVersion("API_KEY", -1);
+```
+
+### Mode: "index"
+
+Fetch by array index (0 = latest, 1 = previous, etc.):
+
+```typescript
+// Latest version
+const latest = await redenv.getVersion("API_KEY", 0, "index");
+
+// Previous version
+const previous = await redenv.getVersion("API_KEY", 1, "index");
+
+// Third most recent
+const third = await redenv.getVersion("API_KEY", 2, "index");
+```
+
+## Return Value
+
+Returns `string | undefined`:
+
+- **String**: The decrypted value at that version
+- **undefined**: If the version doesn't exist or decryption fails
+
+```typescript
+const oldValue = await redenv.getVersion("API_KEY", 5);
+
+if (oldValue === undefined) {
+  console.log("Version not found");
+} else {
+  console.log("Value:", oldValue);
+}
+```
+
+## Practical Examples
+
+### Audit Trail
+
+Display the history of a secret:
+
+```typescript
+async function showSecretHistory(key: string, maxVersions = 10) {
+  console.log(`History for ${key}:`);
+
+  for (let i = 0; i < maxVersions; i++) {
+    const value = await redenv.getVersion(key, i, "index");
+    if (value === undefined) break;
+
+    // Mask the value for display
+    const masked = value.slice(0, 4) + "..." + value.slice(-4);
+    console.log(`  [${i}] ${masked}`);
+  }
+}
+
+await showSecretHistory("API_KEY");
+// History for API_KEY:
+//   [0] sk_l...xyz9 (current)
+//   [1] sk_l...abc1 (previous)
+//   [2] sk_t...test (older)
+```
+
+### Compare Versions
+
+```typescript
+async function compareVersions(key: string) {
+  const current = await redenv.getVersion(key, 0, "index");
+  const previous = await redenv.getVersion(key, 1, "index");
+
+  if (current !== previous) {
+    console.log(`${key} has changed since last version`);
+    // Log or alert as needed
+  }
+}
+```
+
+### Rollback Detection
+
+```typescript
+async function detectRollback(key: string, expectedValue: string) {
+  const current = await redenv.getVersion(key, 0, "index");
+
+  if (current !== expectedValue) {
+    console.warn(`${key} value has changed unexpectedly!`);
+    // Trigger alert or investigation
+  }
+}
+```
+
+### Paginated History Browser
+
+```typescript
+async function* iterateHistory(key: string) {
+  let index = 0;
+  while (true) {
+    const value = await redenv.getVersion(key, index, "index");
+    if (value === undefined) return;
+    yield { index, value };
+    index++;
+  }
+}
+
+// Usage
+for await (const { index, value } of iterateHistory("API_KEY")) {
+  console.log(`Version ${index}: ${value}`);
+}
+```
+
+## Caching
+
+Version history is cached using the same SWR strategy as regular secrets:
+
+```typescript
+// First call: fetches history from Redis
+await redenv.getVersion("API_KEY", 1, "index"); // ~50ms
+
+// Subsequent calls: served from cache
+await redenv.getVersion("API_KEY", 2, "index"); // ~0ms
+```
+
+The cache key is specific to each secret's history:
+
+```
+history:my-app:development:API_KEY
+```
+
+## Error Handling
+
+```typescript
+try {
+  const value = await redenv.getVersion("API_KEY", 999);
+  if (value === undefined) {
+    console.log("Version 999 doesn't exist");
+  }
+} catch (error) {
+  // Decryption or network errors
+  console.error("Failed to fetch version:", error);
+}
+```
+
+## Use Cases
+
+| Scenario               | Approach                                  |
+| ---------------------- | ----------------------------------------- |
+| Audit who changed what | Iterate history with timestamps           |
+| Debug production issue | Compare current vs previous versions      |
+| Emergency rollback     | Fetch old version, use `set()` to restore |
+| Compliance reporting   | Export version history                    |
+
+<Callout type="info">
+  Version history is managed by the CLI. Use `redenv history view` to see full
+  metadata (timestamps, users) for each version. The SDK provides value-only
+  access.
+</Callout>
