@@ -4,6 +4,13 @@ import type { NextConfig } from "next";
 const config: NextConfig = {
   /* config options here */
   reactCompiler: true,
+  images: {
+    remotePatterns: [
+      {
+        hostname: "*",
+      },
+    ],
+  },
   serverExternalPackages: ["typescript", "twoslash"],
 };
 
