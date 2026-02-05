@@ -1,0 +1,173 @@
+---
+title: Scoping
+description: Create scoped views of secrets with prefix stripping.
+---
+
+The `scope()` method creates a new `Secrets` object containing only keys that start with a specific prefix, with that prefix removed from the key names.
+
+## Basic Usage
+
+```python
+secrets = redenv.load()
+
+# Your secrets:
+# AWS_ACCESS_KEY=AKIA...
+# AWS_SECRET_KEY=wJalr...
+# AWS_REGION=us-east-1
+# DATABASE_URL=postgres://...
+
+aws = secrets.scope("AWS_")
+# {"ACCESS_KEY": "AKIA...", "SECRET_KEY": "wJalr...", "REGION": "us-east-1"}
+
+print(aws["ACCESS_KEY"])  # "AKIA..."
+print(aws["REGION"])      # "us-east-1"
+```
+
+## Why Scope?
+
+Scoping is useful for:
+
+1. **Modular Configuration** - Pass only relevant secrets to modules
+2. **Clean Interfaces** - Avoid prefix repetition in code
+3. **Library Integration** - Match expected configuration shapes
+
+### Without Scoping
+
+```python
+import boto3
+
+s3_client = boto3.client(
+    "s3",
+    region_name=secrets["AWS_REGION"],
+    aws_access_key_id=secrets["AWS_ACCESS_KEY"],
+    aws_secret_access_key=secrets["AWS_SECRET_KEY"],
+)
+```
+
+### With Scoping
+
+```python
+import boto3
+
+aws = secrets.scope("AWS_")
+
+s3_client = boto3.client(
+    "s3",
+    region_name=aws["REGION"],
+    aws_access_key_id=aws["ACCESS_KEY"],
+    aws_secret_access_key=aws["SECRET_KEY"],
+)
+```
+
+## Practical Examples
+
+### AWS SDK Configuration
+
+```python
+import boto3
+
+secrets = redenv.load()
+aws = secrets.scope("AWS_")
+
+s3 = boto3.client(
+    "s3",
+    region_name=aws["REGION"],
+    aws_access_key_id=aws["ACCESS_KEY"],
+    aws_secret_access_key=aws["SECRET_KEY"],
+)
+```
+
+### Database Configuration
+
+```python
+secrets = redenv.load()
+
+# Secrets: DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME
+db = secrets.scope("DB_")
+
+connection = create_connection(
+    host=db["HOST"],
+    port=db.get("PORT", 5432, cast=int),
+    user=db["USER"],
+    password=db["PASSWORD"],
+    database=db["NAME"],
+)
+```
+
+### Multi-Service Configuration
+
+```python
+secrets = redenv.load()
+
+# Stripe configuration
+stripe_config = secrets.scope("STRIPE_")
+stripe.api_key = stripe_config["SECRET_KEY"]
+
+# SendGrid configuration
+sendgrid_config = secrets.scope("SENDGRID_")
+sg = sendgrid.SendGridAPIClient(sendgrid_config["API_KEY"])
+
+# Twilio configuration
+twilio_config = secrets.scope("TWILIO_")
+twilio_client = Client(twilio_config["SID"], twilio_config["AUTH_TOKEN"])
+```
+
+## Chaining with Other Methods
+
+Scoped secrets retain all `Secrets` capabilities:
+
+```python
+secrets = redenv.load()
+
+aws = secrets.scope("AWS_")
+
+# Type casting works
+timeout = aws.get("TIMEOUT", 5000, cast=int)
+
+# Validation works
+aws.require("ACCESS_KEY", "SECRET_KEY")
+
+# Iteration works
+for key, value in aws.items():
+    print(f"{key}: {value}")
+```
+
+## Nested Scoping
+
+You can scope multiple times:
+
+```python
+secrets = redenv.load()
+
+# Secrets:
+# AWS_S3_BUCKET=my-bucket
+# AWS_S3_REGION=us-east-1
+# AWS_SQS_QUEUE=my-queue
+
+aws = secrets.scope("AWS_")
+s3 = aws.scope("S3_")
+
+print(s3["BUCKET"])  # "my-bucket"
+print(s3["REGION"])  # "us-east-1"
+```
+
+## With Validation
+
+Validate before scoping to ensure all required secrets exist:
+
+```python
+secrets = redenv.load()
+
+# Validate full paths first
+secrets.require("AWS_ACCESS_KEY", "AWS_SECRET_KEY", "AWS_REGION")
+
+# Then scope for cleaner access
+aws = secrets.scope("AWS_")
+```
+
+Or validate within the scoped context:
+
+```python
+aws = secrets.scope("AWS_")
+aws.require("ACCESS_KEY", "SECRET_KEY", "REGION")
+```

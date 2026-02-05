@@ -1,0 +1,10 @@
+{
+  "title": "Secrets Object",
+  "pages": [
+    "overview",
+    "type-casting",
+    "validation",
+    "scoping",
+    "secret-expansion"
+  ]
+}

@@ -1,0 +1,210 @@
+---
+title: Quickstart
+description: Get up and running with the Redenv Python SDK in 5 minutes.
+---
+
+This guide will get you from zero to loading secrets in your Python application.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+1. Python 3.8 or higher installed
+2. A Redenv project set up via the [CLI](/docs/cli/commands/register)
+3. A [Service Token](/docs/cli/commands/token/create) created for your application
+4. Your Upstash Redis credentials
+
+## Installation
+
+Install the SDK using pip:
+
+```bash
+pip install redenv
+```
+
+## Bootstrap Environment Variables
+
+The client needs a few "bootstrap" variables to connect to your secrets. These are the only variables you'll store in `.env` files or system environment:
+
+```bash title=".env"
+# Redenv Service Token (from `redenv token create`)
+REDENV_PROJECT=my-app
+REDENV_TOKEN_ID=stk_yYt2HXRprwYgpvwv
+REDENV_TOKEN_KEY=redenv_sk_8f3a9b2c1d4e5f6g...
+
+# Upstash Redis (from Upstash Console)
+UPSTASH_REDIS_URL=https://your-redis.upstash.io
+UPSTASH_REDIS_TOKEN=AXxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+<Callout type="warning">
+  **Never hardcode credentials.** Always load your Service Token and Upstash
+  credentials from environment variables.
+</Callout>
+
+## Create a Redenv Instance
+
+Create a dedicated file for your Redenv configuration:
+
+<Tabs items={["Async", "Sync"]}>
+
+```python tab="Async" title="config/redenv.py"
+import os
+from redenv import Redenv
+
+redenv = Redenv({
+    "project": os.environ["REDENV_PROJECT"],
+    "token_id": os.environ["REDENV_TOKEN_ID"],
+    "token": os.environ["REDENV_TOKEN_KEY"],
+    "environment": os.getenv("ENVIRONMENT", "development"),
+    "upstash": {
+        "url": os.environ["UPSTASH_REDIS_URL"],
+        "token": os.environ["UPSTASH_REDIS_TOKEN"],
+    },
+})
+```
+
+```python tab="Sync" title="config/redenv.py"
+import os
+from redenv import RedenvSync
+
+redenv = RedenvSync({
+    "project": os.environ["REDENV_PROJECT"],
+    "token_id": os.environ["REDENV_TOKEN_ID"],
+    "token": os.environ["REDENV_TOKEN_KEY"],
+    "environment": os.getenv("ENVIRONMENT", "development"),
+    "upstash": {
+        "url": os.environ["UPSTASH_REDIS_URL"],
+        "token": os.environ["UPSTASH_REDIS_TOKEN"],
+    },
+})
+```
+
+</Tabs>
+
+## Load and Use Secrets
+
+### Option 1: Auto-populate `os.environ`
+
+The simplest approach—secrets are automatically injected into `os.environ`:
+
+<Tabs items={["Async", "Sync"]}>
+
+```python tab="Async" title="app.py"
+import os
+from config.redenv import redenv
+
+async def main():
+    await redenv.load()
+
+    # Now use os.environ as usual
+    print(os.environ["DATABASE_URL"])
+    print(os.environ["API_KEY"])
+```
+
+```python tab="Sync" title="app.py"
+import os
+from config.redenv import redenv
+
+redenv.load()
+
+# Now use os.environ as usual
+print(os.environ["DATABASE_URL"])
+print(os.environ["API_KEY"])
+```
+
+</Tabs>
+
+### Option 2: Programmatic Access (Recommended)
+
+For more control, use the `Secrets` object returned by `load()`:
+
+<Tabs items={["Async", "Sync"]}>
+
+```python tab="Async" title="app.py"
+from config.redenv import redenv
+
+async def main():
+    secrets = await redenv.load()
+
+    # Direct dict-like access
+    api_key = secrets["API_KEY"]
+
+    # Type-safe access with defaults
+    port = secrets.get("PORT", 3000, cast=int)
+    debug = secrets.get("DEBUG", False, cast=bool)
+    config = secrets.get("CONFIG", {}, cast=dict)
+
+    # Validate required secrets (throws if missing)
+    secrets.require("DATABASE_URL", "STRIPE_KEY")
+```
+
+```python tab="Sync" title="app.py"
+from config.redenv import redenv
+
+secrets = redenv.load()
+
+# Direct dict-like access
+api_key = secrets["API_KEY"]
+
+# Type-safe access with defaults
+port = secrets.get("PORT", 3000, cast=int)
+debug = secrets.get("DEBUG", False, cast=bool)
+config = secrets.get("CONFIG", {}, cast=dict)
+
+# Validate required secrets (throws if missing)
+secrets.require("DATABASE_URL", "STRIPE_KEY")
+```
+
+</Tabs>
+
+## Full Example
+
+<Tabs items={["FastAPI (Async)", "Flask (Sync)"]}>
+
+```python tab="FastAPI (Async)" title="main.py"
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from config.redenv import redenv
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Load and validate secrets on startup
+    secrets = await redenv.init()
+    secrets.require("DATABASE_URL", "JWT_SECRET")
+    yield
+
+app = FastAPI(lifespan=lifespan)
+
+@app.get("/")
+async def root():
+    return {"message": "Hello from Redenv!"}
+```
+
+```python tab="Flask (Sync)" title="app.py"
+from flask import Flask
+from config.redenv import redenv
+
+app = Flask(__name__)
+
+# Load secrets on import
+secrets = redenv.init()
+secrets.require("DATABASE_URL", "SESSION_SECRET")
+
+@app.route("/")
+def home():
+    return "Hello from Redenv!"
+
+if __name__ == "__main__":
+    port = secrets.get("PORT", 5000, cast=int)
+    app.run(port=port)
+```
+
+</Tabs>
+
+## Next Steps
+
+- [Configuration](/docs/sdk/python/configuration) - All client options
+- [Secrets Object](/docs/sdk/python/secrets-object) - Working with the Secrets class
+- [Type Casting](/docs/sdk/python/secrets-object/type-casting) - Convert secrets to numbers, booleans, JSON
+- [Caching](/docs/concepts/caching) - How stale-while-revalidate reduces Redis load

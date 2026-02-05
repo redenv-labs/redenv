@@ -1,0 +1,156 @@
+---
+title: Configuration
+description: All configuration options for the Redenv Python SDK.
+---
+
+The `Redenv` and `RedenvSync` constructors accept a configuration dictionary. Here's a complete example:
+
+```python title="config/redenv.py"
+from redenv import Redenv  # or RedenvSync
+
+redenv = Redenv({
+    # Required
+    "project": "my-app",
+    "token_id": "stk_yYt2HXRprwYgpvwv",
+    "token": "redenv_sk_8f3a9b2c...",
+    "upstash": {
+        "url": "https://your-redis.upstash.io",
+        "token": "AXxxxxxxxxxxxxxxx",
+    },
+
+    # Optional
+    "environment": "production",
+    "cache": {"ttl": 300, "swr": 86400},
+    "env": {"override": True},
+    "log": "low",
+})
+```
+
+## All Options
+
+| Option          | Type                        | Required | Default         | Description                                       |
+| --------------- | --------------------------- | -------- | --------------- | ------------------------------------------------- |
+| `project`       | `str`                       | Yes      | —               | Your Redenv project name                          |
+| `token_id`      | `str`                       | Yes      | —               | Service Token public ID (`stk_...`)               |
+| `token`         | `str`                       | Yes      | —               | Service Token secret key (`redenv_sk_...`)        |
+| `upstash.url`   | `str`                       | Yes      | —               | Upstash Redis REST URL                            |
+| `upstash.token` | `str`                       | Yes      | —               | Upstash Redis REST Token                          |
+| `environment`   | `str`                       | No       | `"development"` | Environment to fetch secrets from                 |
+| `cache.ttl`     | `int`                       | No       | `300`           | Seconds before data is stale                      |
+| `cache.swr`     | `int`                       | No       | `86400`         | Seconds stale data can be served while refreshing |
+| `env.override`  | `bool`                      | No       | `True`          | Overwrite existing `os.environ` variables         |
+| `log`           | `"none" \| "low" \| "high"` | No       | `"low"`         | Logging verbosity                                 |
+
+<Callout type="warning">
+  **Never hardcode credentials.** Load them from environment variables. These
+  "bootstrap" secrets are the only ones you manage outside Redenv.
+</Callout>
+
+## Option Details
+
+### environment
+
+| Value             | Description                |
+| ----------------- | -------------------------- |
+| `"development"`   | Default. Local development |
+| `"staging"`       | Pre-production testing     |
+| `"production"`    | Live production secrets    |
+| Any custom string | Your own environment names |
+
+```python
+import os
+redenv = Redenv({
+    # ...
+    "environment": os.getenv("ENVIRONMENT", "development"),
+})
+```
+
+### cache
+
+Uses **stale-while-revalidate** strategy. Preset configurations:
+
+| Use Case                   | TTL    | SWR     | Example                          |
+| -------------------------- | ------ | ------- | -------------------------------- |
+| **Default**                | `300`  | `86400` | General purpose                  |
+| **High-frequency updates** | `10`   | `60`    | Feature flags, A/B tests         |
+| **Stable secrets**         | `3600` | `86400` | API keys, database URLs          |
+| **Serverless**             | `30`   | `300`   | AWS Lambda (ephemeral instances) |
+| **Development**            | `5`    | `30`    | See changes quickly              |
+
+<Callout type="info">
+  For a deep dive into how caching works, scale impact, and architecture, see
+  [Caching Strategy](/docs/concepts/caching).
+</Callout>
+
+### env.override
+
+When `False`, existing `os.environ` variables are preserved. Useful for local `.env` overrides during development.
+
+```python
+redenv = Redenv({
+    # ...
+    "env": {"override": False},
+})
+```
+
+### log
+
+| Value    | Description                                    |
+| -------- | ---------------------------------------------- |
+| `"none"` | No logs                                        |
+| `"low"`  | Errors and important info only                 |
+| `"high"` | Verbose logging (cache hits/misses, refreshes) |
+
+Example output with `"high"`:
+
+```bash
+[REDENV] Cache HIT (fresh): redenv:my-app:production
+[REDENV] Cache HIT (stale): redenv:my-app:production - triggering background refresh
+[REDENV] Cache MISS: redenv:my-app:staging - fetching from Redis
+```
+
+## Best Practice: Singleton Pattern
+
+Create a single Redenv instance and import it elsewhere. This ensures cache is shared across your app:
+
+<Tabs items={["Async", "Sync"]}>
+
+```python tab="Async" title="config/redenv.py"
+import os
+from redenv import Redenv
+
+redenv = Redenv({
+    "project": os.environ["REDENV_PROJECT"],
+    "token_id": os.environ["REDENV_TOKEN_ID"],
+    "token": os.environ["REDENV_TOKEN_KEY"],
+    "upstash": {
+        "url": os.environ["UPSTASH_REDIS_URL"],
+        "token": os.environ["UPSTASH_REDIS_TOKEN"],
+    },
+    "environment": os.getenv("ENVIRONMENT", "development"),
+})
+```
+
+```python tab="Sync" title="config/redenv.py"
+import os
+from redenv import RedenvSync
+
+redenv = RedenvSync({
+    "project": os.environ["REDENV_PROJECT"],
+    "token_id": os.environ["REDENV_TOKEN_ID"],
+    "token": os.environ["REDENV_TOKEN_KEY"],
+    "upstash": {
+        "url": os.environ["UPSTASH_REDIS_URL"],
+        "token": os.environ["UPSTASH_REDIS_TOKEN"],
+    },
+    "environment": os.getenv("ENVIRONMENT", "development"),
+})
+```
+
+</Tabs>
+
+```python title="anywhere else"
+from config.redenv import redenv
+
+secrets = redenv.load()  # or await redenv.load() for async
+```

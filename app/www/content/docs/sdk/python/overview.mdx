@@ -1,0 +1,135 @@
+---
+title: Overview
+description: A lightweight, zero-knowledge Python client for Redenv.
+---
+
+The `redenv` Python SDK is a powerful client for securely fetching and managing secrets from Redenv in any Python application.
+
+## Key Features
+
+<Cards>
+  <Card title="Zero-Knowledge">
+    All cryptographic operations happen locally. Your secrets are never
+    exposed—not even to Redenv's backend.
+  </Card>
+  <Card title="High-Performance Caching">
+    Built-in stale-while-revalidate cache serves secrets instantly with
+    automatic background refresh.
+  </Card>
+  <Card title="Async and Sync Support">
+    Choose between async (`Redenv`) for modern async apps or sync (`RedenvSync`)
+    for scripts and legacy applications.
+  </Card>
+  <Card title="Smart Secrets">
+    Type-safe access with casting, validation, scoping, and automatic reference
+    expansion.
+  </Card>
+</Cards>
+
+## What You Can Do
+
+<Tabs items={["Async", "Sync"]}>
+
+```python tab="Async" title="app.py"
+import asyncio
+from redenv import Redenv
+
+redenv = Redenv({
+    "project": "my-app",
+    "token_id": "stk_...",
+    "token": "redenv_sk_...",
+    "upstash": {
+        "url": "https://your-redis.upstash.io",
+        "token": "AXxx...",
+    },
+})
+
+async def main():
+    # Load and cache secrets
+    secrets = await redenv.load()
+
+    # Direct access (auto-populates os.environ)
+    print(os.environ["API_KEY"])
+
+    # Smart type casting
+    port = secrets.get("PORT", 3000, cast=int)
+    debug = secrets.get("DEBUG", cast=bool)
+
+    # Fail-fast validation
+    secrets.require("DATABASE_URL", "STRIPE_KEY")
+
+    # Scoped configuration
+    aws_config = secrets.scope("AWS_")
+
+    # Time travel
+    previous_value = await redenv.get_version("API_KEY", 1, "index")
+
+    # Dynamic updates
+    await redenv.set("FEATURE_FLAG", "enabled")
+
+asyncio.run(main())
+```
+
+```python tab="Sync" title="script.py"
+from redenv import RedenvSync
+
+redenv = RedenvSync({
+    "project": "my-app",
+    "token_id": "stk_...",
+    "token": "redenv_sk_...",
+    "upstash": {
+        "url": "https://your-redis.upstash.io",
+        "token": "AXxx...",
+    },
+})
+
+# Load and cache secrets
+secrets = redenv.load()
+
+# Direct access (auto-populates os.environ)
+print(os.environ["API_KEY"])
+
+# Smart type casting
+port = secrets.get("PORT", 3000, cast=int)
+debug = secrets.get("DEBUG", cast=bool)
+
+# Fail-fast validation
+secrets.require("DATABASE_URL", "STRIPE_KEY")
+
+# Scoped configuration
+aws_config = secrets.scope("AWS_")
+
+# Time travel
+previous_value = redenv.get_version("API_KEY", 1, "index")
+
+# Dynamic updates
+redenv.set("FEATURE_FLAG", "enabled")
+```
+
+</Tabs>
+
+## Security Model
+
+The SDK implements a **zero-knowledge architecture**:
+
+1. **Service Token** authenticates your application
+2. **Encrypted PEK** is fetched from Redis and decrypted locally
+3. **Secrets** are decrypted client-side using the PEK
+4. **Redis** never sees unencrypted data
+
+<Callout type="info">
+  Your Master Password is never sent to any server. Only the CLI knows it.
+  Applications use Service Tokens, which are derived keys that can decrypt the
+  Project Encryption Key (PEK).
+</Callout>
+
+## Runtime Compatibility
+
+| Runtime     | Status                    |
+| ----------- | ------------------------- |
+| Python 3.8+ | <Check /> Fully supported |
+| asyncio     | <Check /> Fully supported |
+| sync        | <Check /> Fully supported |
+| Django      | <Check /> Fully supported |
+| FastAPI     | <Check /> Fully supported |
+| Flask       | <Check /> Fully supported |

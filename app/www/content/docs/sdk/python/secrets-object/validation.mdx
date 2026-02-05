@@ -1,0 +1,186 @@
+---
+title: Validation
+description: Fail-fast validation of required secrets.
+---
+
+The `require()` method ensures critical secrets exist before your application runs, failing fast with a clear error instead of crashing later with cryptic undefined errors.
+
+## Recommended: Validate at Initialization
+
+The best place to validate secrets is in your `config/redenv.py` file, right when initializing the client. Since `init()` returns the `Secrets` object, you can validate immediately at app startup:
+
+<Tabs items={["Async", "Sync"]}>
+
+```python tab="Async" title="config/redenv.py"
+import os
+from redenv import Redenv
+
+redenv = Redenv({
+    "project": os.environ["REDENV_PROJECT"],
+    "token_id": os.environ["REDENV_TOKEN_ID"],
+    "token": os.environ["REDENV_TOKEN_KEY"],
+    "upstash": {
+        "url": os.environ["UPSTASH_REDIS_URL"],
+        "token": os.environ["UPSTASH_REDIS_TOKEN"],
+    },
+    "environment": os.getenv("ENVIRONMENT", "development"),
+})
+
+async def initialize():
+    # Initialize AND validate in one place
+    secrets = await redenv.init()
+    secrets.require(  # [!code highlight]
+        "DATABASE_URL",  # [!code highlight]
+        "JWT_SECRET",  # [!code highlight]
+        "STRIPE_SECRET_KEY",  # [!code highlight]
+    )  # [!code highlight]
+    return secrets
+```
+
+```python tab="Sync" title="config/redenv.py"
+import os
+from redenv import RedenvSync
+
+redenv = RedenvSync({
+    "project": os.environ["REDENV_PROJECT"],
+    "token_id": os.environ["REDENV_TOKEN_ID"],
+    "token": os.environ["REDENV_TOKEN_KEY"],
+    "upstash": {
+        "url": os.environ["UPSTASH_REDIS_URL"],
+        "token": os.environ["UPSTASH_REDIS_TOKEN"],
+    },
+    "environment": os.getenv("ENVIRONMENT", "development"),
+})
+
+# Initialize AND validate in one place
+secrets = redenv.init()
+secrets.require(  # [!code highlight]
+    "DATABASE_URL",  # [!code highlight]
+    "JWT_SECRET",  # [!code highlight]
+    "STRIPE_SECRET_KEY",  # [!code highlight]
+)  # [!code highlight]
+```
+
+</Tabs>
+
+<Callout type="tip">
+  **Why here?** This runs the moment your app imports `config/redenv.py`. If any
+  secrets are missing, your app fails immediately — before any routes, services,
+  or database connections are attempted.
+</Callout>
+
+If any of the specified keys are missing, a `RedenvError` is thrown:
+
+```
+RedenvError: [SECRET_NOT_FOUND] Missing required secrets: JWT_SECRET, STRIPE_SECRET_KEY
+```
+
+## Basic Usage
+
+```python
+secrets = redenv.load()
+
+# Throws immediately if any secrets are missing
+secrets.require("DATABASE_URL", "JWT_SECRET", "STRIPE_KEY")
+```
+
+## Chaining
+
+The `require()` method returns `self`, enabling method chaining:
+
+```python
+secrets = redenv.load()
+
+db_url = secrets.require("DATABASE_URL", "JWT_SECRET")["DATABASE_URL"]
+```
+
+## With Scoping
+
+Combine with `scope()` to validate scoped configurations:
+
+```python
+secrets = redenv.load()
+
+# Validate and scope in one flow
+aws = secrets.require(
+    "AWS_ACCESS_KEY",
+    "AWS_SECRET_KEY",
+    "AWS_REGION"
+).scope("AWS_")
+
+print(aws["ACCESS_KEY"])  # Already validated
+```
+
+## Module-Level Validation
+
+```python title="services/stripe.py"
+import stripe
+from config.redenv import redenv
+
+def get_stripe_client():
+    secrets = redenv.load()
+
+    # Validate Stripe-specific secrets
+    secrets.require("STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET")
+
+    stripe.api_key = secrets["STRIPE_SECRET_KEY"]
+    return stripe
+```
+
+## Conditional Requirements
+
+```python
+import os
+
+secrets = redenv.load()
+
+# Always required
+secrets.require("DATABASE_URL", "JWT_SECRET")
+
+# Conditionally required
+if os.getenv("ENVIRONMENT") == "production":
+    secrets.require("SENTRY_DSN", "DATADOG_API_KEY")
+```
+
+## Error Handling
+
+```python
+from redenv import RedenvError
+
+try:
+    secrets = redenv.load()
+    secrets.require("CRITICAL_SECRET")
+except RedenvError as e:
+    if e.code == "SECRET_NOT_FOUND":
+        print("Missing secrets:", e.message)
+        exit(1)
+    raise
+```
+
+## Why Use require()?
+
+<Callout type="warning">
+  **Without validation:**
+  ```python
+  api_key = secrets["API_KEY"]
+  # Later...
+  requests.get(url, headers={"Authorization": api_key})
+  # Error: Cannot concatenate NoneType and str
+  # Or worse: silent 401 errors with no clear cause
+  ```
+</Callout>
+
+<Callout type="info">
+  **With validation:** 
+  ```python twoslash
+  secrets.require("API_KEY") 
+  # Fails immediately with: "[SECRET_NOT_FOUND] Missing required secrets: API_KEY" 
+  # Clear, actionable error message 
+  ```
+</Callout>
+
+Fail-fast validation:
+
+- Catches configuration errors at startup, not at runtime
+- Provides clear, actionable error messages
+- Prevents cascading failures and debugging headaches

@@ -1,0 +1,192 @@
+---
+title: Type Casting
+description: Smart type conversion with the cast parameter.
+---
+
+Environment variables are always strings, but your application often needs other types. The `get()` method provides type-safe conversion via the `cast` parameter.
+
+## How Cast Works
+
+Pass a type or callable to the `cast` parameter:
+
+```python
+secrets = redenv.load()
+
+# Cast to integer
+port = secrets.get("PORT", 3000, cast=int)
+# "3000" → 3000
+
+# Cast to boolean
+debug = secrets.get("DEBUG", False, cast=bool)
+# "true" → True
+
+# Cast to dict (parses JSON)
+config = secrets.get("CONFIG", {}, cast=dict)
+# '{"timeout": 5000}' → {"timeout": 5000}
+```
+
+## Built-in Casts
+
+### int
+
+Parse the value as an integer:
+
+```python
+port = secrets.get("PORT", 3000, cast=int)
+# "3000" → 3000
+
+timeout = secrets.get("TIMEOUT", cast=int)
+# Returns None if not set and no default
+```
+
+Returns the default if the value can't be parsed.
+
+### float
+
+Parse the value as a float:
+
+```python
+rate = secrets.get("RATE_LIMIT", 1.5, cast=float)
+# "2.5" → 2.5
+```
+
+### bool
+
+Parse the value as a boolean:
+
+```python
+debug = secrets.get("DEBUG", False, cast=bool)
+# "true" → True
+# "false" → False
+
+enabled = secrets.get("FEATURE_FLAG", cast=bool)
+# "1" → True
+# "0" → False
+```
+
+**Truthy values:** `"true"`, `"1"`, `"yes"`, `"on"`, `"t"` (case-insensitive)  
+**Falsy values:** `"false"`, `"0"`, `"no"`, `"off"`, `"f"` (case-insensitive)
+
+### dict
+
+Parse the value as JSON into a dictionary:
+
+```python
+config = secrets.get("APP_CONFIG", {}, cast=dict)
+# '{"timeout": 5000}' → {"timeout": 5000}
+
+# Returns default if JSON is invalid
+fallback = secrets.get("BAD_JSON", {"default": True}, cast=dict)
+```
+
+### list
+
+Parse the value as JSON into a list:
+
+```python
+domains = secrets.get("ALLOWED_DOMAINS", [], cast=list)
+# '["example.com", "api.example.com"]' → ["example.com", "api.example.com"]
+```
+
+## Custom Callable Cast
+
+You can pass any callable that takes a string:
+
+```python
+from pathlib import Path
+from datetime import datetime
+
+# Cast to Path
+log_dir = secrets.get("LOG_DIR", "/var/log", cast=Path)
+
+# Cast to datetime (ISO format)
+start_date = secrets.get("START_DATE", cast=lambda x: datetime.fromisoformat(x))
+
+# Custom parser
+def parse_hosts(value: str) -> list:
+    return [h.strip() for h in value.split(",")]
+
+hosts = secrets.get("REDIS_HOSTS", cast=parse_hosts)
+# "host1:6379,host2:6379" → ["host1:6379", "host2:6379"]
+```
+
+## Default Values
+
+The default is returned when:
+
+- The key doesn't exist
+- The cast fails (e.g., invalid JSON, non-numeric string for int)
+
+```python
+# With defaults
+port = secrets.get("PORT", 3000, cast=int)  # 3000 if missing or invalid
+debug = secrets.get("DEBUG", False, cast=bool)  # False if missing
+
+# Without defaults
+api_key = secrets.get("API_KEY", cast=str)  # None if missing
+```
+
+## Practical Examples
+
+### Server Configuration
+
+```python
+secrets = redenv.load()
+
+config = {
+    "port": secrets.get("PORT", 3000, cast=int),
+    "host": secrets.get("HOST", "0.0.0.0"),
+    "ssl": secrets.get("SSL_ENABLED", False, cast=bool),
+    "workers": secrets.get("WORKERS", 4, cast=int),
+}
+
+app.run(host=config["host"], port=config["port"])
+```
+
+### Feature Flags
+
+```python
+secrets = redenv.load()
+
+features = {
+    "beta_mode": secrets.get("BETA_MODE", False, cast=bool),
+    "max_users": secrets.get("MAX_USERS", 1000, cast=int),
+    "allowed_domains": secrets.get("ALLOWED_DOMAINS", [], cast=list),
+}
+
+if features["beta_mode"]:
+    enable_beta_features()
+```
+
+### Complex JSON Configurations
+
+```python
+secrets = redenv.load()
+
+# With type hints (for IDE support)
+from typing import TypedDict
+
+class DatabaseConfig(TypedDict):
+    host: str
+    port: int
+    ssl: bool
+
+db_config: DatabaseConfig = secrets.get("DATABASE_CONFIG", {
+    "host": "localhost",
+    "port": 5432,
+    "ssl": False,
+}, cast=dict)
+```
+
+### Comma-Separated Values
+
+```python
+def parse_csv(value: str) -> list:
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+secrets = redenv.load()
+
+# CORS_ORIGINS="https://app.example.com, https://admin.example.com"
+origins = secrets.get("CORS_ORIGINS", [], cast=parse_csv)
+# ["https://app.example.com", "https://admin.example.com"]
+```

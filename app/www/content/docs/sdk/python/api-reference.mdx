@@ -1,0 +1,397 @@
+---
+title: API Reference
+description: Complete API documentation for the Redenv Python SDK.
+---
+
+## Quick Links
+
+| Class                           | Description                                        |
+| ------------------------------- | -------------------------------------------------- |
+| [Redenv](#redenv-class-async)   | Async client for loading and writing secrets       |
+| [RedenvSync](#redenvsync-class) | Synchronous client for scripts and legacy apps     |
+| [Secrets](#secrets-class)       | Container returned by `load()` with helper methods |
+| [RedenvError](#redenverror)     | Custom error class with error codes                |
+
+---
+
+## Redenv Class (Async)
+
+The async client for interacting with Redenv. Uses `asyncio` and requires `await` for all operations.
+
+### Constructor
+
+```python
+from redenv import Redenv
+
+redenv = Redenv(options: dict)
+```
+
+#### Options
+
+| Property        | Type   | Required | Default         | Description                                     |
+| --------------- | ------ | -------- | --------------- | ----------------------------------------------- |
+| `project`       | `str`  | Yes      | —               | Project name                                    |
+| `token_id`      | `str`  | Yes      | —               | Service Token public ID (`stk_...`)             |
+| `token`         | `str`  | Yes      | —               | Service Token secret key (`redenv_sk_...`)      |
+| `upstash.url`   | `str`  | Yes      | —               | Upstash Redis REST URL                          |
+| `upstash.token` | `str`  | Yes      | —               | Upstash Redis REST token                        |
+| `environment`   | `str`  | No       | `"development"` | Environment name                                |
+| `cache.ttl`     | `int`  | No       | `300`           | Seconds before cache is stale                   |
+| `cache.swr`     | `int`  | No       | `86400`         | Stale-while-revalidate window (seconds)         |
+| `env.override`  | `bool` | No       | `True`          | Overwrite existing `os.environ` vars            |
+| `log`           | `str`  | No       | `"low"`         | Logging verbosity (`"none"`, `"low"`, `"high"`) |
+
+---
+
+### init()
+
+Initialize the client, populate `os.environ`, and return secrets for validation.
+
+```python
+async def init() -> Secrets
+```
+
+```python
+secrets = await redenv.init()
+secrets.require("DATABASE_URL")  # Validate at startup
+```
+
+---
+
+### load()
+
+Fetch, decrypt, cache, and return secrets.
+
+```python
+async def load() -> Secrets
+```
+
+```python
+secrets = await redenv.load()
+print(secrets["API_KEY"])
+```
+
+<Callout>
+  `init()` and `load()` are identical. Use `init()` at startup, `load()`
+  everywhere else for semantic clarity.
+</Callout>
+
+---
+
+### set()
+
+Add or update a secret.
+
+```python
+async def set(key: str, value: str) -> None
+```
+
+| Parameter | Type  | Description     |
+| --------- | ----- | --------------- |
+| `key`     | `str` | Secret key name |
+| `value`   | `str` | Secret value    |
+
+```python
+await redenv.set("LOG_LEVEL", "debug")
+```
+
+---
+
+### get_version()
+
+Fetch a specific version of a secret (time travel).
+
+```python
+async def get_version(
+    key: str,
+    version: int,
+    mode: Literal["id", "index"] = "id"
+) -> Optional[str]
+```
+
+| Parameter | Type              | Default | Description         |
+| --------- | ----------------- | ------- | ------------------- |
+| `key`     | `str`             | —       | Secret key name     |
+| `version` | `int`             | —       | Version ID or index |
+| `mode`    | `"id" \| "index"` | `"id"`  | Lookup mode         |
+
+```python
+# By version ID
+v5 = await redenv.get_version("API_KEY", 5)
+
+# By index (0 = latest, 1 = previous, ...)
+previous = await redenv.get_version("API_KEY", 1, "index")
+```
+
+---
+
+## RedenvSync Class
+
+The synchronous client for scripts and legacy applications. All methods are blocking.
+
+### Constructor
+
+```python
+from redenv import RedenvSync
+
+redenv = RedenvSync(options: dict)
+```
+
+Options are identical to the async `Redenv` class.
+
+---
+
+### init()
+
+```python
+def init() -> Secrets
+```
+
+```python
+secrets = redenv.init()
+secrets.require("DATABASE_URL")
+```
+
+---
+
+### load()
+
+```python
+def load() -> Secrets
+```
+
+```python
+secrets = redenv.load()
+print(secrets["API_KEY"])
+```
+
+---
+
+### set()
+
+```python
+def set(key: str, value: str) -> None
+```
+
+```python
+redenv.set("LOG_LEVEL", "debug")
+```
+
+---
+
+### get_version()
+
+```python
+def get_version(
+    key: str,
+    version: int,
+    mode: Literal["id", "index"] = "id"
+) -> Optional[str]
+```
+
+```python
+# By version ID
+v5 = redenv.get_version("API_KEY", 5)
+
+# By index (0 = latest, 1 = previous, ...)
+previous = redenv.get_version("API_KEY", 1, "index")
+```
+
+---
+
+## Secrets Class
+
+Returned by `load()` and `init()`. Extends Python's `dict` with enhanced access to secrets.
+
+### Dict Access
+
+Access secrets directly via dictionary syntax:
+
+```python
+secrets = redenv.load()
+
+secrets["API_KEY"]       # str
+secrets["DATABASE_URL"]  # str
+secrets.get("MY-KEY")    # str | None
+```
+
+---
+
+### get()
+
+Get a secret with optional default value and type-casting.
+
+```python
+def get(
+    key: str,
+    default: Any = None,
+    cast: Optional[Type | Callable] = None
+) -> Any
+```
+
+| Parameter | Type               | Default | Description                          |
+| --------- | ------------------ | ------- | ------------------------------------ |
+| `key`     | `str`              | —       | Secret key name                      |
+| `default` | `Any`              | `None`  | Default if key missing or cast fails |
+| `cast`    | `Type \| Callable` | `None`  | Type to cast value to                |
+
+```python
+secrets.get("PORT", 3000, cast=int)    # int
+secrets.get("DEBUG", False, cast=bool) # bool
+secrets.get("CONFIG", {}, cast=dict)   # dict (parsed JSON)
+secrets.get("HOSTS", [], cast=list)    # list (parsed JSON)
+```
+
+**Supported casts:**
+
+- `int` - Parse as integer
+- `float` - Parse as float
+- `bool` - Parse as boolean (`"true"`, `"1"`, `"yes"`, `"on"` → `True`)
+- `dict` - Parse as JSON object
+- `list` - Parse as JSON array
+- Any callable - Custom parser
+
+---
+
+### require()
+
+Validate that secrets exist. Throws `RedenvError` if any are missing.
+
+```python
+def require(*keys: str) -> Secrets
+```
+
+```python
+secrets.require("DATABASE_URL", "JWT_SECRET", "STRIPE_KEY")
+# Throws: RedenvError: [SECRET_NOT_FOUND] Missing required secrets: JWT_SECRET
+```
+
+Returns `self` for chaining:
+
+```python
+db_url = secrets.require("DATABASE_URL")["DATABASE_URL"]
+```
+
+---
+
+### scope()
+
+Create a subset with only prefixed keys (prefix is removed).
+
+```python
+def scope(prefix: str) -> Secrets
+```
+
+```python
+# Secrets: AWS_ACCESS_KEY, AWS_SECRET_KEY, AWS_REGION, OTHER_VAR
+
+aws = secrets.scope("AWS_")
+aws["ACCESS_KEY"]  # AWS_ACCESS_KEY value
+aws["SECRET_KEY"]  # AWS_SECRET_KEY value
+aws["REGION"]      # AWS_REGION value
+# OTHER_VAR not included
+```
+
+---
+
+### raw
+
+Access unexpanded values (with `${VAR}` syntax preserved).
+
+```python
+@property
+def raw() -> Secrets
+```
+
+```python
+# If AUTH_URL = "${BASE_URL}/auth"
+
+secrets["AUTH_URL"]      # "https://api.example.com/auth"
+secrets.raw["AUTH_URL"]  # "${BASE_URL}/auth"
+```
+
+---
+
+### items()
+
+Iterate over key-value pairs.
+
+```python
+def items() -> ItemsView[str, str]
+```
+
+```python
+for key, value in secrets.items():
+    print(f"{key}: {value}")
+```
+
+---
+
+### keys() / values()
+
+Standard dict methods for iteration.
+
+```python
+list(secrets.keys())    # ["API_KEY", "DATABASE_URL", ...]
+list(secrets.values())  # ["sk_...", "postgres://...", ...]
+```
+
+---
+
+### \_\_repr\_\_() / \_\_str\_\_()
+
+Masked string representation (safe for logging).
+
+```python
+print(secrets)
+# Secrets({'API_KEY': '********', 'DATABASE_URL': '********'})
+```
+
+---
+
+## RedenvError
+
+Custom error class for Redenv-specific errors.
+
+```python
+from redenv import RedenvError
+
+class RedenvError(Exception):
+    code: str
+    message: str
+```
+
+### Error Codes
+
+| Code                | Description                               |
+| ------------------- | ----------------------------------------- |
+| `MISSING_CONFIG`    | Required configuration options missing    |
+| `PROJECT_NOT_FOUND` | Project doesn't exist in Redis            |
+| `INVALID_TOKEN_ID`  | Service Token ID not found                |
+| `INVALID_TOKEN`     | Service Token secret key invalid          |
+| `SECRET_NOT_FOUND`  | Requested secret key doesn't exist        |
+| `DECRYPTION_FAILED` | Failed to decrypt (wrong password/token)  |
+| `INVALID_INPUT`     | Invalid input to method (e.g., empty key) |
+| `UNKNOWN_ERROR`     | Unexpected error                          |
+
+### Example
+
+```python
+from redenv import RedenvError
+
+try:
+    secrets = redenv.load()
+    secrets.require("MISSING_KEY")
+except RedenvError as e:
+    print(f"[{e.code}] {e.message}")
+    # [SECRET_NOT_FOUND] Missing required secrets: MISSING_KEY
+```
+
+---
+
+## Related
+
+- [Configuration](/docs/sdk/python/configuration) — All client options
+- [Loading Secrets](/docs/sdk/python/loading-secrets) — How to use `init()` and `load()`
+- [Secrets Object](/docs/sdk/python/secrets-object) — Working with the Secrets class
+- [Caching](/docs/concepts/caching) — How stale-while-revalidate works

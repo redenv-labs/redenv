@@ -1,0 +1,12 @@
+{
+  "title": "Python",
+  "pages": [
+    "overview",
+    "quickstart",
+    "configuration",
+    "loading-secrets",
+    "secrets-object",
+    "advanced",
+    "api-reference"
+  ]
+}

@@ -1,0 +1,161 @@
+---
+title: Overview
+description: The powerful Secrets class for accessing and managing your secrets.
+---
+
+When you call `redenv.load()`, you get back a `Secrets` object—not just a plain dictionary. This class provides powerful features for accessing, validating, and transforming your secrets.
+
+## Dict-Like Access
+
+The simplest way to access secrets is via dictionary-style access:
+
+<Tabs items={["Async", "Sync"]}>
+
+```python tab="Async"
+secrets = await redenv.load()
+
+# Direct access
+api_key = secrets["API_KEY"]
+db_url = secrets["DATABASE_URL"]
+```
+
+```python tab="Sync"
+secrets = redenv.load()
+
+# Direct access
+api_key = secrets["API_KEY"]
+db_url = secrets["DATABASE_URL"]
+```
+
+</Tabs>
+
+The `Secrets` class extends Python's `dict`, so all familiar dictionary operations work.
+
+## Automatic Masking
+
+For security, the `Secrets` object automatically masks values in logs:
+
+```python
+secrets = redenv.load()
+
+print(secrets)
+# Output: Secrets({'API_KEY': '********', 'DATABASE_URL': '********'})
+
+print(repr(secrets))
+# Output: Secrets({'API_KEY': '********', 'DATABASE_URL': '********'})
+```
+
+This prevents accidental exposure of secrets in logs, error reports, or debugging output.
+
+<Callout type="info">
+  Direct key access (`secrets["API_KEY"]`) returns the actual value. Masking
+  only applies to `print(secrets)`, `repr()`, and `str()`.
+</Callout>
+
+## The get() Method
+
+For type-safe access with casting capabilities:
+
+```python
+secrets = redenv.load()
+
+# Basic get with default
+port = secrets.get("PORT", 3000)
+
+# With type casting
+port = secrets.get("PORT", 3000, cast=int)
+debug = secrets.get("DEBUG", False, cast=bool)
+config = secrets.get("CONFIG", {}, cast=dict)
+```
+
+See [Type Casting](/docs/sdk/python/secrets-object/type-casting) for details.
+
+## Iteration
+
+You can iterate over secrets like a regular dictionary:
+
+```python
+secrets = redenv.load()
+
+# Get all keys
+keys = list(secrets.keys())
+# ["API_KEY", "DATABASE_URL", "PORT", ...]
+
+# Iterate with items()
+for key, value in secrets.items():
+    print(f"{key}: {value}")
+```
+
+## Methods Reference
+
+| Method                    | Returns      | Description                     |
+| ------------------------- | ------------ | ------------------------------- |
+| `get(key, default, cast)` | `Any`        | Get a secret with type-casting  |
+| `require(*keys)`          | `Secrets`    | Throw if any keys are missing   |
+| `scope(prefix)`           | `Secrets`    | Create a scoped view of secrets |
+| `items()`                 | `ItemsView`  | Iterate key-value pairs         |
+| `keys()`                  | `KeysView`   | Get all keys                    |
+| `values()`                | `ValuesView` | Get all values                  |
+| `raw`                     | `Secrets`    | Access unexpanded raw values    |
+
+## Example: Complete Usage
+
+<Tabs items={["Async", "Sync"]}>
+
+```python tab="Async"
+from config.redenv import redenv
+
+async def initialize_app():
+    secrets = await redenv.load()
+
+    # 1. Validate required secrets exist
+    secrets.require("DATABASE_URL", "JWT_SECRET", "STRIPE_KEY")
+
+    # 2. Get typed configuration
+    config = {
+        "port": secrets.get("PORT", 3000, cast=int),
+        "debug": secrets.get("DEBUG", False, cast=bool),
+        "log_level": secrets.get("LOG_LEVEL", "info"),
+        "database": secrets["DATABASE_URL"],
+    }
+
+    # 3. Get scoped AWS configuration
+    aws_config = secrets.scope("AWS_")
+    # { "ACCESS_KEY": "...", "SECRET_KEY": "...", "REGION": "..." }
+
+    # 4. Safe logging (masked)
+    print("Loaded secrets:", secrets)
+    # Output: Secrets({'DATABASE_URL': '********', 'JWT_SECRET': '********', ...})
+
+    return config
+```
+
+```python tab="Sync"
+from config.redenv import redenv
+
+def initialize_app():
+    secrets = redenv.load()
+
+    # 1. Validate required secrets exist
+    secrets.require("DATABASE_URL", "JWT_SECRET", "STRIPE_KEY")
+
+    # 2. Get typed configuration
+    config = {
+        "port": secrets.get("PORT", 3000, cast=int),
+        "debug": secrets.get("DEBUG", False, cast=bool),
+        "log_level": secrets.get("LOG_LEVEL", "info"),
+        "database": secrets["DATABASE_URL"],
+    }
+
+    # 3. Get scoped AWS configuration
+    aws_config = secrets.scope("AWS_")
+    # { "ACCESS_KEY": "...", "SECRET_KEY": "...", "REGION": "..." }
+
+    # 4. Safe logging (masked)
+    print("Loaded secrets:", secrets)
+    # Output: Secrets({'DATABASE_URL': '********', 'JWT_SECRET': '********', ...})
+
+    return config
+```
+
+</Tabs>

@@ -1,0 +1,228 @@
+---
+title: Time Travel
+description: Access historical versions of secrets for auditing and rollbacks.
+---
+
+The `get_version()` method allows you to fetch previous versions of any secret, enabling auditing, debugging, and programmatic rollbacks.
+
+## Basic Usage
+
+<Tabs items={["Async", "Sync"]}>
+
+```python tab="Async"
+redenv = Redenv({...})
+
+# Fetch a specific version by ID
+v5 = await redenv.get_version("API_KEY", 5)
+print(v5)  # Value at version 5
+```
+
+```python tab="Sync"
+redenv = RedenvSync({...})
+
+# Fetch a specific version by ID
+v5 = redenv.get_version("API_KEY", 5)
+print(v5)  # Value at version 5
+```
+
+</Tabs>
+
+## Version Modes
+
+The method supports two modes for specifying which version to retrieve:
+
+### Mode: "id" (Default)
+
+Fetch by absolute version number:
+
+<Tabs items={["Async", "Sync"]}>
+
+```python tab="Async"
+# Version 10 of API_KEY
+v10 = await redenv.get_version("API_KEY", 10)
+
+# Negative numbers = index from oldest
+oldest = await redenv.get_version("API_KEY", -1)
+```
+
+```python tab="Sync"
+# Version 10 of API_KEY
+v10 = redenv.get_version("API_KEY", 10)
+
+# Negative numbers = index from oldest
+oldest = redenv.get_version("API_KEY", -1)
+```
+
+</Tabs>
+
+### Mode: "index"
+
+Fetch by array index (0 = latest, 1 = previous, etc.):
+
+<Tabs items={["Async", "Sync"]}>
+
+```python tab="Async"
+# Latest version
+latest = await redenv.get_version("API_KEY", 0, "index")
+
+# Previous version
+previous = await redenv.get_version("API_KEY", 1, "index")
+
+# Third most recent
+third = await redenv.get_version("API_KEY", 2, "index")
+```
+
+```python tab="Sync"
+# Latest version
+latest = redenv.get_version("API_KEY", 0, "index")
+
+# Previous version
+previous = redenv.get_version("API_KEY", 1, "index")
+
+# Third most recent
+third = redenv.get_version("API_KEY", 2, "index")
+```
+
+</Tabs>
+
+## Return Value
+
+Returns `str | None`:
+
+- **str**: The decrypted value at that version
+- **None**: If the version doesn't exist or decryption fails
+
+```python
+old_value = redenv.get_version("API_KEY", 5)
+
+if old_value is None:
+    print("Version not found")
+else:
+    print("Value:", old_value)
+```
+
+## Practical Examples
+
+### Audit Trail
+
+Display the history of a secret:
+
+<Tabs items={["Async", "Sync"]}>
+
+```python tab="Async"
+async def show_secret_history(key: str, max_versions: int = 10):
+    print(f"History for {key}:")
+
+    for i in range(max_versions):
+        value = await redenv.get_version(key, i, "index")
+        if value is None:
+            break
+
+        # Mask the value for display
+        masked = value[:4] + "..." + value[-4:]
+        print(f"  [{i}] {masked}")
+
+await show_secret_history("API_KEY")
+# History for API_KEY:
+#   [0] sk_l...xyz9 (current)
+#   [1] sk_l...abc1 (previous)
+#   [2] sk_t...test (older)
+```
+
+```python tab="Sync"
+def show_secret_history(key: str, max_versions: int = 10):
+    print(f"History for {key}:")
+
+    for i in range(max_versions):
+        value = redenv.get_version(key, i, "index")
+        if value is None:
+            break
+
+        # Mask the value for display
+        masked = value[:4] + "..." + value[-4:]
+        print(f"  [{i}] {masked}")
+
+show_secret_history("API_KEY")
+# History for API_KEY:
+#   [0] sk_l...xyz9 (current)
+#   [1] sk_l...abc1 (previous)
+#   [2] sk_t...test (older)
+```
+
+</Tabs>
+
+### Compare Versions
+
+<Tabs items={["Async", "Sync"]}>
+
+```python tab="Async"
+async def compare_versions(key: str):
+    current = await redenv.get_version(key, 0, "index")
+    previous = await redenv.get_version(key, 1, "index")
+
+    if current != previous:
+        print(f"{key} has changed since last version")
+        # Log or alert as needed
+```
+
+```python tab="Sync"
+def compare_versions(key: str):
+    current = redenv.get_version(key, 0, "index")
+    previous = redenv.get_version(key, 1, "index")
+
+    if current != previous:
+        print(f"{key} has changed since last version")
+        # Log or alert as needed
+```
+
+</Tabs>
+
+### Rollback Detection
+
+```python
+def detect_rollback(key: str, expected_value: str):
+    current = redenv.get_version(key, 0, "index")
+
+    if current != expected_value:
+        print(f"{key} value has changed unexpectedly!")
+        # Trigger alert or investigation
+```
+
+## Caching
+
+Version history is cached using the same SWR strategy as regular secrets:
+
+```python
+# First call: fetches history from Redis
+redenv.get_version("API_KEY", 1, "index")  # ~50ms
+
+# Subsequent calls: served from cache
+redenv.get_version("API_KEY", 2, "index")  # ~0ms
+```
+
+## Error Handling
+
+```python
+try:
+    value = redenv.get_version("API_KEY", 999)
+    if value is None:
+        print("Version 999 doesn't exist")
+except Exception as e:
+    # Decryption or network errors
+    print("Failed to fetch version:", e)
+```
+
+## Use Cases
+
+| Scenario               | Approach                                  |
+| ---------------------- | ----------------------------------------- |
+| Audit who changed what | Iterate history with timestamps           |
+| Debug production issue | Compare current vs previous versions      |
+| Emergency rollback     | Fetch old version, use `set()` to restore |
+| Compliance reporting   | Export version history                    |
+
+<Callout type="info">
+  Version history is managed by the CLI. Use `redenv history view` to see full
+  metadata (timestamps, users) for each version. The SDK provides value-only
+  access.
+</Callout>
