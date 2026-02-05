@@ -1,8 +1,14 @@
-import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { CURRENT_URL_HEADER, ORIGIN_HEADER } from "./config";
 
 export async function proxy(request: NextRequest) {
-  return NextResponse.next();
+  // write current url in header to use it in whole application
+  const headers = new Headers(request.headers);
+  headers.set(ORIGIN_HEADER, request.nextUrl.origin);
+  headers.set(CURRENT_URL_HEADER, request.nextUrl.href);
+
+  return NextResponse.next({ request, headers });
 }
 
 export const config = {

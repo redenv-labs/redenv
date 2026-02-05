@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { DocsContent } from "@/components/docs/DocsContent";
 import { DocsTOC } from "@/components/docs/DocsTOC";
 import { REDENV_GITHUB_URL } from "@/consts";
+import { metatag } from "@/lib/metatag";
 
 interface PageProps {
   params: Promise<{ slug?: string[] }>;
@@ -83,9 +84,10 @@ export async function generateMetadata({
   const resolvedParams = await params;
   const page = source.getPage(resolvedParams.slug);
   if (!page) notFound();
-
-  return {
+console.log(page)
+  return metatag({
     title: `${page.data.title} - Redenv Docs`,
     description: page.data.description,
-  };
+    image: page.data.thumbnail,
+  });
 }

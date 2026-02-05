@@ -5,6 +5,7 @@ import { HowItWorks } from "@/components/home/HowItWorks";
 import { SDKShowcase } from "@/components/home/SDKShowcase";
 import { CTAFooter } from "@/components/home/CTAFooter";
 import { Footer } from "@/components/Footer";
+import { metatag } from "@/lib/metatag";
 
 export default function Home() {
   return (
@@ -25,3 +26,11 @@ export default function Home() {
     </main>
   );
 }
+
+export const generateMetadata = () => {
+  return metatag({
+    title: "Redenv - Secure Secret Management",
+    description:
+      "Zero-knowledge, end-to-end encrypted secret management system.",
+  });
+};

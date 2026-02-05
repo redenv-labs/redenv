@@ -1,14 +1,16 @@
 import { getPlugins } from "@/lib/plugins";
 import { PluginsView } from "./view";
-import type { Metadata } from "next";
 import { Suspense } from "react";
+import { metatag } from "@/lib/metatag";
 
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  title: "Plugins - Redenv",
-  description:
-    "Discover plugins that extend Redenv with dashboards, CI/CD integrations, security tools, and more.",
+export const generateMetadata = () => {
+  return metatag({
+    title: "Plugins - Redenv",
+    description:
+      "Explore the Redenv Plugin Ecosystem. Supercharge your secret management workflow with powerful integrations and community-built tools designed to automate and extend your experience.",
+  });
 };
 
 export default async function PluginsPage() {

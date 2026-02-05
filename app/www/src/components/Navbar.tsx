@@ -42,6 +42,7 @@ export function Navbar() {
 
   const navLinks = [
     { href: "/docs", label: "Docs", icon: BookOpen, disabled: false },
+    { href: "/plugins", label: "Plugins", icon: BookOpen, disabled: false },
     { href: "/changelog", label: "Changelog", icon: FileText, disabled: true },
   ];
 

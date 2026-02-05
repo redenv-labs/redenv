@@ -1,6 +1,11 @@
 import { rehypeCodeDefaultOptions } from "fumadocs-core/mdx-plugins";
-import { defineDocs, defineConfig } from "fumadocs-mdx/config";
-import { transformerTwoslash } from 'fumadocs-twoslash';
+import {
+  defineDocs,
+  defineConfig,
+  frontmatterSchema,
+} from "fumadocs-mdx/config";
+import { transformerTwoslash } from "fumadocs-twoslash";
+import { z } from "zod";
 
 export const docs = defineDocs({
   dir: "content/docs",
@@ -9,6 +14,9 @@ export const docs = defineDocs({
       includeProcessedMarkdown: true,
       extractLinkReferences: true,
     },
+    schema: frontmatterSchema.extend({
+      thumbnail: z.string().optional(),
+    }),
   },
 });
 
