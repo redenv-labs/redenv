@@ -1,0 +1,1 @@
+**frontmatter** plugin is inspired by **FumaDocs**. I liked how they manage MDX and metadata, so I borrowed the idea and built my own version for **Redenv** with tweaks.

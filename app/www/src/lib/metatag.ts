@@ -1,6 +1,7 @@
-import { CURRENT_URL_HEADER, ORIGIN_HEADER } from "@/config";
+import { CURRENT_URL_HEADER } from "@/config";
 import { Metadata } from "next";
 import { headers } from "next/headers";
+import { getOrigin } from "./url";
 
 export const metatag = async ({
   title,
@@ -16,9 +17,8 @@ export const metatag = async ({
   description?: string;
 }) => {
   const headersList = await headers();
-  const origin = headersList.get(ORIGIN_HEADER);
   const url = headersList.get(CURRENT_URL_HEADER);
-  const fav = image || `${origin}/favicons/favicon-512x512.png`;
+  const fav = image || `/favicons/favicon-512x512.png`;
 
   const fixedKeywords = [
     "redenv",

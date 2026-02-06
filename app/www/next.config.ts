@@ -1,5 +1,6 @@
 import { createMDX } from "fumadocs-mdx/next";
 import type { NextConfig } from "next";
+import { withFrontmatter } from "./plugins/frontmatter";
 
 const config: NextConfig = {
   /* config options here */
@@ -14,5 +15,10 @@ const config: NextConfig = {
   serverExternalPackages: ["typescript", "twoslash"],
 };
 
+const withFM = withFrontmatter({
+  dir: ["content/**/*"],
+  frequency: 10,
+});
+
 const withMDX = createMDX();
-export default withMDX(config);
+export default withFM(withMDX(config));

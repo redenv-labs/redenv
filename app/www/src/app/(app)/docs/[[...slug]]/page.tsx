@@ -84,7 +84,7 @@ export async function generateMetadata({
   const resolvedParams = await params;
   const page = source.getPage(resolvedParams.slug);
   if (!page) notFound();
-console.log(page)
+  
   return metatag({
     title: `${page.data.title} - Redenv Docs`,
     description: page.data.description,

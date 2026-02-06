@@ -1,6 +1,8 @@
 ---
 title: backup
 description: Create an encrypted backup of your projects.
+createdAt: '2026-02-06T08:41:19.140Z'
+updatedAt: '2026-02-06T09:00:57.771Z'
 ---
 
 The `backup` command exports all your projects and secrets to an encrypted backup file. This is useful for disaster recovery, migration, or archiving.
@@ -46,13 +48,13 @@ $ redenv backup
 
 ## What Gets Backed Up
 
-| Data                | Included |
-| ------------------- | -------- |
-| Project metadata    | Yes      |
-| All environments    | Yes      |
-| All secrets         | Yes      |
-| Version history     | Yes      |
-| Service tokens      | Yes      |
+| Data             | Included |
+| ---------------- | -------- |
+| Project metadata | Yes      |
+| All environments | Yes      |
+| All secrets      | Yes      |
+| Version history  | Yes      |
+| Service tokens   | Yes      |
 
 <Callout type="info">
   The backup password is **separate** from your Master Password. It must be at
@@ -63,12 +65,12 @@ $ redenv backup
 
 The backup file is JSON containing:
 
-| Field           | Description                      |
-| --------------- | -------------------------------- |
-| `version`       | Backup format version            |
-| `createdAt`     | ISO 8601 timestamp               |
-| `salt`          | Encryption salt (hex)            |
-| `encryptedData` | AES-256-GCM encrypted payload    |
+| Field           | Description                   |
+| --------------- | ----------------------------- |
+| `version`       | Backup format version         |
+| `createdAt`     | ISO 8601 timestamp            |
+| `salt`          | Encryption salt (hex)         |
+| `encryptedData` | AES-256-GCM encrypted payload |
 
 <Callout type="warning">
   **Keep your backup password safe.** Without it, the backup cannot be restored.

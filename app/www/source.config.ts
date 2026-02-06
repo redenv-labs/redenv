@@ -15,6 +15,8 @@ export const docs = defineDocs({
       extractLinkReferences: true,
     },
     schema: frontmatterSchema.extend({
+      updatedAt: z.string(),
+      createdAt: z.string(),
       thumbnail: z.string().optional(),
     }),
   },
