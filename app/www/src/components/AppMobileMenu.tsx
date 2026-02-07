@@ -8,11 +8,12 @@ import { useMobileMenu } from "@/components/MobileMenuContext";
 import { DocsSidebar } from "@/components/docs/DocsSidebar";
 import { source } from "@/lib/source";
 import { useEffect } from "react";
-import { BookOpen, Puzzle, ChevronRight } from "lucide-react";
+import { BookOpen, Puzzle, ChevronRight, History } from "lucide-react";
 
 const navItems = [
   { label: "Docs", href: "/docs", icon: BookOpen, description: "Guides, API reference & examples" },
   { label: "Plugins", href: "/plugins", icon: Puzzle, description: "Extend Redenv with integrations" },
+  { label: "Changelog", href: "/changelog", icon: History, description: "Latest updates & improvements" },
 ];
 
 export function AppMobileMenu() {

@@ -19,7 +19,7 @@ import {
 const footerLinks = {
   product: [
     { label: "Documentation", href: "/docs", external: false },
-    { label: "Changelog", href: "/changelog", external: false, disabled: true },
+    { label: "Changelog", href: "/changelog", external: false },
     { label: "Roadmap", href: "/roadmap", external: false, disabled: true },
   ],
   resources: [

@@ -18,6 +18,7 @@ const navItems: {
 }[] = [
   { label: "Docs", href: "/docs", active: true },
   { label: "Plugins", href: "/plugins", active: true },
+  { label: "Changelog", href: "/changelog", active: true },
 ];
 
 export function AppNavbar() {

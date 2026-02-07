@@ -104,7 +104,7 @@ const Paragraph = ({
 // LINKS
 // =============================================================================
 
-const Anchor = ({
+export const Anchor = ({
   href,
   children,
   ...props

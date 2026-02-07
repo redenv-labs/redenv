@@ -15,6 +15,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${origin}/plugins`,
       lastModified: new Date(),
     },
+    {
+      url: `${origin}/changelog`,
+      lastModified: new Date(),
+    },
     ...blogs.map((blog) => ({
       url: `${origin}${blog.url}`,
       lastModified: blog.data.updatedAt,
