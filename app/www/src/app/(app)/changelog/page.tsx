@@ -2,6 +2,7 @@ import { getChangelog, groupChangelogByDate } from "@/lib/changelog";
 import { ChangelogHero, ChangelogTimeline } from "@/components/changelog";
 import { AnimatedBlobs } from "@/components/changelog/AnimatedBlobs";
 import { metatag } from "@/lib/metatag";
+import { Footer } from "@/components/Footer";
 
 export const generateMetadata = () => {
   return metatag({
@@ -26,6 +27,10 @@ export default async function ChangelogPage() {
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pb-24">
         <ChangelogHero totalUpdates={totalUpdates} latestDate={latestDate} />
         <ChangelogTimeline groups={groups} />
+      </div>
+
+      <div className="mt-20">
+        <Footer />
       </div>
     </main>
   );

@@ -4,4 +4,4 @@ export { ChangelogTimeline } from "./ChangelogTimeline";
 export { ChangelogEntry } from "./ChangelogEntry";
 export { ChangeTypeBadge } from "./ChangeTypeBadge";
 export { PackageBadge } from "./PackageBadge";
-export { MarkdownText } from "./MarkdownText";
+export { MarkdownText } from "../MarkdownText";

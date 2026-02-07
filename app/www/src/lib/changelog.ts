@@ -1,3 +1,4 @@
+import { PACKAGE_CONFIG } from "@/consts";
 import fs from "fs/promises";
 import path from "path";
 
@@ -22,19 +23,6 @@ export interface GroupedChangelog {
   displayDate: string;
   entries: ChangelogEntry[];
 }
-
-const PACKAGE_CONFIG: Record<
-  PackageType,
-  { path: string; displayName: string }
-> = {
-  cli: { path: "packages/cli/CHANGELOG.md", displayName: "CLI" },
-  core: { path: "packages/core/CHANGELOG.md", displayName: "Core" },
-  client: { path: "packages/client/CHANGELOG.md", displayName: "JS SDK" },
-  python: {
-    path: "packages/python-client/CHANGELOG.md",
-    displayName: "Python SDK",
-  },
-};
 
 function parseChangeType(header: string): ChangeType | null {
   const normalized = header.toLowerCase().trim();

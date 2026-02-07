@@ -13,11 +13,11 @@ export function ChangelogTimeline({ groups }: ChangelogTimelineProps) {
   return (
     <div className="relative">
       {/* Timeline line */}
-      <div className="absolute left-0 top-0 bottom-0 w-px bg-linear-to-b from-primary/30 via-white/10 to-transparent hidden lg:block" />
+      <div className="absolute left-0 top-1 bottom-0 w-px bg-linear-to-b from-primary/30 via-95% via-white/10 to-transparent hidden lg:block" />
 
       {/* Date groups */}
       <div className="space-y-16">
-        {groups.map((group, groupIndex) => (
+        {groups.map((group) => (
           <div key={group.date} className="relative">
             {/* Date section with sticky behavior */}
             <div className="lg:grid lg:grid-cols-[200px_1fr] xl:grid-cols-[240px_1fr] lg:gap-8 xl:gap-12">
@@ -30,16 +30,8 @@ export function ChangelogTimeline({ groups }: ChangelogTimelineProps) {
                     whileInView={{ scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.3, delay: 0.1 }}
-                    className="absolute -left-1.25 top-1 w-2.75 h-2.75 rounded-full border-2 border-primary/40 bg-neutral-950 hidden lg:block"
+                    className="absolute -left-1.25 top-1.5 w-2.75 h-2.75 rounded-full bg-primary hidden lg:block before:content-[''] before:absolute before:top-1/2 before:-translate-y-1/2 before:left-1/2 before:-translate-x-1/2 before:border-2 before:border-primary/40 before:rounded-full before:w-[calc(100%+7px)] before:h-[calc(100%+7px)] before:bg-black before:-z-10"
                   />
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    whileInView={{ scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                    className="absolute -left-0.75 top-0.75 w-1.75 h-1.75 rounded-full bg-primary shadow-lg shadow-primary/50 hidden lg:block"
-                  />
-
                   {/* Date display */}
                   <motion.div
                     initial={{ opacity: 0, x: -20 }}
@@ -88,9 +80,8 @@ export function ChangelogTimeline({ groups }: ChangelogTimelineProps) {
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
-        className="relative mt-16 lg:pl-50 xl:pl-60 lg:ml-8 xl:ml-12"
+        className="relative mt-16"
       >
-        <div className="absolute -left-0.75 top-0 w-1.75 h-1.75 rounded-full bg-primary/40 hidden lg:block" />
         <div className="flex items-center gap-4 text-sm text-white/40">
           <div className="h-px flex-1 bg-linear-to-r from-primary/20 to-transparent" />
           <span className="px-4 py-1.5 rounded-full bg-white/3 border border-white/6">The beginning</span>

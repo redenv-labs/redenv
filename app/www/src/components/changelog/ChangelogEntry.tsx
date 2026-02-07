@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import type { ChangelogEntry as ChangelogEntryType } from "@/lib/changelog";
 import { PackageBadge } from "./PackageBadge";
 import { ChangeTypeBadge } from "./ChangeTypeBadge";
-import { MarkdownText } from "./MarkdownText";
+import { MarkdownText } from "../MarkdownText";
 
 interface ChangelogEntryProps {
   entry: ChangelogEntryType;
