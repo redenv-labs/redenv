@@ -8,7 +8,7 @@ export async function proxy(request: NextRequest) {
   headers.set(ORIGIN_HEADER, request.nextUrl.origin);
   headers.set(CURRENT_URL_HEADER, request.nextUrl.href);
 
-  return NextResponse.next({ request, headers });
+  return NextResponse.next({ headers });
 }
 
 export const config = {
