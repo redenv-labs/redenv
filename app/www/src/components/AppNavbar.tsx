@@ -9,17 +9,7 @@ import { cn } from "@/lib/utils";
 import { REDENV_LABS_URL } from "@/consts";
 import { useMobileMenu } from "@/components/MobileMenuContext";
 import { useSearch } from "@/components/search/SearchProvider";
-
-const navItems: {
-  label: string;
-  href: string;
-  active: boolean;
-  disabled?: boolean;
-}[] = [
-  { label: "Docs", href: "/docs", active: true },
-  { label: "Plugins", href: "/plugins", active: true },
-  { label: "Changelog", href: "/changelog", active: true },
-];
+import { appNavItems } from "./AppMobileMenu";
 
 export function AppNavbar() {
   const pathname = usePathname();
@@ -52,7 +42,7 @@ export function AppNavbar() {
                 <span className="text-muted-foreground/50">/</span>
                 <span className="text-muted-foreground text-sm">
                   {
-                    navItems.find((item) => pathname.startsWith(item.href))
+                    appNavItems.find((item) => pathname.startsWith(item.href))
                       ?.label
                   }
                 </span>
@@ -63,9 +53,9 @@ export function AppNavbar() {
             <div className="flex items-center justify-end w-full gap-3">
               {/* Desktop Navigation */}
               <nav className="hidden md:flex items-center gap-1">
-                {navItems.map((item) => {
+                {appNavItems.map((item) => {
                   const isActive =
-                    pathname.startsWith(item.href) && item.active;
+                    pathname.startsWith(item.href)
                   return (
                     <Link
                       key={item.href}

@@ -13,7 +13,16 @@ export function ChangelogTimeline({ groups }: ChangelogTimelineProps) {
   return (
     <div className="relative">
       {/* Timeline line */}
-      <div className="absolute left-0 top-1 bottom-0 w-px bg-linear-to-b from-primary/30 via-95% via-white/10 to-transparent hidden lg:block" />
+      <motion.div
+        initial={{ height: 0, opacity: 0 }}
+        whileInView={{ height: "100%", opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{
+          duration: 0.5,
+          delay: 0.1,
+        }}
+        className="absolute left-0 top-1.5 bottom-0 w-px bg-linear-to-b from-primary/30 via-95% via-white/10 to-transparent hidden lg:block"
+      />
 
       {/* Date groups */}
       <div className="space-y-16">
@@ -26,12 +35,35 @@ export function ChangelogTimeline({ groups }: ChangelogTimelineProps) {
                 <div className="lg:sticky lg:top-24">
                   {/* Timeline dot */}
                   <motion.div
-                    initial={{ scale: 0 }}
-                    whileInView={{ scale: 1 }}
+                    initial={{ scale: 0, opacity: 0 }}
+                    whileInView={{ scale: 1, opacity: 1 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.3, delay: 0.1 }}
-                    className="absolute -left-1.25 top-1.5 w-2.75 h-2.75 rounded-full bg-primary hidden lg:block before:content-[''] before:absolute before:top-1/2 before:-translate-y-1/2 before:left-1/2 before:-translate-x-1/2 before:border-2 before:border-primary/40 before:rounded-full before:w-[calc(100%+7px)] before:h-[calc(100%+7px)] before:bg-black before:-z-10"
-                  />
+                    transition={{
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 15,
+                      delay: 0.1,
+                    }}
+                    className="absolute -left-1.25 top-1.75 hidden lg:flex items-center justify-center"
+                  >
+                    {/* Pulsing outer ring */}
+                    <motion.div
+                      className="absolute w-5 h-5 rounded-full border border-primary/40"
+                      animate={{
+                        scale: [1, 1.5, 1],
+                        opacity: [0.6, 0, 0.6],
+                      }}
+                      transition={{
+                        duration: 2.5,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                    />
+                    {/* Inner glow */}
+                    <div className="absolute w-4 h-4 rounded-full bg-primary/20 blur-sm" />
+                    {/* Core dot */}
+                    <div className="relative w-2.5 h-2.5 rounded-full bg-primary shadow-[0_0_8px_2px] shadow-primary/50" />
+                  </motion.div>
                   {/* Date display */}
                   <motion.div
                     initial={{ opacity: 0, x: -20 }}
@@ -53,7 +85,8 @@ export function ChangelogTimeline({ groups }: ChangelogTimelineProps) {
                     {/* Entry count badge - desktop only */}
                     <div className="hidden lg:block mt-2">
                       <span className="text-xs text-white/40 font-medium">
-                        {group.entries.length} update{group.entries.length !== 1 ? "s" : ""}
+                        {group.entries.length} update
+                        {group.entries.length !== 1 ? "s" : ""}
                       </span>
                     </div>
                   </motion.div>
@@ -84,7 +117,9 @@ export function ChangelogTimeline({ groups }: ChangelogTimelineProps) {
       >
         <div className="flex items-center gap-4 text-sm text-white/40">
           <div className="h-px flex-1 bg-linear-to-r from-primary/20 to-transparent" />
-          <span className="px-4 py-1.5 rounded-full bg-white/3 border border-white/6">The beginning</span>
+          <span className="px-4 py-1.5 rounded-full bg-white/3 border border-white/6">
+            The beginning
+          </span>
           <div className="h-px flex-1 bg-linear-to-l from-primary/20 to-transparent" />
         </div>
       </motion.div>

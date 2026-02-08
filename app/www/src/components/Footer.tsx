@@ -14,29 +14,13 @@ import {
   REDENV_PYPI_URL,
   REDENV_JS_CLIENT_URL,
   REDENV_LABS_URL,
+  PAGES,
 } from "@/consts";
 
 const footerLinks = {
-  product: [
-    { label: "Documentation", href: "/docs", external: false },
-    { label: "Changelog", href: "/changelog", external: false },
-    { label: "Roadmap", href: "/roadmap", external: false, disabled: true },
-  ],
-  resources: [
+  resources: PAGES.filter((page) => page.category === "resources"),
+  social: [
     { label: "GitHub", href: REDENV_GITHUB_URL, external: true },
-    {
-      label: "npm",
-      href: REDENV_JS_CLIENT_URL,
-      external: true,
-    },
-    { label: "PyPI", href: REDENV_PYPI_URL, external: true },
-  ],
-  company: [
-    {
-      label: "Redenv Labs",
-      href: REDENV_LABS_URL,
-      external: true,
-    },
   ],
 };
 
@@ -207,7 +191,7 @@ export function Footer() {
                     duration: 0.5,
                     delay: 0.3 + categoryIndex * 0.1,
                   }}
-                  className="col-span-1 md:col-span-2"
+                  className="col-span-1 md:col-span-3"
                 >
                   <h4 className="text-xs font-semibold text-foreground/70 uppercase tracking-wider mb-4">
                     {category}
@@ -261,7 +245,7 @@ export function Footer() {
         >
           {/* Copyright */}
           <div className="flex items-center gap-2 text-xs text-muted-foreground/80">
-            <span>&copy; {new Date().getFullYear()} Redenv Labs</span>
+            <span>&copy; {new Date().getFullYear()} <a className="hover:underline text-foreground/70" href={REDENV_LABS_URL} target="_blank" rel="noopener noreferrer">Redenv Labs</a></span>
             <span className="hidden sm:inline text-muted-foreground/50">•</span>
             <span className="hidden sm:inline">All rights reserved.</span>
           </div>

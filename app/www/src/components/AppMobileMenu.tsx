@@ -8,13 +8,10 @@ import { useMobileMenu } from "@/components/MobileMenuContext";
 import { DocsSidebar } from "@/components/docs/DocsSidebar";
 import { source } from "@/lib/source";
 import { useEffect } from "react";
-import { BookOpen, Puzzle, ChevronRight, History } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+import { PAGES } from "@/consts";
 
-const navItems = [
-  { label: "Docs", href: "/docs", icon: BookOpen, description: "Guides, API reference & examples" },
-  { label: "Plugins", href: "/plugins", icon: Puzzle, description: "Extend Redenv with integrations" },
-  { label: "Changelog", href: "/changelog", icon: History, description: "Latest updates & improvements" },
-];
+export const appNavItems = PAGES.filter((page) => page.category === "resources" && !page.disabled);
 
 export function AppMobileMenu() {
   const { isOpen, close } = useMobileMenu();
@@ -61,7 +58,7 @@ export function AppMobileMenu() {
                 {/* horizontal tab-style nav */}
                 <div className="px-3 pt-3 pb-2 border-b border-border/20">
                   <div className="flex items-center gap-1">
-                    {navItems.map((item) => (
+                    {appNavItems.map((item) => (
                       <Link
                         key={item.href}
                         href={item.href}
@@ -86,7 +83,7 @@ export function AppMobileMenu() {
                 <p className="px-2 text-[10px] font-semibold text-white/25 uppercase tracking-widest mb-3">
                   Navigate
                 </p>
-                {navItems.map((item) => {
+                {appNavItems.map((item) => {
                   const isActive = pathname.startsWith(item.href);
                   return (
                     <Link

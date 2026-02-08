@@ -1,11 +1,11 @@
 "use client";
 
 import { Link } from "@/components/Link";
-import { BookOpen, FileText, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { Github } from "./icons/Github";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
-import { REDENV_GITHUB_URL, REDENV_LABS_URL } from "@/consts";
+import { PAGES, REDENV_GITHUB_URL, REDENV_LABS_URL } from "@/consts";
 import { RedenvLabsLogo } from "./icons/RedenvLabsLogo";
 
 export function Navbar() {
@@ -40,11 +40,7 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMobileMenuOpen]);
 
-  const navLinks = [
-    { href: "/docs", label: "Docs", icon: BookOpen, disabled: false },
-    { href: "/plugins", label: "Plugins", icon: BookOpen, disabled: false },
-    { href: "/changelog", label: "Changelog", icon: FileText, disabled: true },
-  ];
+  const navLinks = PAGES.filter((page) => page.category === "resources");
 
   return (
     <>
