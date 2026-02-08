@@ -1,9 +1,49 @@
 import { source } from "@/lib/source";
 import { createFromSource } from "fumadocs-core/search/server";
 import { getPlugins } from "@/lib/plugins";
+
 import { NextRequest, NextResponse } from "next/server";
+import { capitalize } from "@/lib/utils";
 
 const searchAPI = createFromSource(source, { language: "english" });
+
+const searchablePages = [
+  {
+    title: "Changelog",
+    url: "/changelog",
+    keywords: "changelog release notes updates versions history",
+  },
+  {
+    title: "Plugins",
+    url: "/plugins",
+    keywords: "plugins extensions integrations addons",
+  },
+];
+
+const SEGMENT_LABELS: Record<string, string> = {
+  docs: "Documentation",
+  sdk: "SDK",
+  cli: "CLI",
+  api: "API",
+};
+
+function buildBreadcrumbs(url: string): string[] {
+  const [path, hash] = url.split("#");
+
+  const segments = path
+    .split("/")
+    .filter(Boolean)
+    .map((segment) => {
+      const label = SEGMENT_LABELS[segment.toLowerCase()];
+      return label ?? capitalize(segment.replace(/[_-]/g, " "));
+    });
+
+  if (hash) {
+    segments.push(`#${hash}`);
+  }
+
+  return segments;
+}
 
 function normalize(text: string): string[] {
   return text
@@ -145,7 +185,7 @@ export async function GET(request: NextRequest) {
         title,
         type,
         score,
-        breadcrumbs: item.breadcrumbs,
+        breadcrumbs: item.breadcrumbs ?? buildBreadcrumbs(item.url),
         highlights,
       });
     });
@@ -173,6 +213,23 @@ export async function GET(request: NextRequest) {
       score: finalScore,
       description: plugin.description,
       official: plugin.official,
+    });
+  }
+
+  // Static pages
+  for (const page of searchablePages) {
+    const titleScore = relevanceScore(page.title, query);
+    const keywordScore = relevanceScore(page.keywords, query) * 0.8;
+    const score = Math.max(titleScore, keywordScore);
+
+    if (score < 50) continue;
+
+    results.push({
+      id: `page:${page.url}`,
+      url: page.url,
+      title: page.title,
+      type: "page",
+      score: score + 15,
     });
   }
 
