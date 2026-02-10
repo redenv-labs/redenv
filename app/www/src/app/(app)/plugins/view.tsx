@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { useMotionValue, useInView, animate } from "framer-motion";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
+import { useRouter } from "@/hooks/useRouter";
 import { PluginsHero } from "@/components/plugins/PluginsHero";
 import { FeaturedPlugin } from "@/components/plugins/FeaturedPlugin";
 import { CategoryFilter } from "@/components/plugins/CategoryFilter";

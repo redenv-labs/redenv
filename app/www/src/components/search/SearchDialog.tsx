@@ -13,7 +13,7 @@ import {
   CornerDownLeft,
   ChevronRight,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/hooks/useRouter";
 import {
   useSearch as useSearchQuery,
   type SearchResult,
